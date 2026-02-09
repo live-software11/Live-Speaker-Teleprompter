@@ -1,8 +1,15 @@
-# Dependencies
+# .NET build output
+**/bin/
+**/obj/
+**/publish/
+
+# Node.js (companion-module)
 node_modules/
 
-# Build output
-dist/
+# Portable builds & installers (binary artifacts)
+portable/*.exe
+portable/*.zip
+portable/*.msi
 
 # Environment
 .env
@@ -10,7 +17,6 @@ dist/
 
 # Logs
 *.log
-npm-debug.log*
 
 # Editor & OS
 .vscode/
@@ -19,10 +25,5 @@ npm-debug.log*
 Thumbs.db
 *.sw?
 
-# Portable builds & installers (binary artifacts)
-portable/*.exe
-portable/*.zip
-portable/*.msi
-
-# Solution file (Visual Studio)
-*.sln
+# User preferences (generated at runtime)
+preferences.json

@@ -47,6 +47,17 @@ internal sealed class CompanionBridge : IDisposable
             {
                 // alcuni sistemi potrebbero non consentire il binding doppio: ignoriamo l'errore.
             }
+
+            // Allow connections from any network interface for remote Companion control
+            try
+            {
+                _listener.Prefixes.Add($"http://+:{_port}/teleprompter/");
+            }
+            catch
+            {
+                // Requires admin or netsh http add urlacl; ignore if not available
+            }
+
             _listener.Start();
 
             _cts = new CancellationTokenSource();
@@ -126,7 +137,15 @@ internal sealed class CompanionBridge : IDisposable
         {
             context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/json";
+
+            // CORS headers for network Companion access (e.g. Companion on another machine)
+            context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
+            context.Response.KeepAlive = false;
+
             var buffer = Encoding.UTF8.GetBytes(payload);
+            context.Response.ContentLength64 = buffer.Length;
             await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length, token).ConfigureAwait(false);
         }
         catch
@@ -148,6 +167,12 @@ internal sealed class CompanionBridge : IDisposable
 
     private async Task<string> ProcessRequestAsync(HttpListenerContext context)
     {
+        // Handle CORS preflight requests
+        if (string.Equals(context.Request.HttpMethod, "OPTIONS", StringComparison.OrdinalIgnoreCase))
+        {
+            return BuildResponse(message: "OK");
+        }
+
         var path = context.Request.Url?.AbsolutePath ?? "/";
         var segments = path.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
 

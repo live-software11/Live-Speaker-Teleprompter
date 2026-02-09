@@ -39,6 +39,9 @@ internal sealed class NDITransmitter : IDisposable
     private int _cachedWidth;
     private int _cachedHeight;
 
+    // Cached VisualBrush — reused across frames, only updated when source changes
+    private VisualBrush? _cachedVisualBrush;
+
     public NDITransmitter(FrameworkElement source, string ndiName)
     {
         _source = source;
@@ -175,11 +178,17 @@ internal sealed class NDITransmitter : IDisposable
         desiredWidth = Math.Max(1, desiredWidth);
         desiredHeight = Math.Max(1, desiredHeight);
 
+        // Reuse VisualBrush — only create once, WPF auto-updates when source changes
+        _cachedVisualBrush ??= new VisualBrush(_source)
+        {
+            Stretch = Stretch.Fill,
+            AutoLayoutContent = false
+        };
+
         // Reuse DrawingVisual — just re-render into it
         using (var context = _reusableVisual.RenderOpen())
         {
-            var brush = new VisualBrush(_source) { Stretch = Stretch.Fill };
-            context.DrawRectangle(brush, null, new Rect(0, 0, desiredWidth, desiredHeight));
+            context.DrawRectangle(_cachedVisualBrush, null, new Rect(0, 0, desiredWidth, desiredHeight));
         }
 
         // Reuse RenderTargetBitmap if resolution hasn't changed
@@ -251,6 +260,7 @@ internal sealed class NDITransmitter : IDisposable
         CompositionTarget.Rendering -= OnRendering;
 
         _cachedBitmap = null;
+        _cachedVisualBrush = null;
 
         if (_sendInstance != IntPtr.Zero)
         {

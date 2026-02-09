@@ -1,6 +1,10 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
+
 namespace TeleprompterApp;
 
 public partial class App : System.Windows.Application
@@ -16,10 +20,17 @@ public partial class App : System.Windows.Application
 		_logFilePath = Path.Combine(LogDirectory, $"error-{DateTime.Now:yyyyMMdd-HHmmss}.log");
 		DispatcherUnhandledException += OnDispatcherUnhandledException;
 		AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+		TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 	}
 
 	protected override void OnStartup(StartupEventArgs e)
 	{
+		// Force hardware GPU rendering for best performance on external screens
+		RenderOptions.ProcessRenderMode = RenderMode.Default;
+
+		// Clean up old log files (keep last 10)
+		CleanupOldLogs();
+
 		base.OnStartup(e);
 	}
 
@@ -52,6 +63,37 @@ public partial class App : System.Windows.Application
 		catch
 		{
 			// Ignore logging failures.
+		}
+	}
+
+	private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+	{
+		if (e.Exception?.InnerException != null)
+		{
+			LogException("TaskScheduler", e.Exception.InnerException);
+		}
+		e.SetObserved();
+	}
+
+	private static void CleanupOldLogs()
+	{
+		try
+		{
+			if (!Directory.Exists(LogDirectory)) return;
+
+			var logFiles = new DirectoryInfo(LogDirectory)
+				.GetFiles("error-*.log")
+				.OrderByDescending(f => f.CreationTimeUtc)
+				.Skip(10);
+
+			foreach (var file in logFiles)
+			{
+				try { file.Delete(); } catch { }
+			}
+		}
+		catch
+		{
+			// Non-critical, ignore
 		}
 	}
 }

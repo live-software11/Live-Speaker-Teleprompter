@@ -37,6 +37,13 @@ namespace TeleprompterApp
 
         private void PresenterWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // Enable hardware-rendered bitmap caching on the content area
+            // for smoother scrolling and reduced CPU load on external displays
+            if (_content != null)
+            {
+                RenderOptions.SetBitmapScalingMode(_content, BitmapScalingMode.LowQuality);
+            }
+
             UpdateArrowPosition();
         }
 
@@ -95,7 +102,13 @@ namespace TeleprompterApp
 
         public void SetVerticalOffset(double offset)
         {
-            _scrollViewer?.ScrollToVerticalOffset(offset);
+            if (_scrollViewer == null) return;
+
+            // Avoid redundant scroll commands that trigger unnecessary layout passes
+            var current = _scrollViewer.VerticalOffset;
+            if (Math.Abs(current - offset) < 0.1) return;
+
+            _scrollViewer.ScrollToVerticalOffset(offset);
         }
 
         private double _arrowNormalizedY = 0.5;

@@ -8,7 +8,10 @@
         AllowsTransparency="False"
         Background="#0A101F"
         Topmost="True"
-        SizeToContent="Manual">
+        SizeToContent="Manual"
+        RenderOptions.BitmapScalingMode="LowQuality"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="Auto">
     <Grid>
         <Border Margin="0"
                 Padding="0"
@@ -37,7 +40,11 @@
                                          FontFamily="Segoe UI"
                                          FontSize="72"
                                          Focusable="False"
-                                         IsReadOnlyCaretVisible="False">
+                                         IsReadOnlyCaretVisible="False"
+                                         RenderOptions.ClearTypeHint="Enabled">
+                                <RichTextBox.CacheMode>
+                                    <BitmapCache RenderAtScale="1" EnableClearType="True" />
+                                </RichTextBox.CacheMode>
                                 <FlowDocument PagePadding="96" LineHeight="86" TextAlignment="Center" />
                             </RichTextBox>
                         </ScrollViewer>

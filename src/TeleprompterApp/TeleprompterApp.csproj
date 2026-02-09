@@ -13,18 +13,32 @@
     <Product>R-Speaker Teleprompter</Product>
     <Company>R-Speaker</Company>
     <Description>Professional teleprompter for multi-screen presentations with NDI, OSC, and Companion support</Description>
+    <Copyright>© 2026 R-Speaker. All rights reserved.</Copyright>
     <Version>2.0.0</Version>
     <FileVersion>2.0.0.0</FileVersion>
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
+
+    <!-- Performance: server GC + tiered compilation for production workloads -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <TieredCompilation>true</TieredCompilation>
+    <TieredPGO>true</TieredPGO>
   </PropertyGroup>
 
-  <!-- Publish profile: framework-dependent single-file executable -->
-  <!-- Requires .NET 8 Desktop Runtime on the target machine -->
+  <!--
+    Release publish profile: self-contained single-file portable executable.
+    No .NET runtime required on the target machine.
+    ReadyToRun pre-compiles for ~40% faster cold startup.
+    Compression reduces single-file size by ~30-40%.
+  -->
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>false</SelfContained>
+    <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>

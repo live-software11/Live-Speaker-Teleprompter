@@ -29,7 +29,7 @@ $form.Controls.Add($titleLabel)
 $verLabel = New-Object System.Windows.Forms.Label
 $verLabel.Location = New-Object System.Drawing.Point(20, 55)
 $verLabel.Size = New-Object System.Drawing.Size(460, 20)
-$verLabel.Text = "Versione 2.0.0 - .NET 8 / WPF"
+$verLabel.Text = "Versione 2.0.0 - Applicazione autonoma (nessun runtime richiesto)"
 $verLabel.Font = New-Object System.Drawing.Font("Segoe UI", 9)
 $verLabel.ForeColor = [System.Drawing.Color]::FromArgb(148, 163, 184)
 $form.Controls.Add($verLabel)

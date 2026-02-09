@@ -1,78 +1,98 @@
-# R-Speaker Teleprompter - Bitfocus Companion Module
+# R-Speaker Teleprompter — Companion Module
 
-## Installation
+Modulo per [Bitfocus Companion](https://bitfocus.io/companion) che permette il controllo completo di R-Speaker Teleprompter via **OSC over UDP**.
 
-1. Copy the `companion-module` folder to your Companion modules directory
-2. Restart Companion
-3. Add a new connection and search for "R-Speaker Teleprompter"
+## Funzionalità
 
-## Configuration
+- **23 azioni**: playback, velocità, font, navigazione, mirror, NDI, output mode
+- **5 feedback**: playing, speed, mirror, NDI active, NDI available
+- **4 variabili**: speed, playing, mirrored, ndi_active
+- **10 preset**: pronti per Stream Deck con feedback visivi
+- **Auto-reconnect**: riconnessione automatica ogni 5 secondi
+- **Status sync**: richiesta stato automatica alla connessione
 
-- **Target IP**: IP address of the computer running R-Speaker Teleprompter (default: 127.0.0.1)
-- **OSC Port**: Port for sending commands (default: 8000)
-- **Feedback Port**: Port for receiving status updates (default: 8001)
+## Requisiti
 
-## Available Actions
+- Bitfocus Companion 3.0+
+- R-Speaker Teleprompter 2.0.0+
 
-### Playback Control
-- **Play/Start**: Start teleprompter scrolling
-- **Stop/Pause**: Stop teleprompter scrolling  
-- **Reset**: Reset to beginning of text
+## Installazione
 
-### Speed Control
-- **Set Speed**: Set specific speed value (1-10)
-- **Speed Increase**: Increase scroll speed
-- **Speed Decrease**: Decrease scroll speed
+1. Copia questa cartella nel path dei moduli custom di Companion.
+2. Installa le dipendenze:
 
-### Text Display
-- **Set Font Size**: Set specific font size (20-200)
-- **Font Increase**: Increase font size
-- **Font Decrease**: Decrease font size
-- **Mirror Toggle**: Toggle mirror mode
+   ```bash
+   npm install
+   ```
 
-### Navigation
-- **Next Script**: Load next script in list
-- **Previous Script**: Load previous script
-- **Load Script**: Load specific script by index
-- **Jump to Top**: Jump to beginning of text
-- **Jump to Bottom**: Jump to end of text
-- **Set Position**: Set scroll position (0-100%)
+3. Riavvia Companion.
+4. Aggiungi la connessione **"R-Speaker Teleprompter"**.
 
-## Available Feedbacks
+## Configurazione
 
-- **Playing Status**: Shows green when teleprompter is playing
-- **Current Speed**: Displays current speed value
-- **Mirror Status**: Shows blue when mirror mode is active
+| Parametro | Default | Descrizione |
+|-----------|---------|-------------|
+| Target IP | `127.0.0.1` | IP del PC con R-Speaker |
+| OSC Port | `8000` | Porta comandi |
+| Feedback Port | `8001` | Porta feedback (locale) |
 
-## Preset Buttons
+## Azioni disponibili
 
-Pre-configured buttons are available for common functions:
-- Play (Green)
-- Stop (Red)
-- Reset (Blue)
-- Speed Up/Down (Orange)
+### Playback
+- **Start/Play** — avvia lo scorrimento
+- **Stop/Pause** — ferma lo scorrimento
+- **Play/Pause Toggle** — inverte lo stato
+- **Reset** — torna all'inizio del testo
 
-## OSC Commands Reference
+### Velocità
+- **Set Speed** — imposta velocità esatta (range: **-20** a **+20**, step 0,25)
+- **Speed Increase** — +0,25
+- **Speed Decrease** — −0,25
 
-All commands use OSC protocol. You can also control the teleprompter with any OSC-compatible software.
+### Font
+- **Set Font Size** — imposta dimensione (20–200 pt)
+- **Font Increase** — +2 pt
+- **Font Decrease** — −2 pt
 
-| Command | OSC Address | Arguments |
-|---------|------------|-----------|
-| Play | `/teleprompter/start` | none |
-| Stop | `/teleprompter/stop` | none |
-| Reset | `/teleprompter/reset` | none |
-| Set Speed | `/teleprompter/speed` | int (1-10) |
-| Set Font Size | `/teleprompter/font/size` | int (20-200) |
-| Set Position | `/teleprompter/position` | float (0.0-1.0) |
-| Mirror Toggle | `/teleprompter/mirror/toggle` | none |
+### Navigazione
+- **Jump to Top** — inizio documento
+- **Jump to Bottom** — fine documento
+- **Set Position** — posizione percentuale (0–100%)
 
-## Troubleshooting
+### Mirror
+- **Mirror Toggle** — inverte stato mirror
 
-1. **Connection Issues**: Ensure R-Speaker Teleprompter is running and OSC server is enabled
-2. **No Response**: Check firewall settings allow UDP traffic on configured ports
-3. **Wrong IP**: If running on same computer, use 127.0.0.1
-4. **Port Conflicts**: Try different port numbers if defaults are in use
+### Script (predisposte)
+- **Next Script** / **Previous Script** / **Load Script** — predisposte per futura playlist
 
-## Support
+### NDI
+- **NDI Start** / **NDI Stop** / **NDI Toggle**
+- **NDI Set Resolution** — Full HD, HD, 4K
+- **NDI Set Framerate** — 25, 30, 50, 60 fps
 
-For issues or feature requests, please visit the R-Speaker Teleprompter GitHub repository.
+### Output
+- **Set Output Mode** — Display, NDI, Both
+
+## Variabili
+
+| ID | Esempio | Uso nel testo bottone |
+|----|---------|----------------------|
+| `speed` | `"1.50"` | `$(rspeaker:speed)` |
+| `playing` | `"Playing"` | `$(rspeaker:playing)` |
+| `mirrored` | `"Off"` | `$(rspeaker:mirrored)` |
+| `ndi_active` | `"Active"` | `$(rspeaker:ndi_active)` |
+
+## Protocollo OSC
+
+Comandi: porta **8000** (UDP). Feedback: porta **8001** (UDP).
+
+Riferimento completo: vedi [COMPANION_SETUP_GUIDE.md](../docs/COMPANION_SETUP_GUIDE.md#protocollo-osc--riferimento-completo)
+
+## Dipendenze
+
+- `@companion-module/base` ^1.12.0
+- `osc` ^2.4.5
+
+## Licenza
+
+MIT

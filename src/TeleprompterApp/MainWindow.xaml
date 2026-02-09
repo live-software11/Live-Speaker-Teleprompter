@@ -528,7 +528,11 @@
                                          SpellCheck.IsEnabled="True"
                                          CaretBrush="#60A5FA"
                                          SelectionBrush="#3B82F6"
-                                         SelectionOpacity="0.25">
+                                         SelectionOpacity="0.25"
+                                         RenderOptions.ClearTypeHint="Enabled">
+                                <RichTextBox.CacheMode>
+                                    <BitmapCache RenderAtScale="1" EnableClearType="True" />
+                                </RichTextBox.CacheMode>
                                 <FlowDocument PagePadding="96" LineHeight="86" TextAlignment="Center" />
                             </RichTextBox>
                         </ScrollViewer>

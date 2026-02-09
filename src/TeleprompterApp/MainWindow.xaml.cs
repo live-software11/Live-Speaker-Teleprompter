@@ -1157,12 +1157,42 @@ namespace TeleprompterApp
         }
     }
 
+    /// <summary>
+    /// Clones a FlowDocument via XamlPackage serialization (faster than XamlWriter/XamlReader).
+    /// Falls back to XML serialization only on error.
+    /// </summary>
     private static FlowDocument CloneDocument(FlowDocument source)
     {
-        var xaml = XamlWriter.Save(source);
-        using var stringReader = new StringReader(xaml);
-        using var xmlReader = XmlReader.Create(stringReader);
-        return (FlowDocument)XamlReader.Load(xmlReader);
+        try
+        {
+            using var stream = new MemoryStream();
+            var sourceRange = new TextRange(source.ContentStart, source.ContentEnd);
+            sourceRange.Save(stream, MediaDataFormats.XamlPackage);
+            stream.Position = 0;
+
+            var clone = new FlowDocument();
+            var cloneRange = new TextRange(clone.ContentStart, clone.ContentEnd);
+            cloneRange.Load(stream, MediaDataFormats.XamlPackage);
+
+            clone.PagePadding = source.PagePadding;
+            clone.LineHeight = source.LineHeight;
+            clone.TextAlignment = source.TextAlignment;
+            clone.Background = source.Background;
+            clone.FontFamily = source.FontFamily;
+            clone.FontSize = source.FontSize;
+            clone.Foreground = source.Foreground;
+            clone.FontWeight = source.FontWeight;
+            clone.FontStyle = source.FontStyle;
+
+            return clone;
+        }
+        catch
+        {
+            var xaml = XamlWriter.Save(source);
+            using var stringReader = new StringReader(xaml);
+            using var xmlReader = XmlReader.Create(stringReader);
+            return (FlowDocument)XamlReader.Load(xmlReader);
+        }
     }
 
     private void UpdatePresenterMirror()

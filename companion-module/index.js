@@ -5,10 +5,13 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
   constructor(internal) {
     super(internal);
     this.oscPort = null;
+    this.reconnectTimer = null;
     this.feedbackValues = {
       isPlaying: false,
-      currentSpeed: 5,
-      isMirrored: false
+      currentSpeed: 0.5,
+      isMirrored: false,
+      ndiActive: false,
+      ndiAvailable: false
     };
   }
 
@@ -20,12 +23,41 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
     this.initActions();
     this.initFeedbacks();
     this.initPresets();
+    this.initVariables();
     this.subscribeFeedbacks();
+
+    // Request initial status after connection
+    setTimeout(() => {
+      this.sendOsc('/teleprompter/status/request');
+      this.sendOsc('/ndi/status/request');
+    }, 1000);
+  }
+
+  initVariables() {
+    this.setVariableDefinitions([
+      { variableId: 'speed', name: 'Current Speed' },
+      { variableId: 'playing', name: 'Playing Status' },
+      { variableId: 'mirrored', name: 'Mirror Status' },
+      { variableId: 'ndi_active', name: 'NDI Active' }
+    ]);
+
+    this.setVariableValues({
+      speed: this.feedbackValues.currentSpeed,
+      playing: this.feedbackValues.isPlaying ? 'Playing' : 'Stopped',
+      mirrored: this.feedbackValues.isMirrored ? 'On' : 'Off',
+      ndi_active: this.feedbackValues.ndiActive ? 'Active' : 'Inactive'
+    });
   }
 
   async configureOsc() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
     if (this.oscPort) {
-      this.oscPort.close();
+      try { this.oscPort.close(); } catch(e) {}
+      this.oscPort = null;
     }
 
     try {
@@ -40,6 +72,9 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
       this.oscPort.on('ready', () => {
         this.updateStatus(InstanceStatus.Ok);
         this.log('info', `Connected to R-Speaker Teleprompter at ${this.config.host}:${this.config.port}`);
+        // Request current status on connect
+        this.sendOsc('/teleprompter/status/request');
+        this.sendOsc('/ndi/status/request');
       });
 
       this.oscPort.on('message', (oscMsg) => {
@@ -49,6 +84,14 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
       this.oscPort.on('error', (err) => {
         this.updateStatus(InstanceStatus.ConnectionFailure);
         this.log('error', `OSC error: ${err.message}`);
+        // Auto-reconnect after 5 seconds
+        if (!this.reconnectTimer) {
+          this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            this.log('info', 'Attempting OSC reconnection...');
+            this.configureOsc();
+          }, 5000);
+        }
       });
 
       this.oscPort.open();
@@ -66,13 +109,16 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
         if (args[0]) {
           this.feedbackValues.isPlaying = args[0].value === 'playing';
           this.checkFeedbacks('isPlaying');
+          this.setVariableValues({ playing: this.feedbackValues.isPlaying ? 'Playing' : 'Stopped' });
         }
         break;
       
       case '/teleprompter/speed/current':
         if (args[0]) {
-          this.feedbackValues.currentSpeed = args[0].value;
+          const speed = parseFloat(args[0].value);
+          this.feedbackValues.currentSpeed = isNaN(speed) ? 0 : speed;
           this.checkFeedbacks('currentSpeed');
+          this.setVariableValues({ speed: this.feedbackValues.currentSpeed.toFixed(2) });
         }
         break;
       
@@ -80,6 +126,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
         if (args[0]) {
           this.feedbackValues.isMirrored = args[0].value === 'true';
           this.checkFeedbacks('isMirrored');
+          this.setVariableValues({ mirrored: this.feedbackValues.isMirrored ? 'On' : 'Off' });
         }
         break;
         
@@ -87,6 +134,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
         if (args[0]) {
           this.feedbackValues.ndiActive = args[0].value === 'active';
           this.checkFeedbacks('ndiActive');
+          this.setVariableValues({ ndi_active: this.feedbackValues.ndiActive ? 'Active' : 'Inactive' });
         }
         break;
       
@@ -94,6 +142,18 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
         if (args[0]) {
           this.feedbackValues.ndiAvailable = args[0].value === 'yes';
           this.checkFeedbacks('ndiAvailable');
+        }
+        break;
+
+      case '/teleprompter/position/current':
+        if (args[0]) {
+          this.feedbackValues.position = parseFloat(args[0].value) || 0;
+        }
+        break;
+
+      case '/teleprompter/font/size/current':
+        if (args[0]) {
+          this.feedbackValues.fontSize = parseInt(args[0].value) || 72;
         }
         break;
     }
@@ -133,21 +193,34 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
           this.sendOsc('/teleprompter/reset');
         }
       },
+      toggle: {
+        name: 'Play/Pause Toggle',
+        options: [],
+        callback: async () => {
+          // Toggle based on current known state for lowest latency
+          if (this.feedbackValues.isPlaying) {
+            this.sendOsc('/teleprompter/stop');
+          } else {
+            this.sendOsc('/teleprompter/start');
+          }
+        }
+      },
       setSpeed: {
         name: 'Set Speed',
         options: [
           {
             type: 'number',
-            label: 'Speed (1-10)',
+            label: 'Speed (-20 to 20)',
             id: 'speed',
-            default: 5,
-            min: 1,
-            max: 10
+            default: 0.5,
+            min: -20,
+            max: 20,
+            step: 0.25
           }
         ],
         callback: async (action) => {
           this.sendOsc('/teleprompter/speed', [
-            { type: 'i', value: action.options.speed }
+            { type: 'f', value: action.options.speed }
           ]);
         }
       },
@@ -462,6 +535,20 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
       },
       steps: [{ down: [{ actionId: 'reset' }] }]
     });
+
+    presets.push({
+      type: 'button',
+      category: 'Playback',
+      name: 'Toggle',
+      style: {
+        text: 'TOGGLE',
+        size: '18',
+        color: this.rgb(255, 255, 255),
+        bgcolor: this.rgb(100, 100, 100)
+      },
+      steps: [{ down: [{ actionId: 'toggle' }] }],
+      feedbacks: [{ feedbackId: 'isPlaying' }]
+    });
     
     // Speed presets
     presets.push({
@@ -568,8 +655,12 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
   }
 
   async destroy() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.oscPort) {
-      this.oscPort.close();
+      try { this.oscPort.close(); } catch(e) {}
       this.oscPort = null;
     }
   }
