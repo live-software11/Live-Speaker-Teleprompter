@@ -1,0 +1,31 @@
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #111;
+  color: #fff;
+}
+
+.text-display {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  transition: transform 0.3s ease;
+}
+
+.text-display--mirrored {
+  transform: scaleX(-1);
+}
+
+.text-display__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.text-line {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 0.25rem 0;
+}

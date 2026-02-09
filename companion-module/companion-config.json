@@ -1,0 +1,255 @@
+{
+  "name": "R-Speaker Teleprompter",
+  "id": "r-speaker-teleprompter",
+  "shortname": "rspeaker",
+  "description": "Control R-Speaker Teleprompter via OSC",
+  "version": "1.0.0",
+  "author": "R-Speaker",
+  "category": "Presentation",
+  "keywords": ["teleprompter", "presentation", "speech"],
+  "manufacturer": "R-Speaker",
+  "products": ["R-Speaker Teleprompter"],
+  "main_file": "index.js",
+  "config": [
+    {
+      "type": "textinput",
+      "id": "host",
+      "label": "Target IP",
+      "width": 8,
+      "default": "127.0.0.1"
+    },
+    {
+      "type": "number",
+      "id": "port",
+      "label": "OSC Port",
+      "width": 4,
+      "default": 8000,
+      "min": 1,
+      "max": 65535
+    },
+    {
+      "type": "number",
+      "id": "feedbackPort",
+      "label": "Feedback Port",
+      "width": 4,
+      "default": 8001,
+      "min": 1,
+      "max": 65535
+    }
+  ],
+  "actions": [
+    {
+      "name": "Start/Play",
+      "id": "play",
+      "description": "Start teleprompter playback",
+      "options": []
+    },
+    {
+      "name": "Stop/Pause",
+      "id": "stop",
+      "description": "Stop teleprompter playback",
+      "options": []
+    },
+    {
+      "name": "Reset",
+      "id": "reset",
+      "description": "Reset to beginning",
+      "options": []
+    },
+    {
+      "name": "Set Speed",
+      "id": "setSpeed",
+      "description": "Set scroll speed",
+      "options": [
+        {
+          "type": "number",
+          "id": "speed",
+          "label": "Speed (1-10)",
+          "default": 5,
+          "min": 1,
+          "max": 10
+        }
+      ]
+    },
+    {
+      "name": "Speed Increase",
+      "id": "speedUp",
+      "description": "Increase scroll speed",
+      "options": []
+    },
+    {
+      "name": "Speed Decrease",
+      "id": "speedDown",
+      "description": "Decrease scroll speed",
+      "options": []
+    },
+    {
+      "name": "Font Size",
+      "id": "setFontSize",
+      "description": "Set font size",
+      "options": [
+        {
+          "type": "number",
+          "id": "size",
+          "label": "Font Size",
+          "default": 48,
+          "min": 20,
+          "max": 200
+        }
+      ]
+    },
+    {
+      "name": "Font Increase",
+      "id": "fontUp",
+      "description": "Increase font size",
+      "options": []
+    },
+    {
+      "name": "Font Decrease",
+      "id": "fontDown",
+      "description": "Decrease font size",
+      "options": []
+    },
+    {
+      "name": "Next Script",
+      "id": "nextScript",
+      "description": "Load next script",
+      "options": []
+    },
+    {
+      "name": "Previous Script",
+      "id": "prevScript",
+      "description": "Load previous script",
+      "options": []
+    },
+    {
+      "name": "Load Script",
+      "id": "loadScript",
+      "description": "Load specific script",
+      "options": [
+        {
+          "type": "number",
+          "id": "index",
+          "label": "Script Index",
+          "default": 0,
+          "min": 0
+        }
+      ]
+    },
+    {
+      "name": "Mirror Toggle",
+      "id": "mirrorToggle",
+      "description": "Toggle mirror mode",
+      "options": []
+    },
+    {
+      "name": "Jump to Top",
+      "id": "jumpTop",
+      "description": "Jump to beginning",
+      "options": []
+    },
+    {
+      "name": "Jump to Bottom",
+      "id": "jumpBottom",
+      "description": "Jump to end",
+      "options": []
+    },
+    {
+      "name": "Set Position",
+      "id": "setPosition",
+      "description": "Set scroll position (0-100%)",
+      "options": [
+        {
+          "type": "number",
+          "id": "position",
+          "label": "Position (%)",
+          "default": 0,
+          "min": 0,
+          "max": 100
+        }
+      ]
+    }
+  ],
+  "feedbacks": [
+    {
+      "name": "Playing Status",
+      "id": "isPlaying",
+      "description": "Shows if teleprompter is playing",
+      "type": "boolean"
+    },
+    {
+      "name": "Current Speed",
+      "id": "currentSpeed",
+      "description": "Shows current speed",
+      "type": "text"
+    },
+    {
+      "name": "Mirror Status",
+      "id": "isMirrored",
+      "description": "Shows if mirror mode is active",
+      "type": "boolean"
+    }
+  ],
+  "presets": [
+    {
+      "category": "Playback",
+      "name": "Play",
+      "type": "button",
+      "style": {
+        "text": "PLAY",
+        "size": "18",
+        "color": "16777215",
+        "bgcolor": "65280"
+      },
+      "actions": [{"action": "play"}]
+    },
+    {
+      "category": "Playback",
+      "name": "Stop",
+      "type": "button",
+      "style": {
+        "text": "STOP",
+        "size": "18",
+        "color": "16777215",
+        "bgcolor": "16711680"
+      },
+      "actions": [{"action": "stop"}]
+    },
+    {
+      "category": "Playback",
+      "name": "Reset",
+      "type": "button",
+      "style": {
+        "text": "RESET",
+        "size": "18",
+        "color": "16777215",
+        "bgcolor": "255"
+      },
+      "actions": [{"action": "reset"}]
+    },
+    {
+      "category": "Speed",
+      "name": "Speed Up",
+      "type": "button",
+      "style": {
+        "text": "SPEED+",
+        "size": "14",
+        "color": "16777215",
+        "bgcolor": "16744448"
+      },
+      "actions": [{"action": "speedUp"}]
+    },
+    {
+      "category": "Speed",
+      "name": "Speed Down",
+      "type": "button",
+      "style": {
+        "text": "SPEED-",
+        "size": "14",
+        "color": "16777215",
+        "bgcolor": "16744448"
+      },
+      "actions": [{"action": "speedDown"}]
+    }
+  ]
+}

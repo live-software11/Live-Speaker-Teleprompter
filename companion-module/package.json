@@ -1,0 +1,28 @@
+{
+  "name": "companion-module-r-speaker-teleprompter",
+  "version": "1.0.0",
+  "description": "Companion module for R-Speaker Teleprompter",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "companion-module",
+    "teleprompter",
+    "osc"
+  ],
+  "author": "R-Speaker",
+  "license": "MIT",
+  "dependencies": {
+    "@companion-module/base": "^1.12.0",
+    "osc": "^2.4.5"
+  },
+  "companion": {
+    "module_api": "1.0.0",
+    "products": ["R-Speaker Teleprompter"],
+    "manufacturer": "R-Speaker",
+    "name": "R-Speaker Teleprompter",
+    "shortname": "rspeaker",
+    "description": "Control R-Speaker Teleprompter via OSC"
+  }
+}

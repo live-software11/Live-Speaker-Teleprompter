@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>..\..\icons\app-icon.ico</ApplicationIcon>
+
+    <!-- App metadata: AssemblyName must stay TeleprompterApp for WPF XAML pack URIs -->
+    <AssemblyName>TeleprompterApp</AssemblyName>
+    <Product>R-Speaker Teleprompter</Product>
+    <Company>R-Speaker</Company>
+    <Description>Professional teleprompter for multi-screen presentations with NDI, OSC, and Companion support</Description>
+    <Version>2.0.0</Version>
+    <FileVersion>2.0.0.0</FileVersion>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <!-- Publish profile: framework-dependent single-file executable -->
+  <!-- Requires .NET 8 Desktop Runtime on the target machine -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="..\..\icons\app-icon.ico" />
+  </ItemGroup>
+</Project>

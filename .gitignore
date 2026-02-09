@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.sw?
+
+# Portable builds & installers (binary artifacts)
+portable/*.exe
+portable/*.zip
+portable/*.msi
+
+# Solution file (Visual Studio)
+*.sln
