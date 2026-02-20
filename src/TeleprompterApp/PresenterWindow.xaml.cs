@@ -46,7 +46,7 @@ namespace TeleprompterApp
             }
         }
 
-        private void HwndSource_DpiChanged(object sender, System.Windows.DpiChangedEventArgs e)
+        private void HwndSource_DpiChanged(object sender, HwndDpiChangedEventArgs e)
         {
             if (!string.IsNullOrEmpty(CurrentScreenDeviceName))
             {

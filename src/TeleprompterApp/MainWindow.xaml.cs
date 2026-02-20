@@ -1493,7 +1493,7 @@ namespace TeleprompterApp
 
     private void PlayPauseToggle_Checked(object sender, RoutedEventArgs e)
     {
-        if (_onAirToggle?.IsChecked != true)
+        if (_onAirToggle != null && _onAirToggle.IsChecked != true)
         {
             _onAirToggle.IsChecked = true;
         }
