@@ -124,9 +124,10 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="EditBtn" TargetType="ToggleButton" BasedOn="{StaticResource TbTgl}">
-            <Setter Property="Padding" Value="10,5" />
+        <Style x:Key="OnAirBtn" TargetType="ToggleButton" BasedOn="{StaticResource TbTgl}">
+            <Setter Property="Padding" Value="12,5" />
             <Setter Property="Background" Value="#1F2937" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
@@ -135,11 +136,12 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Background" Value="#0EA5E9" />
-                                <Setter Property="BorderBrush" Value="#38BDF8" />
+                                <Setter Property="Background" Value="#DC2626" />
+                                <Setter Property="BorderBrush" Value="#EF4444" />
+                                <Setter Property="Foreground" Value="#FEE2E2" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#1D4ED8" />
+                                <Setter Property="BorderBrush" Value="#F87171" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -151,7 +153,7 @@
         <Style x:Key="ToolbarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource TbBtn}" />
         <Style x:Key="ToolbarToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource TbTgl}" />
         <Style x:Key="PlayToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource PlayBtn}" />
-        <Style x:Key="EditToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource EditBtn}" />
+        <Style x:Key="OnAirToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource OnAirBtn}" />
         <Style x:Key="HeaderSectionBorder" TargetType="Border">
             <Setter Property="Background" Value="#111C33" />
             <Setter Property="CornerRadius" Value="8" />
@@ -260,8 +262,35 @@
                     <StackPanel x:Name="MonitorTogglePanel" Orientation="Horizontal" />
                     <ToggleButton x:Name="NdiToggle" Style="{StaticResource TbTgl}" Content="NDI" Margin="4,0" Checked="NdiToggle_Checked" Unchecked="NdiToggle_Unchecked" FontSize="12" />
                     <Border Width="1" Background="#1E2A44" Margin="4,3" />
-                    <ToggleButton x:Name="EditModeToggle" Style="{StaticResource EditBtn}" IsChecked="True" Checked="EditModeToggle_Checked" Unchecked="EditModeToggle_Unchecked" ToolTip="Modifica / Presentazione">
-                        <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" />
+                    <ToggleButton x:Name="OnAirToggle" Style="{StaticResource OnAirBtn}" IsChecked="False" Checked="OnAirToggle_Checked" Unchecked="OnAirToggle_Unchecked" ToolTip="On-Air ON: testo bloccato, schermo esterno=preview. Off: modifica script, relatore vede modifiche in diretta">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,4,0" Foreground="#94A3B8">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#94A3B8" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                <Setter Property="Foreground" Value="#FEE2E2" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="OFF" />
+                                        <Setter Property="Foreground" Value="#94A3B8" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                <Setter Property="Text" Value="ON AIR" />
+                                                <Setter Property="Foreground" Value="#FEE2E2" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
                     </ToggleButton>
                     <ToggleButton x:Name="MirrorToggle" Style="{StaticResource TbTgl}" ToolTip="Specchio" Checked="MirrorToggle_Checked" Unchecked="MirrorToggle_Unchecked">
                         <TextBlock Text="&#xE7C5;" FontFamily="Segoe MDL2 Assets" FontSize="14" />
@@ -333,10 +362,9 @@
                                          SelectionBrush="#3B82F6"
                                          SelectionOpacity="0.25"
                                          RenderOptions.ClearTypeHint="Enabled"
-                                         TextOptions.TextFormattingMode="Display">
-                                <RichTextBox.CacheMode>
-                                    <BitmapCache RenderAtScale="1" EnableClearType="True" />
-                                </RichTextBox.CacheMode>
+                                         TextOptions.TextFormattingMode="Ideal"
+                                         TextOptions.TextRenderingMode="ClearType"
+                                         UseLayoutRounding="True">
                                 <FlowDocument PagePadding="40" LineHeight="86" TextAlignment="Center" />
                             </RichTextBox>
                         </ScrollViewer>

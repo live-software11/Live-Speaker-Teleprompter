@@ -9,9 +9,10 @@
         Background="#0A101F"
         Topmost="True"
         SizeToContent="Manual"
-        RenderOptions.BitmapScalingMode="LowQuality"
-        TextOptions.TextFormattingMode="Display"
-        TextOptions.TextRenderingMode="Auto">
+        RenderOptions.BitmapScalingMode="HighQuality"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True">
     <Grid>
         <Border Margin="0"
                 Padding="0"
@@ -41,10 +42,10 @@
                                          FontSize="72"
                                          Focusable="False"
                                          IsReadOnlyCaretVisible="False"
-                                         RenderOptions.ClearTypeHint="Enabled">
-                                <RichTextBox.CacheMode>
-                                    <BitmapCache RenderAtScale="1" EnableClearType="True" />
-                                </RichTextBox.CacheMode>
+                                         RenderOptions.ClearTypeHint="Enabled"
+                                         TextOptions.TextFormattingMode="Ideal"
+                                         TextOptions.TextRenderingMode="ClearType"
+                                         UseLayoutRounding="True">
                                 <FlowDocument PagePadding="40" LineHeight="86" TextAlignment="Center" />
                             </RichTextBox>
                         </ScrollViewer>

@@ -118,4 +118,42 @@ UI change → SavePreferences() → CapturePreferences() → DebouncedPreference
 
 ---
 
+---
+
+## v2.3.1 — Qualità testo e schermo esterno
+
+| Intervento | Descrizione |
+|------------|-------------|
+| **Qualità caratteri** | TextFormattingMode=Ideal, TextRenderingMode=ClearType, rimosso BitmapCache che sgranava a 72pt |
+| **Schermo esterno** | Sync presenter in background (DispatcherPriority.Loaded), DPI PerMonitorV2, gestione errori |
+| **Spazio** | Solo primo keypress (e.IsRepeat), nessun toggle ripetuto se tenuto premuto |
+
+---
+
+---
+
+## v2.3.2 — Schermo esterno ultra stabile, Preview=Program
+
+| Intervento | Descrizione | Fonte |
+|------------|-------------|-------|
+| **PageWidth nel clone** | Copia esplicita di PageWidth per layout identico preview/program | Analisi |
+| **SetScrollRatio** | UpdateLayout solo quando ScrollableHeight invalido (evita 60 UpdateLayout/sec) | Microsoft Perf |
+| **DpiChanged** | HwndSource.DpiChanged riapplica bounds su cambio DPI/monitor | Microsoft Docs |
+| **Sync prima di Show** | SyncPresenterDocument prima di ShowOnScreen per contenuto visibile subito | Best practice |
+
+---
+
+---
+
+## v2.3.3 — Tasto On-Air
+
+| Intervento | Descrizione |
+|------------|-------------|
+| **On-Air toggle** | Sostituito tasto Modifica con On-Air (rosso quando attivo) |
+| **On-Air ON** | Testo bloccato, schermo esterno = preview (relatore vede ciò che fai) |
+| **On-Air OFF** | Modifica script, relatore vede modifiche in diretta |
+| **Play → On-Air** | Avviando lo scroll si passa automaticamente in On-Air |
+
+---
+
 *Documento aggiornato il 2026-02-20 — R-Speaker Teleprompter v2.3.0*

@@ -51,7 +51,7 @@ cd installer && .\build-installer.ps1 # Full pipeline: exe + zip + installer
 
 - FlowDocument cloning via XamlPackage (~30ms vs ~300ms with XamlWriter)
 - Cached VisualBrush/RenderTargetBitmap/DrawingVisual for NDI (zero per-frame alloc)
-- BitmapCache GPU rendering on editor and presenter
+- TextFormattingMode=Ideal + ClearType per testo nitido a 72pt (no BitmapCache)
 - Dead-zone scroll skip (< 0.1px)
 - ServerGC + TieredPGO + ReadyToRun
 - Auto log cleanup (keeps last 10 files)

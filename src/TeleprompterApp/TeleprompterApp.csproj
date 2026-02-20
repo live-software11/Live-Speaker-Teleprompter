@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
@@ -14,9 +15,9 @@
     <Company>R-Speaker</Company>
     <Description>Professional teleprompter for multi-screen presentations with NDI, OSC, and Companion support</Description>
     <Copyright>© 2026 R-Speaker. All rights reserved.</Copyright>
-    <Version>2.3.0</Version>
-    <FileVersion>2.3.0.0</FileVersion>
-    <AssemblyVersion>2.3.0.0</AssemblyVersion>
+    <Version>2.3.3</Version>
+    <FileVersion>2.3.3.0</FileVersion>
+    <AssemblyVersion>2.3.3.0</AssemblyVersion>
 
     <!-- Performance: server GC + tiered compilation for production workloads -->
     <ServerGarbageCollection>true</ServerGarbageCollection>

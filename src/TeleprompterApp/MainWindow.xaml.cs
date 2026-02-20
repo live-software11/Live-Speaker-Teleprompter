@@ -86,7 +86,7 @@ namespace TeleprompterApp
     private MediaPoint _arrowNormalizedPosition = new(0, 0.5);
     private double _arrowScale = 1.0;
     private bool _isUpdatingEditToggle;
-    private bool _pendingEditMode = true;
+    private bool _pendingEditMode = false;
     private bool _isUpdatingLeftMargin;
     private bool _isUpdatingMarginSliders;
     private double _marginTop = 40;
@@ -114,7 +114,7 @@ namespace TeleprompterApp
 
     private WpfRichTextBox _contentEditor = null!;
     private WpfScrollViewer _contentScrollViewer = null!;
-    private WpfToggleButton _editModeToggle = null!;
+    private WpfToggleButton _onAirToggle = null!;
     private WpfToggleButton _playPauseToggle = null!;
     private WpfToggleButton _mirrorToggle = null!;
     private WpfToggleButton _topMostToggle = null!;
@@ -149,7 +149,7 @@ namespace TeleprompterApp
     {
     _contentEditor = GetRequiredElement<WpfRichTextBox>("ContentEditor");
     _contentScrollViewer = GetRequiredElement<WpfScrollViewer>("ContentScrollViewer");
-    _editModeToggle = GetRequiredElement<WpfToggleButton>("EditModeToggle");
+    _onAirToggle = GetRequiredElement<WpfToggleButton>("OnAirToggle");
     _playPauseToggle = GetRequiredElement<WpfToggleButton>("PlayPauseToggle");
     _mirrorToggle = GetRequiredElement<WpfToggleButton>("MirrorToggle");
     _topMostToggle = GetRequiredElement<WpfToggleButton>("TopMostToggle");
@@ -229,7 +229,7 @@ namespace TeleprompterApp
     StartOscIntegration();
         _isApplyingPreferences = false;
 
-        _pendingEditMode = _editModeToggle?.IsChecked ?? _pendingEditMode;
+        _pendingEditMode = _onAirToggle?.IsChecked != true;
         ApplyEditMode(_pendingEditMode);
 
         if (_pendingEditMode)
@@ -387,10 +387,10 @@ namespace TeleprompterApp
         _topMostToggle.IsChecked = _preferences.TopMostEnabled;
         _mirrorToggle.IsChecked = _preferences.MirrorEnabled;
 
-        if (_editModeToggle != null)
+        if (_onAirToggle != null)
         {
             _isUpdatingEditToggle = true;
-            _editModeToggle.IsChecked = _preferences.EditModeEnabled;
+            _onAirToggle.IsChecked = !_preferences.EditModeEnabled;
             _isUpdatingEditToggle = false;
         }
 
@@ -642,9 +642,29 @@ namespace TeleprompterApp
             return false;
         }
 
-        _presenterWindow.ShowOnScreen(option.Screen);
-        SyncPresenterDocument();
-        ApplyNormalizedArrowPosition();
+        try
+        {
+            SyncPresenterDocument();
+            _presenterWindow.ShowOnScreen(option.Screen);
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            {
+                try
+                {
+                    SyncPresenterScroll();
+                    ApplyNormalizedArrowPosition();
+                    UpdatePresenterArrowAppearance();
+                }
+                catch (Exception ex)
+                {
+                    SetStatus($"Sync presenter: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Errore schermo esterno: {ex.Message}");
+            return false;
+        }
         return true;
     }
 
@@ -697,9 +717,9 @@ namespace TeleprompterApp
 
     private void LoadDocument(string filePath)
     {
-        if (_editModeToggle != null && _editModeToggle.IsChecked != true)
+        if (_onAirToggle != null && _onAirToggle.IsChecked == true)
         {
-            _editModeToggle.IsChecked = true;
+            _onAirToggle.IsChecked = false;
         }
 
         var extension = Path.GetExtension(filePath).ToLowerInvariant();
@@ -1313,6 +1333,7 @@ namespace TeleprompterApp
             cloneRange.Load(stream, MediaDataFormats.XamlPackage);
 
             clone.PagePadding = source.PagePadding;
+            clone.PageWidth = source.PageWidth;
             clone.LineHeight = source.LineHeight;
             clone.TextAlignment = source.TextAlignment;
             clone.Background = source.Background;
@@ -1329,7 +1350,11 @@ namespace TeleprompterApp
             var xaml = XamlWriter.Save(source);
             using var stringReader = new StringReader(xaml);
             using var xmlReader = XmlReader.Create(stringReader);
-            return (FlowDocument)XamlReader.Load(xmlReader);
+            var clone = (FlowDocument)XamlReader.Load(xmlReader);
+            clone.PagePadding = source.PagePadding;
+            clone.PageWidth = source.PageWidth;
+            clone.LineHeight = source.LineHeight;
+            return clone;
         }
     }
 
@@ -1358,7 +1383,7 @@ namespace TeleprompterApp
         return baseWidth * _arrowScale;
     }
 
-    internal bool IsEditMode => _editModeToggle?.IsChecked != false;
+    internal bool IsEditMode => _onAirToggle?.IsChecked != true;
 
     private void ApplyEditMode(bool isEditMode)
     {
@@ -1468,9 +1493,9 @@ namespace TeleprompterApp
 
     private void PlayPauseToggle_Checked(object sender, RoutedEventArgs e)
     {
-        if (_editModeToggle?.IsChecked == true)
+        if (_onAirToggle?.IsChecked != true)
         {
-            _editModeToggle.IsChecked = false;
+            _onAirToggle.IsChecked = true;
         }
 
         var desiredSpeed = _scrollSpeed;
@@ -1626,7 +1651,7 @@ namespace TeleprompterApp
             return;
         }
 
-        if (e.Key == Key.Space && !IsEditMode)
+        if (e.Key == Key.Space && !IsEditMode && !e.IsRepeat)
         {
             _playPauseToggle.IsChecked = !_playPauseToggle.IsChecked;
             e.Handled = true;
@@ -2019,40 +2044,40 @@ namespace TeleprompterApp
         UpdateLeftMarginDisplay();
     }
 
-    private void EditModeToggle_Checked(object sender, RoutedEventArgs e)
+    private void OnAirToggle_Checked(object sender, RoutedEventArgs e)
     {
-        OnEditModeToggleChanged(true);
+        OnOnAirChanged(true);
     }
 
-    private void EditModeToggle_Unchecked(object sender, RoutedEventArgs e)
+    private void OnAirToggle_Unchecked(object sender, RoutedEventArgs e)
     {
-        OnEditModeToggleChanged(false);
+        OnOnAirChanged(false);
     }
 
-    private void OnEditModeToggleChanged(bool isChecked)
+    private void OnOnAirChanged(bool isOnAir)
     {
-        _pendingEditMode = isChecked;
+        _pendingEditMode = !isOnAir;
 
         if (_contentEditor is null)
         {
             return;
         }
 
-        ApplyEditMode(isChecked);
+        ApplyEditMode(_pendingEditMode);
 
         if (_isUpdatingEditToggle || _isApplyingPreferences)
         {
             return;
         }
 
-        if (isChecked)
+        if (isOnAir)
         {
-            _contentEditor.Focus();
-            SetStatus("Modalità modifica attiva");
+            SetStatus("On-Air attivo: testo bloccato, schermo esterno = preview");
         }
         else
         {
-            SetStatus("Modalità presentazione attiva");
+            _contentEditor.Focus();
+            SetStatus("On-Air spento: modifica script, relatore vede in diretta");
         }
 
         SavePreferences();

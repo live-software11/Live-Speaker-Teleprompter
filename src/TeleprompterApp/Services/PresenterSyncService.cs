@@ -126,8 +126,9 @@ internal sealed class PresenterSyncService : IDisposable
             var cloneRange = new TextRange(clone.ContentStart, clone.ContentEnd);
             cloneRange.Load(stream, System.Windows.DataFormats.XamlPackage);
 
-            // Copy document-level properties
+            // Copy document-level properties (PageWidth critico per preview=program identico)
             clone.PagePadding = source.PagePadding;
+            clone.PageWidth = source.PageWidth;
             clone.LineHeight = source.LineHeight;
             clone.TextAlignment = source.TextAlignment;
             clone.Background = source.Background;

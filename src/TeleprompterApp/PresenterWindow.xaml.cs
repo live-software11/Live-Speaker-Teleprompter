@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using MediaColor = System.Windows.Media.Color;
@@ -34,17 +35,33 @@ namespace TeleprompterApp
             LoadView();
             ResolveNamedElements();
             Loaded += PresenterWindow_Loaded;
+            SourceInitialized += PresenterWindow_SourceInitialized;
+        }
+
+        private void PresenterWindow_SourceInitialized(object? sender, EventArgs e)
+        {
+            if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
+            {
+                hwndSource.DpiChanged += HwndSource_DpiChanged;
+            }
+        }
+
+        private void HwndSource_DpiChanged(object sender, System.Windows.DpiChangedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(CurrentScreenDeviceName))
+            {
+                var currentScreen = System.Windows.Forms.Screen.AllScreens
+                    .FirstOrDefault(s => s.DeviceName == CurrentScreenDeviceName);
+                if (currentScreen != null)
+                {
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+                        ApplyScreenBounds(currentScreen));
+                }
+            }
         }
 
         private void PresenterWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // Enable hardware-rendered bitmap caching on the content area
-            // for smoother scrolling and reduced CPU load on external displays
-            if (_content != null)
-            {
-                RenderOptions.SetBitmapScalingMode(_content, BitmapScalingMode.LowQuality);
-            }
-
             UpdateArrowPosition();
         }
 
@@ -115,16 +132,19 @@ namespace TeleprompterApp
         {
             if (_scrollViewer == null) return;
 
-            _scrollViewer.UpdateLayout();
             var maxScroll = _scrollViewer.ScrollableHeight;
             if (double.IsNaN(maxScroll) || maxScroll <= 0)
             {
-                _scrollViewer.ScrollToVerticalOffset(0);
-                return;
+                _scrollViewer.UpdateLayout();
+                maxScroll = _scrollViewer.ScrollableHeight;
+                if (double.IsNaN(maxScroll) || maxScroll <= 0)
+                {
+                    _scrollViewer.ScrollToVerticalOffset(0);
+                    return;
+                }
             }
 
             var targetOffset = maxScroll * Math.Clamp(ratio, 0, 1);
-
             var current = _scrollViewer.VerticalOffset;
             if (Math.Abs(current - targetOffset) < 0.5) return;
 
@@ -218,27 +238,27 @@ namespace TeleprompterApp
             WindowState = WindowState.Normal;
             WindowStartupLocation = WindowStartupLocation.Manual;
 
-            var targetOpacity = Opacity;
-            var shouldRestoreOpacity = !IsVisible && targetOpacity > 0;
-            if (shouldRestoreOpacity)
-            {
-                Opacity = 0;
-            }
-
             if (!IsVisible)
             {
                 Show();
             }
 
             ApplyScreenBounds(screen);
+            WindowState = WindowState.Maximized;
             Activate();
 
-            if (shouldRestoreOpacity)
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
             {
-                Opacity = targetOpacity;
-            }
-
-            WindowState = WindowState.Maximized;
+                if (!string.IsNullOrEmpty(CurrentScreenDeviceName))
+                {
+                    var currentScreen = System.Windows.Forms.Screen.AllScreens
+                        .FirstOrDefault(s => s.DeviceName == CurrentScreenDeviceName);
+                    if (currentScreen != null)
+                    {
+                        ApplyScreenBounds(currentScreen);
+                    }
+                }
+            });
         }
 
         private void ApplyScreenBounds(System.Windows.Forms.Screen screen)
