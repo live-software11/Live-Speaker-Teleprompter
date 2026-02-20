@@ -19,8 +19,11 @@ MainWindow (editor/preview)
     ├── SyncPresenterScroll() ──→ ratio proporzionale 0-1
     │       usare per: scroll position (ScrollChanged)
     │
-    └── UpdatePresenterArrowAppearance() ──→ colore, scala, posizione
-            usare per: qualsiasi modifica alla freccia
+    ├── UpdatePresenterArrowAppearance() ──→ colore, scala (NON posizione)
+    │       usare per: modifica colore/dimensione freccia; NON aggiorna posizione (evita spostamenti indesiderati)
+    │
+    └── SyncPresenterAppearance() ──→ sfondo, freccia (colore, scala, posizione)
+            usare per: sync completo prima di Show presenter o dopo cambio layout
     │
     ▼
 PresenterWindow (output esterno)
@@ -45,6 +48,7 @@ presenterWindow.SetVerticalOffset(mainScrollViewer.VerticalOffset);
 - `SetArrowNormalizedY(double)` applica la stessa proporzione su entrambe le finestre.
 - Tenere conto della scala freccia (`_arrowScale`) nel calcolo dell'altezza effettiva.
 - In mirror mode: la freccia nel presenter si sposta a destra, il testo si specchia.
+- **Freccia stabile**: `UpdatePresenterArrowAppearance()` NON deve chiamare `UpdateArrowNormalizedFromCurrent()` — la posizione si aggiorna solo con trascinamento manuale o `SyncPresenterAppearance()`.
 
 ## Regole di sync documento
 - Il clone copia TUTTE le proprieta document-level: PagePadding, LineHeight, TextAlignment, Background, FontFamily, FontSize, Foreground, FontWeight, FontStyle.

@@ -56,7 +56,6 @@ namespace TeleprompterApp
     private readonly Stopwatch _scrollStopwatch = new();
     private DispatcherTimer? _scrollTimer;
     private double _scrollAccumulator;
-    private int _scrollStuckFrames;
     private double _scrollSpeed;
     private const double SpeedStep = 0.5;
     private const double MaxSpeed = 80;
@@ -232,7 +231,7 @@ namespace TeleprompterApp
                 var presenterPadding = GetPresenterPagePadding(_contentEditor.Document.PagePadding);
                 _presenterWindow.SetPagePadding(presenterPadding);
                 SyncPresenterScroll();
-                UpdatePresenterArrowAppearance();
+                SyncPresenterAppearance();
                 UpdatePresenterMirror();
             });
 
@@ -663,15 +662,19 @@ namespace TeleprompterApp
 
         try
         {
+            ApplyArrowSafePadding();
             SyncPresenterDocument();
             _presenterWindow.ShowOnScreen(option.Screen);
             Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
             {
                 try
                 {
+                    ApplyArrowSafePadding();
+                    var mainPadding = ComputeMainDocumentPadding();
+                    _presenterWindow.SetPagePadding(GetPresenterPagePadding(mainPadding));
                     SyncPresenterScroll();
                     ApplyNormalizedArrowPosition();
-                    UpdatePresenterArrowAppearance();
+                    SyncPresenterAppearance();
                 }
                 catch (Exception ex)
                 {
@@ -836,6 +839,11 @@ namespace TeleprompterApp
 
     private void TrySaveDocument(string filePath)
     {
+        if (_contentEditor == null)
+        {
+            SetStatus("Impossibile salvare: editor non pronto.");
+            return;
+        }
         try
         {
             var extension = NormalizeExtension(filePath);
@@ -1152,6 +1160,12 @@ namespace TeleprompterApp
         _contentEditor.FontWeight = isBold ? FontWeights.Bold : FontWeights.Regular;
         _contentEditor.FontStyle = isItalic ? FontStyles.Italic : FontStyles.Normal;
 
+        var doc = _contentEditor.Document;
+        doc.FontFamily = family;
+        doc.FontSize = wpfSize;
+        doc.FontWeight = _contentEditor.FontWeight;
+        doc.FontStyle = _contentEditor.FontStyle;
+
         TextDecorationCollection? decorations = null;
         if (underline)
         {
@@ -1171,7 +1185,7 @@ namespace TeleprompterApp
             range.ApplyPropertyValue(Inline.TextDecorationsProperty, decorations);
         });
 
-        _contentEditor.Document.LineHeight = wpfSize * 1.2;
+        doc.LineHeight = wpfSize * 1.2;
         SyncFontSizeSelectionFromEditor();
         SavePreferences();
     }
@@ -1277,7 +1291,6 @@ namespace TeleprompterApp
 
         _presenterWindow.Hide();
         UpdatePresenterMirror();
-        UpdatePresenterArrowAppearance();
         SyncPresenterDocument();
     }
 
@@ -1305,7 +1318,7 @@ namespace TeleprompterApp
             var presenterPadding = GetPresenterPagePadding(_contentEditor.Document.PagePadding);
             _presenterWindow.SetPagePadding(presenterPadding);
             SyncPresenterScroll();
-            UpdatePresenterArrowAppearance();
+            SyncPresenterAppearance();
             UpdatePresenterMirror();
         }
         catch
@@ -1377,6 +1390,22 @@ namespace TeleprompterApp
         _presenterWindow?.SetMirror(_mirrorToggle.IsChecked == true);
     }
 
+    /// <summary>
+    /// Sincronizza sfondo, colore e dimensione freccia sul presenter.
+    /// Chiamare dopo ogni sync documento o quando si mostra il presenter.
+    /// </summary>
+    private void SyncPresenterAppearance()
+    {
+        if (_presenterWindow == null) return;
+
+        if (_contentEditor?.Document?.Background is SolidColorBrush bg)
+        {
+            _presenterWindow.SetBackgroundColor(bg.Color);
+        }
+
+        UpdatePresenterArrowAppearance();
+    }
+
     private void UpdatePresenterArrowAppearance()
     {
         if (_presenterWindow == null)
@@ -1384,11 +1413,12 @@ namespace TeleprompterApp
             return;
         }
 
-        var fill = (_arrowShape.Fill as SolidColorBrush)?.Color ?? MediaColor.FromRgb(234, 179, 8);
-        var stroke = (_arrowShape.Stroke as SolidColorBrush)?.Color ?? MediaColor.FromRgb(255, 240, 138);
+        var fill = (_arrowShape?.Fill as SolidColorBrush)?.Color ?? MediaColor.FromRgb(234, 179, 8);
+        var stroke = (_arrowShape?.Stroke as SolidColorBrush)?.Color ?? MediaColor.FromRgb(255, 240, 138);
         _presenterWindow.SetArrowColor(fill, stroke);
         _presenterWindow.SetArrowScale(_arrowScale);
         _presenterWindow.SetArrowNormalizedX(_arrowNormalizedPosition.X);
+
         var arrowTop = double.IsNaN(Canvas.GetTop(_arrowContainer)) ? 0 : Canvas.GetTop(_arrowContainer);
         _presenterWindow.SetArrowViewportY(arrowTop);
     }
@@ -1537,7 +1567,6 @@ namespace TeleprompterApp
         }
         _scrollTimer.Stop();
         _scrollAccumulator = 0;
-        _scrollStuckFrames = 0;
         _scrollTimer.Start();
         _scrollStopwatch.Restart();
 
@@ -1606,31 +1635,34 @@ namespace TeleprompterApp
             ? previousOffset + scrollDelta
             : Math.Clamp(previousOffset + scrollDelta, 0, maxOffset);
 
+        var reachedEnd = _scrollSpeed > 0 && target >= maxOffset - 0.5;
+        var reachedStart = _scrollSpeed < 0 && target <= 0.5;
+
+        if (reachedEnd || reachedStart)
+        {
+            _scrollTimer?.Stop();
+            _scrollStopwatch.Stop();
+            _playPauseToggle.IsChecked = false;
+            SetStatus(_scrollSpeed > 0 ? "Fine del testo" : "Inizio del testo");
+            return;
+        }
+
         _contentScrollViewer.ScrollToVerticalOffset(target);
         SyncPresenterScroll();
         UpdateScrollProgressDisplay();
-
-        var actualOffset = _contentScrollViewer.VerticalOffset;
-        if (Math.Abs(actualOffset - previousOffset) < 0.1)
-        {
-            _scrollStuckFrames++;
-            if (_scrollStuckFrames > 30)
-            {
-                _scrollTimer?.Stop();
-                _scrollStopwatch.Stop();
-                _scrollStuckFrames = 0;
-                _playPauseToggle.IsChecked = false;
-                SetStatus(_scrollSpeed > 0 ? "Fine del testo" : "Inizio del testo");
-            }
-        }
-        else
-        {
-            _scrollStuckFrames = 0;
-        }
     }
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if (e.Key == Key.S && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control && !e.IsRepeat)
+        {
+            if (!string.IsNullOrEmpty(_currentDocumentPath))
+                TrySaveDocument(_currentDocumentPath);
+            else
+                SaveDocument();
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.Space && !IsEditMode && !e.IsRepeat)
         {
             TogglePlayPause();
@@ -1654,47 +1686,53 @@ namespace TeleprompterApp
 
     private void HandlePresentationKey(System.Windows.Input.KeyEventArgs e)
     {
-        if (e.Key == Key.Home)
+        if (!IsEditMode)
         {
-            _contentScrollViewer.ScrollToTop();
-            ResetOnAirTimer();
-            SyncPresenterScroll();
-            UpdateScrollProgressDisplay();
-            e.Handled = true;
-            return;
-        }
-        if (e.Key == Key.End)
-        {
-            _contentScrollViewer.ScrollToEnd();
-            SyncPresenterScroll();
-            UpdateScrollProgressDisplay();
-            e.Handled = true;
-            return;
-        }
-        if (e.Key == Key.PageUp)
-        {
-            var page = _contentScrollViewer.ViewportHeight;
-            _contentScrollViewer.ScrollToVerticalOffset(Math.Max(0, _contentScrollViewer.VerticalOffset - page));
-            SyncPresenterScroll();
-            UpdateScrollProgressDisplay();
-            e.Handled = true;
-            return;
-        }
-        if (e.Key == Key.PageDown)
-        {
-            var page = _contentScrollViewer.ViewportHeight;
-            var max = _contentScrollViewer.ExtentHeight - page;
-            _contentScrollViewer.ScrollToVerticalOffset(Math.Min(max, _contentScrollViewer.VerticalOffset + page));
-            SyncPresenterScroll();
-            UpdateScrollProgressDisplay();
-            e.Handled = true;
-            return;
-        }
-
-        if (e.Key == Key.Space && !IsEditMode)
-        {
-            e.Handled = true;
-            return;
+            if (e.Key == Key.Home)
+            {
+                _contentScrollViewer.ScrollToTop();
+                if (_playPauseToggle?.IsChecked == true) _playPauseToggle.IsChecked = false;
+                ResetOnAirTimer();
+                SyncPresenterScroll();
+                UpdateScrollProgressDisplay();
+                SetStatus("Inizio testo");
+                NotifyOscPosition();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.End)
+            {
+                _contentScrollViewer.ScrollToEnd();
+                _contentScrollViewer.UpdateLayout();
+                if (_playPauseToggle?.IsChecked == true) _playPauseToggle.IsChecked = false;
+                SyncPresenterScroll();
+                UpdateScrollProgressDisplay();
+                SetStatus("Fine testo");
+                NotifyOscPosition();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.PageUp)
+            {
+                var page = _contentScrollViewer.ViewportHeight;
+                _contentScrollViewer.ScrollToVerticalOffset(Math.Max(0, _contentScrollViewer.VerticalOffset - page));
+                SyncPresenterScroll();
+                UpdateScrollProgressDisplay();
+                NotifyOscPosition();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.PageDown)
+            {
+                var page = _contentScrollViewer.ViewportHeight;
+                var max = _contentScrollViewer.ExtentHeight - page;
+                _contentScrollViewer.ScrollToVerticalOffset(Math.Min(max, _contentScrollViewer.VerticalOffset + page));
+                SyncPresenterScroll();
+                UpdateScrollProgressDisplay();
+                NotifyOscPosition();
+                e.Handled = true;
+                return;
+            }
         }
 
         if (IsEditMode)
@@ -1795,7 +1833,6 @@ namespace TeleprompterApp
             }
             _scrollTimer.Stop();
             _scrollAccumulator = 0;
-            _scrollStuckFrames = 0;
             _scrollTimer.Start();
             _scrollStopwatch.Restart();
             SetStatus(_scrollSpeed > 0 ? "Scorrimento attivo" : "Scorrimento inverso");
@@ -1861,6 +1898,7 @@ namespace TeleprompterApp
         {
             var wpfSize = ConvertPointsToWpf(points);
             _contentEditor.FontSize = wpfSize;
+            _contentEditor.Document.FontSize = wpfSize;
             ApplyToDocument(range => range.ApplyPropertyValue(TextElement.FontSizeProperty, wpfSize));
             _contentEditor.Document.LineHeight = wpfSize * 1.2;
             SavePreferences();
@@ -2136,6 +2174,127 @@ namespace TeleprompterApp
     private void ArrowStyleButton_Click(object sender, RoutedEventArgs e)
     {
         ArrowStylePopup.IsOpen = !ArrowStylePopup.IsOpen;
+    }
+
+    private void PresetSave_Click(object sender, RoutedEventArgs e)
+    {
+        var slot = GetPresetSlot(sender);
+        if (slot < 1 || slot > 4) return;
+        var preset = CaptureLayoutPreset();
+        Services.LayoutPresetService.Save(slot, preset);
+        SetPresetSaveToggle(slot);
+        SetStatus($"Preset {slot} salvato");
+    }
+
+    private void SetPresetSaveToggle(int slot)
+    {
+        for (var i = 1; i <= 4; i++)
+        {
+            if (FindName($"PresetSave{i}") is WpfToggleButton tb)
+                tb.IsChecked = i == slot;
+        }
+    }
+
+    private void PresetLoad_Click(object sender, RoutedEventArgs e)
+    {
+        var slot = GetPresetSlot(sender);
+        if (slot < 1 || slot > 4) return;
+        var preset = Services.LayoutPresetService.Load(slot);
+        if (preset == null)
+        {
+            SetStatus($"Preset {slot} vuoto");
+            return;
+        }
+        ApplyLayoutPreset(preset);
+        SetStatus($"Preset {slot} caricato");
+    }
+
+    private static int GetPresetSlot(object sender)
+    {
+        if (sender is not FrameworkElement el || el.Tag == null) return 0;
+        return el.Tag switch
+        {
+            int i => i,
+            string s when int.TryParse(s, out var n) => n,
+            _ => 0
+        };
+    }
+
+    private LayoutPreset CaptureLayoutPreset()
+    {
+        CapturePreferences();
+        return new LayoutPreset
+        {
+            DocumentBackgroundHex = _preferences.DocumentBackgroundHex,
+            TextForegroundHex = _preferences.TextForegroundHex,
+            FontFamily = _preferences.FontFamily,
+            FontSizePoints = _preferences.FontSizePoints,
+            IsBold = _preferences.IsBold,
+            IsItalic = _preferences.IsItalic,
+            UseUnderline = _preferences.UseUnderline,
+            DefaultScrollSpeed = _preferences.DefaultScrollSpeed,
+            MirrorEnabled = _preferences.MirrorEnabled,
+            ArrowColorHex = _preferences.ArrowColorHex,
+            ArrowScale = _preferences.ArrowScale,
+            ArrowHorizontalOffset = _preferences.ArrowHorizontalOffset,
+            ArrowVerticalOffset = _preferences.ArrowVerticalOffset,
+            ArrowLeftPaddingExtra = _preferences.ArrowLeftPaddingExtra,
+            MarginTop = _preferences.MarginTop,
+            MarginRight = _preferences.MarginRight,
+            MarginBottom = _preferences.MarginBottom,
+            MarginLeft = _preferences.MarginLeft,
+            MarginsLinked = _preferences.MarginsLinked
+        };
+    }
+
+    private void ApplyLayoutPreset(LayoutPreset preset)
+    {
+        _isApplyingPreferences = true;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(preset.DocumentBackgroundHex))
+            {
+                var bg = CreateBrushFromHex(preset.DocumentBackgroundHex);
+                if (bg is SolidColorBrush solid) ApplyBackgroundColor(solid.Color);
+            }
+            if (!string.IsNullOrWhiteSpace(preset.TextForegroundHex))
+            {
+                var fg = CreateBrushFromHex(preset.TextForegroundHex);
+                if (fg != null) SetDocumentForeground(fg);
+            }
+            if (!string.IsNullOrWhiteSpace(preset.FontFamily))
+                ApplyFont(preset.FontFamily, preset.FontSizePoints <= 0 ? 72 : preset.FontSizePoints, preset.IsBold, preset.IsItalic, preset.UseUnderline, strikeout: false);
+            SetSpeed(preset.DefaultScrollSpeed, fromSlider: false);
+            _mirrorToggle.IsChecked = preset.MirrorEnabled;
+            if (!string.IsNullOrWhiteSpace(preset.ArrowColorHex))
+            {
+                var ac = CreateBrushFromHex(preset.ArrowColorHex);
+                if (ac is SolidColorBrush arrowSolid) SetArrowColor(arrowSolid.Color, persist: false);
+            }
+            UpdateArrowScale(Math.Clamp(preset.ArrowScale, 0.5, 2.0), fromSlider: false, persist: false);
+            SetArrowPaddingExtra(Math.Clamp(preset.ArrowLeftPaddingExtra, 0, MaxMargin), fromSlider: false, persist: false);
+            _arrowNormalizedPosition = new MediaPoint(Clamp01(preset.ArrowHorizontalOffset), Clamp01(preset.ArrowVerticalOffset));
+            _marginTop = Math.Clamp(preset.MarginTop, 0, MaxMargin);
+            _marginRight = Math.Clamp(preset.MarginRight, 0, MaxMargin);
+            _marginBottom = Math.Clamp(preset.MarginBottom, 0, MaxMargin);
+            _preferences.MarginLeft = Math.Clamp(preset.MarginLeft, 0, MaxMargin);
+            _marginsLinkedToggle.IsChecked = preset.MarginsLinked;
+            _isUpdatingMarginSliders = true;
+            if (FindName("MarginTopSlider") is WpfSlider ts) ts.Value = _marginTop;
+            if (FindName("MarginRightSlider") is WpfSlider rs) rs.Value = _marginRight;
+            if (FindName("MarginBottomSlider") is WpfSlider bs) bs.Value = _marginBottom;
+            _isUpdatingMarginSliders = false;
+            UpdateMarginDisplay();
+            UpdateLeftMarginDisplay();
+            ApplyArrowSafePadding();
+            ApplyNormalizedArrowPosition();
+            SyncPresenterAppearance();
+            UpdatePresenterMirror();
+        }
+        finally
+        {
+            _isApplyingPreferences = false;
+        }
     }
 
     private bool MarginsLinked => _marginsLinkedToggle?.IsChecked == true;

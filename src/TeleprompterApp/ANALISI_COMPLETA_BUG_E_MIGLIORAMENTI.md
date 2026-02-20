@@ -1,6 +1,6 @@
 # R-Speaker Teleprompter - Analisi Completa Bug e Miglioramenti
 
-## Stato: v2.3.0 — Header a due righe, margini estesi, navigazione rapida
+## Stato: v2.3.4 — Preset layout, Play senza loop, Sync presenter completo
 
 Tutti i bug segnalati sono risolti. Ottimizzazioni di performance e fluidità implementate secondo best practice WPF e fonti esterne (Microsoft Docs, Stack Overflow, PerfView).
 
@@ -105,13 +105,18 @@ UI change → SavePreferences() → CapturePreferences() → DebouncedPreference
 ## CHECKLIST DI VERIFICA
 
 - [ ] Header su due righe, menu utilizzabili
+- [ ] Preset S1–S4 Save, L1–L4 Load; toggle evidenziato dopo save
+- [ ] Play si ferma al 100% (nessun loop)
+- [ ] Freccia stabile: non si sposta con preset/play/sync aspetto
+- [ ] Preview e Program: font e aspetto identici
+- [ ] Ctrl+S salva documento
 - [ ] Play/Pausa visibile, Spazio funziona solo in modalità presentazione
 - [ ] Velocità -80 … +80, scorrimento rapido
 - [ ] Margini L, D, A, B fino a 400 px
 - [ ] Tasto L=D imposta margini uguali
 - [ ] Barra dimensione freccia in header
-- [ ] Freccia si sposta solo con trascinamento
-- [ ] Home, End, Page Up, Page Down per navigazione
+- [ ] Freccia si sposta solo con trascinamento manuale
+- [ ] Home, End, Page Up, Page Down per navigazione (solo fuori modifica)
 - [ ] Scorrimento fluido (vsync)
 - [ ] Import Word in background
 - [ ] NDI, OSC, Companion
@@ -156,4 +161,24 @@ UI change → SavePreferences() → CapturePreferences() → DebouncedPreference
 
 ---
 
-*Documento aggiornato il 2026-02-20 — R-Speaker Teleprompter v2.3.0*
+## v2.3.4 — Preset layout, Play senza loop, Sync presenter completo
+
+| Intervento | Descrizione |
+|------------|-------------|
+| **Preset S1–S4 / L1–L4** | 4 slot Save e 4 Load in header riga 2; salvataggio layout completo (colori, font, margini, freccia, ecc.) in `layout-presets.json` |
+| **Toggle preset Save** | Dopo il salvataggio, il pulsante S1–S4 resta evidenziato (toggle style) |
+| **Play senza loop** | Lo scroll prosegue fino al 100% del testo e si ferma; nessun ritorno all'inizio |
+| **Freccia stabile** | La freccia non si sposta quando si salva preset, play, sync aspetto; solo trascinamento manuale |
+| **Sync presenter completo** | `SyncPresenterAppearance()` applica sfondo, colore freccia, dimensione freccia, posizione freccia al secondo schermo |
+| **Font identico** | Preview e Program hanno dimensione e stile font identici (`SetFontFromDocument` con `MediaFontFamily`) |
+| **Salvataggio Ctrl+S** | Gestito in `Window_PreviewKeyDown`; null check in `TrySaveDocument` |
+| **Margini prima di Show** | `ApplyArrowSafePadding()` e `SetPagePadding` chiamati prima di mostrare il presenter |
+| **Home/End/PageUp/PageDown** | Attivi solo in modalità non-modifica |
+
+### File aggiunti
+- `LayoutPreset.cs` — modello snapshot layout
+- `Services/LayoutPresetService.cs` — salvataggio/caricamento preset in `layout-presets.json`
+
+---
+
+*Documento aggiornato il 2026-02-20 — R-Speaker Teleprompter v2.3.4*

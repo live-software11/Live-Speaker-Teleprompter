@@ -27,6 +27,7 @@ Services/
   DisplayManager.cs          — Real-time display detection (3-layer redundancy)
   DebouncedPreferencesService.cs — 500ms debounced save
   PresenterSyncService.cs    — 300ms debounced editor→presenter sync
+  LayoutPresetService.cs     — Save/Load preset layout S1–S4 / L1–L4 (layout-presets.json)
 ```
 
 ## Build Commands
@@ -38,14 +39,17 @@ dotnet publish -c Release             # Release publish (self-contained)
 cd installer && .\build-installer.ps1 # Full pipeline: exe + zip + installer
 ```
 
-## Key Features (v2.3.0)
+## Key Features (v2.3.4)
 
-- **Header a due righe** — File, formattazione, velocità, play, navigazione, margini, freccia
+- **Header a due righe** — File, formattazione, velocità, play, navigazione, margini, freccia, preset
+- **Preset S1–S4 / L1–L4** — Salvataggio e caricamento layout completo (colori, font, margini, freccia) in header riga 2
+- **Play senza loop** — Lo scroll prosegue fino al 100% del testo e si ferma
 - **Margini estesi** — L, D, A, B fino a 400 px; tasto L=D per margini uguali
 - **Velocità -80 … +80** — Scorrimento più rapido
 - **Navigazione** — Home, End, Page Up, Page Down; pulsanti Inizio/Fine in header
 - **Spazio** — Play/Pausa solo in modalità presentazione (non-modifica)
-- **Freccia** — Spostamento solo manuale (drag); barra dimensione in header
+- **Freccia stabile** — Spostamento solo manuale (drag); non si sposta con preset/play/sync
+- **Preview = Program** — Font e aspetto identici tra MainWindow e PresenterWindow
 
 ## Key Optimizations (v2.0)
 

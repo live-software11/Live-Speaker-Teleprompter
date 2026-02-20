@@ -1,6 +1,6 @@
 ---
 description: Regole per gestione preferenze utente e persistenza stato
-globs: "**/UserPreferences.cs,**/PreferencesService.cs,**/DebouncedPreferencesService.cs"
+globs: "**/UserPreferences.cs,**/PreferencesService.cs,**/DebouncedPreferencesService.cs,**/LayoutPresetService.cs,**/LayoutPreset.cs"
 alwaysApply: false
 ---
 
@@ -62,3 +62,8 @@ In `Window_Closing`:
 - Clamp TUTTI i valori numerici ai range validi in `ApplyPreferences()`.
 - Se un valore e 0 o negativo quando non dovrebbe, usare il default.
 - Se `LastScriptPath` punta a un file inesistente, ignorare silenziosamente.
+
+### Preset layout (LayoutPresetService)
+- I preset S1–S4 / L1–L4 sono separati dalle preferenze: salvati in `layout-presets.json` (stessa base dir di preferences).
+- `LayoutPreset` contiene snapshot completo: colori, font, margini, freccia (posizione, scala, colore), mirror, ecc.
+- `LayoutPresetService.Save(slot, preset)` e `Load(slot)` — slot 1–4.

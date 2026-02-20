@@ -35,7 +35,7 @@ alwaysApply: false
 - Formato: `<TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" />`
 
 ## Performance XAML
-- `BitmapCache` obbligatorio sui RichTextBox per GPU rendering.
+- `TextFormattingMode="Ideal"` e `TextRenderingMode="ClearType"` per qualità testo nitida a 72pt (evitare BitmapCache che sgranava).
 - `RenderOptions.ClearTypeHint="Enabled"` su tutti i RichTextBox.
 - NON usare `DropShadowEffect` su elementi che si aggiornano ogni frame (es. scroll content).
 - `VerticalScrollBarVisibility="Hidden"` e `HorizontalScrollBarVisibility="Disabled"` sempre sul RichTextBox (lo scroll e gestito dal ScrollViewer esterno).

@@ -331,6 +331,16 @@
                             <TextBlock Text="Freccia" FontSize="12" />
                         </StackPanel>
                     </Button>
+                    <Border Width="1" Background="#1E2A44" Margin="4,3" />
+                    <TextBlock Text="Preset:" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="2,0" />
+                    <ToggleButton x:Name="PresetSave1" Style="{StaticResource TbTgl}" Click="PresetSave_Click" Tag="1" ToolTip="Salva preset 1" Content="S1" FontSize="11" Padding="6,2" />
+                    <Button x:Name="PresetLoad1" Style="{StaticResource TbBtn}" Click="PresetLoad_Click" Tag="1" ToolTip="Carica preset 1" Content="L1" FontSize="11" Padding="6,2" />
+                    <ToggleButton x:Name="PresetSave2" Style="{StaticResource TbTgl}" Click="PresetSave_Click" Tag="2" ToolTip="Salva preset 2" Content="S2" FontSize="11" Padding="6,2" />
+                    <Button x:Name="PresetLoad2" Style="{StaticResource TbBtn}" Click="PresetLoad_Click" Tag="2" ToolTip="Carica preset 2" Content="L2" FontSize="11" Padding="6,2" />
+                    <ToggleButton x:Name="PresetSave3" Style="{StaticResource TbTgl}" Click="PresetSave_Click" Tag="3" ToolTip="Salva preset 3" Content="S3" FontSize="11" Padding="6,2" />
+                    <Button x:Name="PresetLoad3" Style="{StaticResource TbBtn}" Click="PresetLoad_Click" Tag="3" ToolTip="Carica preset 3" Content="L3" FontSize="11" Padding="6,2" />
+                    <ToggleButton x:Name="PresetSave4" Style="{StaticResource TbTgl}" Click="PresetSave_Click" Tag="4" ToolTip="Salva preset 4" Content="S4" FontSize="11" Padding="6,2" />
+                    <Button x:Name="PresetLoad4" Style="{StaticResource TbBtn}" Click="PresetLoad_Click" Tag="4" ToolTip="Carica preset 4" Content="L4" FontSize="11" Padding="6,2" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -372,7 +382,7 @@
                             </RichTextBox>
                         </ScrollViewer>
                         <Canvas x:Name="ArrowCanvas" Background="{x:Null}" SizeChanged="ArrowCanvas_SizeChanged">
-                            <Grid x:Name="ArrowContainer" Width="72" Height="72" Canvas.Left="36" Canvas.Top="200" Cursor="Hand"
+                            <Grid x:Name="ArrowContainer" Width="72" Height="72" Canvas.Left="36" Canvas.Top="200" Cursor="Hand" ClipToBounds="False"
                                   MouseLeftButtonDown="ArrowContainer_MouseLeftButtonDown"
                                   MouseMove="ArrowContainer_MouseMove"
                                   MouseLeftButtonUp="ArrowContainer_MouseLeftButtonUp">
@@ -380,7 +390,7 @@
                                     <ScaleTransform x:Name="ArrowScaleTransform" ScaleX="1" ScaleY="1" />
                                 </Grid.RenderTransform>
                                 <Polygon x:Name="ArrowShape"
-                                         Points="0,20 34,20 34,6 72,36 34,66 34,52 0,52"
+                                         Points="0,20 34,20 34,6 70,36 34,66 34,52 0,52"
                                          Fill="#FFEAB308" Stroke="#FFFFF08A" StrokeThickness="3" StrokeLineJoin="Round">
                                     <Polygon.Effect>
                                         <DropShadowEffect Color="#99000000" BlurRadius="12" ShadowDepth="0" Opacity="0.6" />

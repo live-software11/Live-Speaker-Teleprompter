@@ -7,6 +7,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using MediaColor = System.Windows.Media.Color;
+using MediaFontFamily = System.Windows.Media.FontFamily;
 using WpfApplication = System.Windows.Application;
 using WpfRichTextBox = System.Windows.Controls.RichTextBox;
 
@@ -75,6 +76,30 @@ namespace TeleprompterApp
             if (_content != null)
             {
                 _content.Document = document;
+                SetFontFromDocument(document);
+            }
+        }
+
+        /// <summary>
+        /// Sincronizza font family, size, weight, style dal documento sorgente.
+        /// Il contenuto inline è già formattato dal clone XamlPackage.
+        /// </summary>
+        public void SetFontFromDocument(FlowDocument source)
+        {
+            if (_content == null) return;
+            var family = source.FontFamily ?? new MediaFontFamily("Segoe UI");
+            var size = source.FontSize > 0 ? source.FontSize : 96;
+            _content.FontFamily = family;
+            _content.FontSize = size;
+            _content.FontWeight = source.FontWeight;
+            _content.FontStyle = source.FontStyle;
+            if (_content.Document != null)
+            {
+                _content.Document.FontFamily = family;
+                _content.Document.FontSize = size;
+                _content.Document.FontWeight = source.FontWeight;
+                _content.Document.FontStyle = source.FontStyle;
+                _content.Document.LineHeight = source.LineHeight;
             }
         }
 
