@@ -1409,17 +1409,16 @@ namespace TeleprompterApp
 
     private void UpdatePresenterArrowAppearance()
     {
-        if (_presenterWindow == null)
-        {
-            return;
-        }
+        if (_presenterWindow == null) return;
 
         var fill = (_arrowShape?.Fill as SolidColorBrush)?.Color ?? MediaColor.FromRgb(234, 179, 8);
         var stroke = (_arrowShape?.Stroke as SolidColorBrush)?.Color ?? MediaColor.FromRgb(255, 240, 138);
         _presenterWindow.SetArrowColor(fill, stroke);
         _presenterWindow.SetArrowScale(_arrowScale);
         _presenterWindow.SetArrowNormalizedX(_arrowNormalizedPosition.X);
-        _presenterWindow.SetArrowNormalizedY(_arrowNormalizedPosition.Y);
+
+        var arrowTop = double.IsNaN(Canvas.GetTop(_arrowContainer)) ? 0 : Canvas.GetTop(_arrowContainer);
+        _presenterWindow.SetArrowAbsoluteY(arrowTop);
     }
 
     private double GetArrowEffectiveWidth()
@@ -1518,16 +1517,11 @@ namespace TeleprompterApp
 
     private void SyncPresenterScroll()
     {
-        if (_presenterWindow == null || _contentScrollViewer == null || _arrowContainer == null)
+        if (_presenterWindow == null || _contentScrollViewer == null)
             return;
 
         var offset = _contentScrollViewer.VerticalOffset;
-        var arrowTop = double.IsNaN(Canvas.GetTop(_arrowContainer)) ? 0 : Canvas.GetTop(_arrowContainer);
-        var arrowHeight = _arrowContainer.ActualHeight > 0 ? _arrowContainer.ActualHeight : 72;
-        var arrowCenterY = arrowTop + arrowHeight / 2;
-        var documentPositionAtArrow = offset + arrowCenterY;
-
-        _presenterWindow.SetScrollToAlignDocumentPositionAtArrow(documentPositionAtArrow);
+        _presenterWindow.SetVerticalOffset(offset);
     }
 
     private void UpdateScrollProgressDisplay()
@@ -2627,7 +2621,8 @@ namespace TeleprompterApp
 
         MoveArrowTo(left, top);
         _presenterWindow?.SetArrowNormalizedX(_arrowNormalizedPosition.X);
-        _presenterWindow?.SetArrowNormalizedY(_arrowNormalizedPosition.Y);
+        var arrowTop = double.IsNaN(Canvas.GetTop(_arrowContainer)) ? 0 : Canvas.GetTop(_arrowContainer);
+        _presenterWindow?.SetArrowAbsoluteY(arrowTop);
     }
 
     private void MoveArrowTo(double left, double top)
@@ -3229,7 +3224,7 @@ namespace TeleprompterApp
         _arrowNormalizedPosition = new MediaPoint(normX, normY);
 
         _presenterWindow?.SetArrowNormalizedX(_arrowNormalizedPosition.X);
-        _presenterWindow?.SetArrowNormalizedY(_arrowNormalizedPosition.Y);
+        _presenterWindow?.SetArrowAbsoluteY(currentTop);
     }
 
     private static double Clamp01(double value) => Math.Max(0, Math.Min(1, value));

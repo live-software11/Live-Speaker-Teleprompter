@@ -176,31 +176,6 @@ namespace TeleprompterApp
             _scrollViewer.ScrollToVerticalOffset(targetOffset);
         }
 
-        /// <summary>
-        /// Imposta lo scroll in modo che la posizione documento indicata sia esattamente sotto il centro della freccia.
-        /// Garantisce che preview e program puntino alla stessa parola/riga.
-        /// </summary>
-        public void SetScrollToAlignDocumentPositionAtArrow(double documentPositionAtArrow)
-        {
-            if (_scrollViewer == null || _arrowCanvas == null || _arrowContainer == null) return;
-
-            UpdateLayout();
-            var arrowTop = Canvas.GetTop(_arrowContainer);
-            if (double.IsNaN(arrowTop)) arrowTop = 0;
-            var arrowHeight = _arrowContainer.ActualHeight > 0 ? _arrowContainer.ActualHeight : 72;
-            var arrowCenterY = arrowTop + arrowHeight / 2;
-
-            var targetOffset = documentPositionAtArrow - arrowCenterY;
-            var maxScroll = _scrollViewer.ScrollableHeight;
-            if (double.IsNaN(maxScroll) || maxScroll <= 0) return;
-
-            targetOffset = Math.Clamp(targetOffset, 0, maxScroll);
-            var current = _scrollViewer.VerticalOffset;
-            if (Math.Abs(current - targetOffset) < 0.5) return;
-
-            _scrollViewer.ScrollToVerticalOffset(targetOffset);
-        }
-
         public void SetBackgroundColor(MediaColor color)
         {
             var brush = new SolidColorBrush(color);
@@ -222,20 +197,16 @@ namespace TeleprompterApp
             }
         }
 
-        private double _arrowNormalizedY = 0.5;
+        private double _arrowAbsoluteY;
         private double _arrowNormalizedX = 0;
-        private double? _arrowViewportYOverride;
 
-        public void SetArrowViewportY(double viewportY)
+        /// <summary>
+        /// Posiziona la freccia alla stessa Y assoluta (pixel dal top) della preview.
+        /// Con lo stesso scroll offset, stessa Y = stessa riga di testo.
+        /// </summary>
+        public void SetArrowAbsoluteY(double top)
         {
-            _arrowViewportYOverride = viewportY;
-            UpdateArrowPosition();
-        }
-
-        public void SetArrowNormalizedY(double normalizedY)
-        {
-            _arrowViewportYOverride = null;
-            _arrowNormalizedY = Math.Clamp(normalizedY, 0, 1);
+            _arrowAbsoluteY = Math.Max(0, top);
             UpdateArrowPosition();
         }
 
@@ -271,36 +242,21 @@ namespace TeleprompterApp
 
         private void UpdateArrowPosition()
         {
-                if (_arrowCanvas == null || _arrowContainer == null)
-                {
-                    return;
-                }
+            if (_arrowCanvas == null || _arrowContainer == null) return;
+            if (_arrowCanvas.ActualHeight <= 0) return;
 
-                if (_arrowCanvas.ActualHeight <= 0)
-            {
-                return;
-            }
+            var arrowHeight = _arrowContainer.ActualHeight > 0 ? _arrowContainer.ActualHeight : _arrowContainer.Height;
+            var arrowWidth = _arrowContainer.ActualWidth > 0 ? _arrowContainer.ActualWidth : _arrowContainer.Width;
+            var maxTop = Math.Max(0, _arrowCanvas.ActualHeight - arrowHeight);
+            var top = Math.Clamp(_arrowAbsoluteY, 0, maxTop);
 
-                var arrowHeight = _arrowContainer.ActualHeight > 0 ? _arrowContainer.ActualHeight : _arrowContainer.Height;
-                var arrowWidth = _arrowContainer.ActualWidth > 0 ? _arrowContainer.ActualWidth : _arrowContainer.Width;
-                var maxTop = Math.Max(0, _arrowCanvas.ActualHeight - arrowHeight);
-                double top;
-                if (_arrowViewportYOverride.HasValue)
-                {
-                    top = Math.Clamp(_arrowViewportYOverride.Value, 0, maxTop);
-                }
-                else
-                {
-                    top = maxTop * _arrowNormalizedY;
-                }
+            var canvasWidth = _arrowCanvas.ActualWidth;
+            var range = Math.Max(0, canvasWidth - arrowWidth - 2 * ArrowLeftOffset);
+            var normalizedX = _isMirrored ? (1 - _arrowNormalizedX) : _arrowNormalizedX;
+            var left = ArrowLeftOffset + range * normalizedX;
 
-                var canvasWidth = _arrowCanvas.ActualWidth;
-                var range = Math.Max(0, canvasWidth - arrowWidth - 2 * ArrowLeftOffset);
-                var normalizedX = _isMirrored ? (1 - _arrowNormalizedX) : _arrowNormalizedX;
-                var left = ArrowLeftOffset + range * normalizedX;
-
-                Canvas.SetLeft(_arrowContainer, left);
-                Canvas.SetTop(_arrowContainer, top);
+            Canvas.SetLeft(_arrowContainer, left);
+            Canvas.SetTop(_arrowContainer, top);
         }
 
         public void ShowOnScreen(System.Windows.Forms.Screen screen)
