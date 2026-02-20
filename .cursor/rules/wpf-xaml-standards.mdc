@@ -34,6 +34,9 @@ alwaysApply: false
 - Font: `Segoe MDL2 Assets` per le icone. Verificare i codepoint prima di usarli.
 - Formato: `<TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" />`
 
+## ScrollViewer
+- `CanContentScroll="False"` obbligatorio — scroll fisico (pixel) per movimento fluido, non logico a scatti.
+
 ## Performance XAML
 - `TextFormattingMode="Ideal"` e `TextRenderingMode="ClearType"` per qualità testo nitida a 72pt (evitare BitmapCache che sgranava).
 - `RenderOptions.ClearTypeHint="Enabled"` su tutti i RichTextBox.

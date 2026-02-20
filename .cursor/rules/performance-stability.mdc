@@ -11,9 +11,11 @@ Il software viene usato DURANTE eventi live davanti a un pubblico. Un crash o un
 ## Scroll engine
 - Usa `CompositionTarget.Rendering` (vsync-aligned) invece di `DispatcherTimer` — sincronizzato con refresh monitor.
 - Delta-time compensation con `Stopwatch` per velocità costante indipendente dal frame rate.
+- Dead zone 0.05 px (non 1.0): scroll quasi ogni frame anche a velocità basse = fluido.
 - MAI chiamare `UpdateLayout()` nel tick di scroll: causa micro-freeze su documenti lunghi.
 - Clamp elapsed time: se >500ms (sistema in sleep), resettare a 16ms per evitare salti.
 - Lo scroll si ferma automaticamente a fine (100%) o inizio (0%) testo; nessun loop, nessun ritorno automatico.
+- `SyncPresenterScroll` e `UpdateScrollProgressDisplay` solo in `ScrollChanged`, non nel tick.
 
 ```csharp
 // CORRETTO: solo ScrollToVerticalOffset nel tick
@@ -29,6 +31,9 @@ _contentScrollViewer.UpdateLayout(); // costa 2-5ms per frame, causa jank
 - Il debounce a 300ms per il typing evita clone multipli durante la digitazione veloce.
 - Il clone via `XamlWriter.Save` e il fallback: ~300ms, usare SOLO se XamlPackage fallisce.
 - MAI clonare nel rendering tick o nel scroll tick.
+
+## ScrollViewer
+- `CanContentScroll="False"` su entrambi i ScrollViewer (MainWindow, PresenterWindow) — scroll fisico (pixel) invece di logico, movimento continuo.
 
 ## Rendering testo e GPU
 - `TextFormattingMode="Ideal"` e `TextRenderingMode="ClearType"` per testo nitido a 72pt (BitmapCache rimosso: sgranava).

@@ -27,6 +27,7 @@
                         BorderThickness="0">
                     <Grid>
                         <ScrollViewer x:Name="PresenterScrollViewer"
+                                      CanContentScroll="False"
                                       VerticalScrollBarVisibility="Hidden"
                                       HorizontalScrollBarVisibility="Hidden"
                                       Background="Transparent"

@@ -16,13 +16,13 @@ MainWindow (editor/preview)
     ├── RequestPresenterSync() ──→ clone debounced 300ms
     │       usare per: digitazione utente (TextChanged)
     │
-    ├── SyncPresenterScroll() ──→ ratio proporzionale 0-1
-    │       usare per: scroll position (ScrollChanged)
+    ├── SyncPresenterScroll() ──→ SetVerticalOffset(offset)
+    │       usare per: scroll position (ScrollChanged); stesso documento = stesso offset
     │
     ├── UpdatePresenterArrowAppearance() ──→ colore, scala (NON posizione)
     │       usare per: modifica colore/dimensione freccia; NON aggiorna posizione (evita spostamenti indesiderati)
     │
-    └── SyncPresenterAppearance() ──→ sfondo, freccia (colore, scala, posizione)
+    └── SyncPresenterAppearance() ──→ sfondo, freccia (colore, scala, Y assoluta)
             usare per: sync completo prima di Show presenter o dopo cambio layout
     │
     ▼
@@ -30,25 +30,14 @@ PresenterWindow (output esterno)
 ```
 
 ## Regole di sync scroll
-- USARE `SetScrollRatio(double ratio)` per sincronizzare lo scroll: calcola il rapporto `offset/scrollableHeight` nella MainWindow e lo applica proporzionalmente nella PresenterWindow.
-- NON usare `SetVerticalOffset(double offset)` con offset assoluto: le viewport hanno dimensioni diverse, lo stesso offset mostra testo diverso.
-- Skip sync se delta < 0.5px per evitare loop e layout pass inutili.
-
-```csharp
-// CORRETTO: sync proporzionale
-var ratio = mainScrollViewer.VerticalOffset / mainScrollViewer.ScrollableHeight;
-presenterWindow.SetScrollRatio(ratio);
-
-// SBAGLIATO: sync assoluto (viewport diverse = testo diverso)
-presenterWindow.SetVerticalOffset(mainScrollViewer.VerticalOffset);
-```
+- USARE `SetVerticalOffset(offset)` — stesso documento clonato = stesso layout = stesso offset mostra testo identico.
+- `SyncPresenterScroll` viene chiamato da `ContentScrollViewer_ScrollChanged` (non nel tick) per evitare lavoro ridondante.
 
 ## Regole di sync freccia
-- La posizione freccia usa coordinate normalizzate Y (0-1) rispetto all'altezza del canvas.
-- `SetArrowNormalizedY(double)` applica la stessa proporzione su entrambe le finestre.
-- Tenere conto della scala freccia (`_arrowScale`) nel calcolo dell'altezza effettiva.
+- **Y assoluta**: `SetArrowAbsoluteY(double top)` — posizione in pixel dal top della viewport. Stessa Y = stessa riga di testo (riferimento testo, non schermo).
+- **X normalizzata**: `SetArrowNormalizedX(double)` per posizione orizzontale.
 - In mirror mode: la freccia nel presenter si sposta a destra, il testo si specchia.
-- **Freccia stabile**: `UpdatePresenterArrowAppearance()` NON deve chiamare `UpdateArrowNormalizedFromCurrent()` — la posizione si aggiorna solo con trascinamento manuale o `SyncPresenterAppearance()`.
+- **Freccia stabile**: `UpdatePresenterArrowAppearance()` invia `SetArrowAbsoluteY(arrowTop)` dalla MainWindow; non usa coordinate normalizzate Y.
 
 ## Regole di sync documento
 - Il clone copia TUTTE le proprieta document-level: PagePadding, LineHeight, TextAlignment, Background, FontFamily, FontSize, Foreground, FontWeight, FontStyle.

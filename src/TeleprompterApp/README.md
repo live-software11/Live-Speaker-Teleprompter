@@ -39,23 +39,24 @@ dotnet publish -c Release             # Release publish (self-contained)
 cd installer && .\build-installer.ps1 # Full pipeline: exe + zip + installer
 ```
 
-## Key Features (v2.3.4)
+## Key Features (v2.3.5)
 
 - **Header a due righe** — File, formattazione, velocità, play, navigazione, margini, freccia, preset
 - **Preset S1–S4 / L1–L4** — Salvataggio e caricamento layout completo (colori, font, margini, freccia) in header riga 2
 - **Play senza loop** — Lo scroll prosegue fino al 100% del testo e si ferma
+- **Freccia allineata** — Stessa riga di testo in preview e program (Y assoluta, riferimento testo)
 - **Margini estesi** — L, D, A, B fino a 400 px; tasto L=D per margini uguali
 - **Velocità -80 … +80** — Scorrimento più rapido
 - **Navigazione** — Home, End, Page Up, Page Down; pulsanti Inizio/Fine in header
 - **Spazio** — Play/Pausa solo in modalità presentazione (non-modifica)
-- **Freccia stabile** — Spostamento solo manuale (drag); non si sposta con preset/play/sync
 - **Preview = Program** — Font e aspetto identici tra MainWindow e PresenterWindow
 
-## Key Optimizations (v2.0)
+## Key Optimizations (v2.3.5)
 
+- CompositionTarget.Rendering per scroll vsync-aligned (60/120 Hz)
+- CanContentScroll=False per scroll fisico (pixel) fluido
+- Dead-zone 0.05 px per scroll quasi ogni frame
 - FlowDocument cloning via XamlPackage (~30ms vs ~300ms with XamlWriter)
-- Cached VisualBrush/RenderTargetBitmap/DrawingVisual for NDI (zero per-frame alloc)
-- TextFormattingMode=Ideal + ClearType per testo nitido a 72pt (no BitmapCache)
-- Dead-zone scroll skip (< 0.1px)
+- TextFormattingMode=Ideal + ClearType per testo nitido a 72pt
 - ServerGC + TieredPGO + ReadyToRun
 - Auto log cleanup (keeps last 10 files)

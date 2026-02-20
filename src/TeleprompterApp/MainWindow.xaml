@@ -360,7 +360,7 @@
             <Grid>
                 <Border x:Name="ContentInnerBorder" CornerRadius="10" Background="#111F36" Padding="4" BorderBrush="#1E2A44" BorderThickness="1">
                     <Grid>
-                        <ScrollViewer x:Name="ContentScrollViewer" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden" Background="Transparent" PanningMode="VerticalOnly" PreviewKeyDown="ContentScrollViewer_PreviewKeyDown">
+                        <ScrollViewer x:Name="ContentScrollViewer" CanContentScroll="False" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden" Background="Transparent" PanningMode="VerticalOnly" PreviewKeyDown="ContentScrollViewer_PreviewKeyDown">
                             <RichTextBox x:Name="ContentEditor"
                                          AcceptsReturn="True"
                                          VerticalScrollBarVisibility="Hidden"

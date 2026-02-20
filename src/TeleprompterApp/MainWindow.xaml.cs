@@ -54,7 +54,7 @@ namespace TeleprompterApp
     {
     // ── Scroll ──
     private readonly Stopwatch _scrollStopwatch = new();
-    private DispatcherTimer? _scrollTimer;
+    private bool _isScrollRenderingSubscribed;
     private double _scrollAccumulator;
     private double _scrollSpeed;
     private const double SpeedStep = 0.5;
@@ -1555,17 +1555,12 @@ namespace TeleprompterApp
 
         SetSpeed(desiredSpeed, fromSlider: false);
 
-        if (_scrollTimer == null)
+        if (!_isScrollRenderingSubscribed)
         {
-            _scrollTimer = new DispatcherTimer(DispatcherPriority.Render, Dispatcher)
-            {
-                Interval = TimeSpan.FromMilliseconds(16)
-            };
-            _scrollTimer.Tick += ScrollTimer_Tick;
+            CompositionTarget.Rendering += OnScrollRendering;
+            _isScrollRenderingSubscribed = true;
         }
-        _scrollTimer.Stop();
         _scrollAccumulator = 0;
-        _scrollTimer.Start();
         _scrollStopwatch.Restart();
 
         FocusManager.SetFocusedElement(this, this);
@@ -1575,7 +1570,11 @@ namespace TeleprompterApp
 
     private void PlayPauseToggle_Unchecked(object sender, RoutedEventArgs e)
     {
-        _scrollTimer?.Stop();
+        if (_isScrollRenderingSubscribed)
+        {
+            CompositionTarget.Rendering -= OnScrollRendering;
+            _isScrollRenderingSubscribed = false;
+        }
         _scrollStopwatch.Stop();
         SetStatus("In pausa");
         NotifyOscPlaybackState();
@@ -1605,7 +1604,9 @@ namespace TeleprompterApp
         SavePreferences();
     }
 
-    private void ScrollTimer_Tick(object? sender, EventArgs e)
+    private const double ScrollDeadZonePx = 0.05;
+
+    private void OnScrollRendering(object? sender, EventArgs e)
     {
         if (_scrollSpeed == 0 || _contentScrollViewer == null)
             return;
@@ -1618,7 +1619,7 @@ namespace TeleprompterApp
         var dtFactor = elapsed / 16.0;
         _scrollAccumulator += _scrollSpeed * dtFactor;
 
-        if (Math.Abs(_scrollAccumulator) < 1.0)
+        if (Math.Abs(_scrollAccumulator) < ScrollDeadZonePx)
             return;
 
         var scrollDelta = _scrollAccumulator;
@@ -1638,7 +1639,11 @@ namespace TeleprompterApp
 
         if (reachedEnd || reachedStart)
         {
-            _scrollTimer?.Stop();
+            if (_isScrollRenderingSubscribed)
+            {
+                CompositionTarget.Rendering -= OnScrollRendering;
+                _isScrollRenderingSubscribed = false;
+            }
             _scrollStopwatch.Stop();
             _playPauseToggle.IsChecked = false;
             SetStatus(_scrollSpeed > 0 ? "Fine del testo" : "Inizio del testo");
@@ -1646,8 +1651,6 @@ namespace TeleprompterApp
         }
 
         _contentScrollViewer.ScrollToVerticalOffset(target);
-        SyncPresenterScroll();
-        UpdateScrollProgressDisplay();
     }
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -1813,25 +1816,21 @@ namespace TeleprompterApp
 
         if (_scrollSpeed == 0)
         {
-            if (_playPauseToggle.IsChecked == true)
+            if (_playPauseToggle.IsChecked == true && _isScrollRenderingSubscribed)
             {
-                _scrollTimer?.Stop();
+                CompositionTarget.Rendering -= OnScrollRendering;
+                _isScrollRenderingSubscribed = false;
                 SetStatus("Velocità 0: pausa");
             }
         }
         else if (_playPauseToggle.IsChecked == true)
         {
-            if (_scrollTimer == null)
+            if (!_isScrollRenderingSubscribed)
             {
-                _scrollTimer = new DispatcherTimer(DispatcherPriority.Render, Dispatcher)
-                {
-                    Interval = TimeSpan.FromMilliseconds(16)
-                };
-                _scrollTimer.Tick += ScrollTimer_Tick;
+                CompositionTarget.Rendering += OnScrollRendering;
+                _isScrollRenderingSubscribed = true;
             }
-            _scrollTimer.Stop();
             _scrollAccumulator = 0;
-            _scrollTimer.Start();
             _scrollStopwatch.Restart();
             SetStatus(_scrollSpeed > 0 ? "Scorrimento attivo" : "Scorrimento inverso");
         }
@@ -1906,7 +1905,11 @@ namespace TeleprompterApp
 
     private void Window_Closing(object sender, CancelEventArgs e)
     {
-        _scrollTimer?.Stop();
+        if (_isScrollRenderingSubscribed)
+        {
+            CompositionTarget.Rendering -= OnScrollRendering;
+            _isScrollRenderingSubscribed = false;
+        }
         _displayManager?.Dispose();
         _presenterSync?.Dispose();
         _companionBridge?.Dispose();

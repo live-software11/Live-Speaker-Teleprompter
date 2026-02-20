@@ -1,6 +1,6 @@
 # R-Speaker Teleprompter - Analisi Completa Bug e Miglioramenti
 
-## Stato: v2.3.4 — Preset layout, Play senza loop, Sync presenter completo
+## Stato: v2.3.5 — Freccia allineata al testo, scroll fluido
 
 Tutti i bug segnalati sono risolti. Ottimizzazioni di performance e fluidità implementate secondo best practice WPF e fonti esterne (Microsoft Docs, Stack Overflow, PerfView).
 
@@ -107,6 +107,7 @@ UI change → SavePreferences() → CapturePreferences() → DebouncedPreference
 - [ ] Header su due righe, menu utilizzabili
 - [ ] Preset S1–S4 Save, L1–L4 Load; toggle evidenziato dopo save
 - [ ] Play si ferma al 100% (nessun loop)
+- [ ] Freccia allineata: stessa riga testo in preview e program (Y assoluta)
 - [ ] Freccia stabile: non si sposta con preset/play/sync aspetto
 - [ ] Preview e Program: font e aspetto identici
 - [ ] Ctrl+S salva documento
@@ -181,4 +182,17 @@ UI change → SavePreferences() → CapturePreferences() → DebouncedPreference
 
 ---
 
-*Documento aggiornato il 2026-02-20 — R-Speaker Teleprompter v2.3.4*
+## v2.3.5 — Freccia allineata al testo, scroll fluido
+
+| Intervento | Descrizione |
+|------------|-------------|
+| **Freccia Y assoluta** | `SetArrowAbsoluteY(top)` — posizione in pixel dal top; stessa Y = stessa riga testo in preview e program |
+| **Font sync** | `SyncPresenterDocument()` dopo `ApplyFont()` e `FontSizeComboBox_SelectionChanged` — font visibile subito sul secondo schermo |
+| **Scroll vsync** | `CompositionTarget.Rendering` al posto di `DispatcherTimer` — sincronizzato con refresh monitor |
+| **CanContentScroll=False** | Scroll fisico (pixel) invece di logico — movimento continuo, non a scatti |
+| **Dead zone 0.05 px** | Prima 1.0 px: a velocità basse si saltavano frame. Ora scroll quasi ogni frame |
+| **Tick snellito** | `SyncPresenterScroll` e `UpdateScrollProgressDisplay` solo in `ScrollChanged` (non nel tick) |
+
+---
+
+*Documento aggiornato il 2026-02-20 — R-Speaker Teleprompter v2.3.5*
