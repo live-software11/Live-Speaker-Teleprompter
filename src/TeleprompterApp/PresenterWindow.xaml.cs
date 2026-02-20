@@ -176,6 +176,31 @@ namespace TeleprompterApp
             _scrollViewer.ScrollToVerticalOffset(targetOffset);
         }
 
+        /// <summary>
+        /// Imposta lo scroll in modo che la posizione documento indicata sia esattamente sotto il centro della freccia.
+        /// Garantisce che preview e program puntino alla stessa parola/riga.
+        /// </summary>
+        public void SetScrollToAlignDocumentPositionAtArrow(double documentPositionAtArrow)
+        {
+            if (_scrollViewer == null || _arrowCanvas == null || _arrowContainer == null) return;
+
+            UpdateLayout();
+            var arrowTop = Canvas.GetTop(_arrowContainer);
+            if (double.IsNaN(arrowTop)) arrowTop = 0;
+            var arrowHeight = _arrowContainer.ActualHeight > 0 ? _arrowContainer.ActualHeight : 72;
+            var arrowCenterY = arrowTop + arrowHeight / 2;
+
+            var targetOffset = documentPositionAtArrow - arrowCenterY;
+            var maxScroll = _scrollViewer.ScrollableHeight;
+            if (double.IsNaN(maxScroll) || maxScroll <= 0) return;
+
+            targetOffset = Math.Clamp(targetOffset, 0, maxScroll);
+            var current = _scrollViewer.VerticalOffset;
+            if (Math.Abs(current - targetOffset) < 0.5) return;
+
+            _scrollViewer.ScrollToVerticalOffset(targetOffset);
+        }
+
         public void SetBackgroundColor(MediaColor color)
         {
             var brush = new SolidColorBrush(color);

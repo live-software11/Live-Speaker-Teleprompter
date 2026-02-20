@@ -1188,6 +1188,7 @@ namespace TeleprompterApp
         doc.LineHeight = wpfSize * 1.2;
         SyncFontSizeSelectionFromEditor();
         SavePreferences();
+        SyncPresenterDocument();
     }
 
     private void SyncFontSizeSelectionFromEditor()
@@ -1418,9 +1419,7 @@ namespace TeleprompterApp
         _presenterWindow.SetArrowColor(fill, stroke);
         _presenterWindow.SetArrowScale(_arrowScale);
         _presenterWindow.SetArrowNormalizedX(_arrowNormalizedPosition.X);
-
-        var arrowTop = double.IsNaN(Canvas.GetTop(_arrowContainer)) ? 0 : Canvas.GetTop(_arrowContainer);
-        _presenterWindow.SetArrowViewportY(arrowTop);
+        _presenterWindow.SetArrowNormalizedY(_arrowNormalizedPosition.Y);
     }
 
     private double GetArrowEffectiveWidth()
@@ -1519,11 +1518,16 @@ namespace TeleprompterApp
 
     private void SyncPresenterScroll()
     {
-        if (_presenterWindow == null || _contentScrollViewer == null)
+        if (_presenterWindow == null || _contentScrollViewer == null || _arrowContainer == null)
             return;
 
         var offset = _contentScrollViewer.VerticalOffset;
-        _presenterWindow.SetVerticalOffset(offset);
+        var arrowTop = double.IsNaN(Canvas.GetTop(_arrowContainer)) ? 0 : Canvas.GetTop(_arrowContainer);
+        var arrowHeight = _arrowContainer.ActualHeight > 0 ? _arrowContainer.ActualHeight : 72;
+        var arrowCenterY = arrowTop + arrowHeight / 2;
+        var documentPositionAtArrow = offset + arrowCenterY;
+
+        _presenterWindow.SetScrollToAlignDocumentPositionAtArrow(documentPositionAtArrow);
     }
 
     private void UpdateScrollProgressDisplay()
@@ -1902,6 +1906,7 @@ namespace TeleprompterApp
             ApplyToDocument(range => range.ApplyPropertyValue(TextElement.FontSizeProperty, wpfSize));
             _contentEditor.Document.LineHeight = wpfSize * 1.2;
             SavePreferences();
+            SyncPresenterDocument();
         }
     }
 
