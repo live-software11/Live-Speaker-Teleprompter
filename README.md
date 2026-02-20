@@ -3,7 +3,7 @@
 Teleprompter professionale per presentazioni multi-schermo. Singolo eseguibile portable, nessuna installazione richiesta.  
 Integrazione completa con **Bitfocus Companion**, **NDI** e **OSC** per il controllo remoto in produzione live.
 
-> **Versione 2.0.0** — Self-contained .NET 8 / WPF — Windows 10/11 x64
+> **Versione 2.2.0** — Self-contained .NET 8 / WPF — Windows 10/11 x64 — Ultra fluido e stabile
 
 ---
 
@@ -32,10 +32,10 @@ Integrazione completa con **Bitfocus Companion**, **NDI** e **OSC** per il contr
 ### Editor e presentazione
 - **Editor rich text** con grassetto, corsivo, sottolineato, allineamento e scelta rapida della dimensione font (36–120 pt).
 - **Formato nativo `.rstp`** (XamlPackage) che conserva formattazione, colori, font e stile. Supporto anche RTF, testo semplice e sottotitoli.
-- **Scorrimento automatico fluido** con compensazione delta-time (Stopwatch). Velocità regolabile da **-20** a **+20** con step di 0,25.
+- **Scorrimento automatico vsync-aligned** (CompositionTarget.Rendering) con compensazione delta-time. Velocità regolabile da **-20** a **+20** con step di 0,5.
 - **Freccia guida draggable** con dimensione, colore e margine personalizzabili. Sincronizzata sul presenter.
 - **Modalità modifica / presentazione** — toggle rapido che blocca la tastiera per evitare modifiche accidentali durante il live.
-- **Drag & drop** di file di testo, RTF e sottotitoli direttamente nella finestra.
+- **Drag & drop** di file di testo, RTF, Word (.docx) e sottotitoli direttamente nella finestra.
 
 ### Multi-schermo
 - **Rilevamento real-time degli schermi** con tripla ridondanza: Win32 `WM_DISPLAYCHANGE`, `SystemEvents.DisplaySettingsChanged`, polling ogni 3 secondi.
@@ -102,8 +102,8 @@ L'app si apre a **schermo intero** con velocità di scorrimento predefinita a **
 | Tasto | Funzione |
 |-------|----------|
 | `Spazio` | Play / Pausa |
-| `Freccia Su` | Aumenta velocità (+0,25) |
-| `Freccia Giù` | Diminuisce velocità (-0,25) |
+| `Freccia Su` | Aumenta velocità (+0,5) |
+| `Freccia Giù` | Diminuisce velocità (-0,5) |
 | `Freccia Sinistra / Destra` | Azzera la velocità |
 | `Home` | Vai all'inizio del testo |
 | `End` | Vai alla fine del testo |
@@ -301,6 +301,7 @@ Il modulo si trova nella cartella `companion-module/` e offre:
 | Formato | Estensioni | Note |
 |---------|-----------|------|
 | Documento Teleprompter | `.rstp` | Formato nativo, conserva tutta la formattazione |
+| Microsoft Word | `.docx`, `.doc` | Estrazione testo (Office Open XML) |
 | Rich Text Format | `.rtf` | Formattazione base |
 | FlowDocument XAML | `.xaml`, `.xamlpackage` | Formato WPF nativo |
 | Testo semplice | `.txt`, `.md`, `.log` | Convertito con font corrente |
@@ -440,11 +441,14 @@ docs/                                — Documentazione aggiuntiva
 
 ## Ottimizzazioni performance
 
+### Scroll e fluidità
+- **CompositionTarget.Rendering** — scroll vsync-aligned con il refresh del monitor (60/120 Hz). Zero micro-stutter rispetto a DispatcherTimer.
+- **Delta-time compensation** — `Stopwatch` compensa variazioni di framerate per scorrimento costante.
+- **SpellCheck disabilitato** — con font grandi (72pt+) il controllo ortografico causava latenza 50-200ms per keystroke.
+
 ### Rendering e schermi esterni
 - **BitmapCache** sull'editor e sul presenter per rendering GPU-accelerato.
-- **RenderOptions.ClearTypeHint** e **TextOptions.TextFormattingMode=Display** per testo nitido.
-- **SetVerticalOffset ottimizzato** — skip se delta < 0,1 px per evitare layout pass ridondanti.
-- **Scroll delta-time** — `Stopwatch` compensa variazioni di framerate per scorrimento sempre fluido.
+- **RenderOptions.ClearTypeHint** e **TextOptions.TextFormattingMode=Display** per testo nitido e performante.
 
 ### NDI
 - **VisualBrush cachato** — riusato tra frame, WPF aggiorna automaticamente quando il contenuto cambia.

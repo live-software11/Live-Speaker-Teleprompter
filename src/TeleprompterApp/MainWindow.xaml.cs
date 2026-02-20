@@ -52,9 +52,9 @@ namespace TeleprompterApp
 {
     public partial class MainWindow : Window
     {
-    // ── Scroll ──
-    private readonly DispatcherTimer _scrollTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
+    // ── Scroll (vsync-aligned per fluidità massima) ──
     private readonly Stopwatch _scrollStopwatch = new();
+    private bool _scrollRenderingSubscribed;
     private double _scrollSpeed;
     private const double SpeedStep = 0.5;
     private const double MaxSpeed = 20;
@@ -70,7 +70,7 @@ namespace TeleprompterApp
 
     private readonly HashSet<string> _supportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".txt", ".md", ".rtf", ".srt", ".vtt", ".log", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".ini", ".cfg", ".bat", ".ps1", ".xaml", ".xamlpackage", ".rstp"
+        ".txt", ".md", ".rtf", ".srt", ".vtt", ".log", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".ini", ".cfg", ".bat", ".ps1", ".xaml", ".xamlpackage", ".rstp", ".docx", ".doc"
     };
     private PresenterWindow? _presenterWindow;
     private UserPreferences _preferences = new();
@@ -137,7 +137,6 @@ namespace TeleprompterApp
         LoadView();
         ResolveNamedElements();
         AttachRuntimeHandlers();
-        _scrollTimer.Tick += OnScrollTimerTick;
     }
 
     private void LoadView()
@@ -676,7 +675,7 @@ namespace TeleprompterApp
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = "Apri copione",
-            Filter = "Documento Teleprompter (*.rstp)|*.rstp|Formati ricchi (*.rtf;*.xaml;*.xamlpackage)|*.rtf;*.xaml;*.xamlpackage|Testo e sottotitoli|*.txt;*.md;*.srt;*.vtt;*.log;*.csv;*.json;*.xml;*.html;*.htm;*.yaml;*.yml;*.ini;*.cfg;*.bat;*.ps1|Tutti i file|*.*",
+            Filter = "Documento Teleprompter (*.rstp)|*.rstp|Microsoft Word (*.docx;*.doc)|*.docx;*.doc|Formati ricchi (*.rtf;*.xaml;*.xamlpackage)|*.rtf;*.xaml;*.xamlpackage|Testo e sottotitoli|*.txt;*.md;*.srt;*.vtt;*.log;*.csv;*.json;*.xml;*.html;*.htm;*.yaml;*.yml;*.ini;*.cfg;*.bat;*.ps1|Tutti i file|*.*",
             DefaultExt = ".rstp",
             AddExtension = true
         };
@@ -706,20 +705,28 @@ namespace TeleprompterApp
         var extension = Path.GetExtension(filePath).ToLowerInvariant();
         var range = new TextRange(_contentEditor.Document.ContentStart, _contentEditor.Document.ContentEnd);
 
-        using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-        if (extension == ".rtf")
+        if (extension == ".docx" || extension == ".doc")
         {
-            range.Load(fileStream, MediaDataFormats.Rtf);
-        }
-        else if (extension == ".xaml" || extension == ".xamlpackage" || extension == ".rstp")
-        {
-            range.Load(fileStream, MediaDataFormats.XamlPackage);
+            var text = ExtractTextFromDocx(filePath);
+            SetPlainTextDocument(text);
         }
         else
         {
-            using var reader = new StreamReader(fileStream);
-            var text = reader.ReadToEnd();
-            SetPlainTextDocument(text);
+            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            if (extension == ".rtf")
+            {
+                range.Load(fileStream, MediaDataFormats.Rtf);
+            }
+            else if (extension == ".xaml" || extension == ".xamlpackage" || extension == ".rstp")
+            {
+                range.Load(fileStream, MediaDataFormats.XamlPackage);
+            }
+            else
+            {
+                using var reader = new StreamReader(fileStream);
+                var text = reader.ReadToEnd();
+                SetPlainTextDocument(text);
+            }
         }
 
         _contentEditor.CaretPosition = _contentEditor.Document.ContentStart;
@@ -866,6 +873,50 @@ namespace TeleprompterApp
     {
         var text = range.Text ?? string.Empty;
         return text.TrimEnd('\r', '\n');
+    }
+
+    private static string ExtractTextFromDocx(string filePath)
+    {
+        try
+        {
+            using var package = System.IO.Packaging.Package.Open(filePath, FileMode.Open, FileAccess.Read);
+            var docPartUri = new Uri("/word/document.xml", UriKind.Relative);
+            if (!package.PartExists(docPartUri))
+                return "[Formato Word non supportato]";
+
+            var docPart = package.GetPart(docPartUri);
+            using var stream = docPart.GetStream();
+            var xmlDoc = new XmlDocument();
+            xmlDoc.Load(stream);
+
+            var nsManager = new XmlNamespaceManager(xmlDoc.NameTable);
+            nsManager.AddNamespace("w", "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+
+            var paragraphs = xmlDoc.SelectNodes("//w:p", nsManager);
+            if (paragraphs == null || paragraphs.Count == 0)
+                return string.Empty;
+
+            var sb = new StringBuilder();
+            foreach (XmlNode para in paragraphs)
+            {
+                var textNodes = para.SelectNodes(".//w:t", nsManager);
+                if (textNodes == null) continue;
+
+                var line = new StringBuilder();
+                foreach (XmlNode textNode in textNodes)
+                {
+                    line.Append(textNode.InnerText);
+                }
+
+                sb.AppendLine(line.ToString());
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+        catch (Exception ex)
+        {
+            return $"[Errore lettura Word: {ex.Message}]";
+        }
     }
 
     private void SaveCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -1103,16 +1154,13 @@ namespace TeleprompterApp
 
     var mainPadding = ComputeMainDocumentPadding();
     document.PagePadding = mainPadding;
-    _contentEditor.Padding = mainPadding;
 
     var presenterPadding = GetPresenterPagePadding(mainPadding);
     _presenterWindow?.SetPagePadding(presenterPadding);
 
         UpdateLeftMarginDisplay();
         ApplyNormalizedArrowPosition();
-        _contentEditor.UpdateLayout();
-        _contentScrollViewer.UpdateLayout();
-        SyncPresenterDocument();
+        RequestPresenterSync();
     }
 
     private Thickness ComputeMainDocumentPadding()
@@ -1292,12 +1340,16 @@ namespace TeleprompterApp
         }
 
         _contentEditor.IsReadOnly = !isEditMode;
-        _contentEditor.IsReadOnlyCaretVisible = isEditMode;
         _contentEditor.IsHitTestVisible = true;
-        _contentEditor.Focusable = isEditMode;
-    _contentEditor.Cursor = isEditMode ? MediaCursors.IBeam : MediaCursors.Arrow;
+        _contentEditor.Focusable = true;
+        _contentEditor.Cursor = isEditMode ? MediaCursors.IBeam : MediaCursors.Arrow;
 
-        if (!isEditMode)
+        if (isEditMode)
+        {
+            _contentEditor.Focus();
+            Keyboard.Focus(_contentEditor);
+        }
+        else
         {
             Keyboard.ClearFocus();
             FocusManager.SetFocusedElement(this, this);
@@ -1381,7 +1433,7 @@ namespace TeleprompterApp
         {
             var ratio = GetScrollRatio();
             progressText.Text = $"{(int)(ratio * 100)}%";
-            var maxWidth = 120.0;
+            var maxWidth = 80.0;
             progressBar.Width = maxWidth * ratio;
         }
     }
@@ -1406,9 +1458,12 @@ namespace TeleprompterApp
 
         SetSpeed(desiredSpeed, fromSlider: false);
 
-        _scrollTimer.Stop();
+        if (!_scrollRenderingSubscribed)
+        {
+            _scrollRenderingSubscribed = true;
+            System.Windows.Media.CompositionTarget.Rendering += OnScrollRendering;
+        }
         _scrollStopwatch.Restart();
-        _scrollTimer.Start();
 
         _contentScrollViewer?.Focus();
         SetStatus("Scorrimento attivo");
@@ -1417,7 +1472,11 @@ namespace TeleprompterApp
 
     private void PlayPauseToggle_Unchecked(object sender, RoutedEventArgs e)
     {
-        _scrollTimer.Stop();
+        if (_scrollRenderingSubscribed)
+        {
+            _scrollRenderingSubscribed = false;
+            System.Windows.Media.CompositionTarget.Rendering -= OnScrollRendering;
+        }
         _scrollStopwatch.Stop();
         SetStatus("In pausa");
         NotifyOscPlaybackState();
@@ -1447,18 +1506,20 @@ namespace TeleprompterApp
         SavePreferences();
     }
 
-    private void OnScrollTimerTick(object? sender, EventArgs e)
+    /// <summary>
+    /// Scroll vsync-aligned: CompositionTarget.Rendering è sincronizzato con il refresh del monitor.
+    /// Più fluido di DispatcherTimer perché evita micro-stutter e tearing.
+    /// </summary>
+    private void OnScrollRendering(object? sender, EventArgs e)
     {
         if (_scrollSpeed == 0 || _contentScrollViewer == null)
         {
             return;
         }
 
-        // Delta-time compensation: scale scroll by actual elapsed time vs ideal 16ms
         var elapsed = _scrollStopwatch.Elapsed.TotalMilliseconds;
         _scrollStopwatch.Restart();
 
-        // Avoid extreme jumps after long stalls (e.g. system sleep)
         if (elapsed <= 0 || elapsed > 500)
         {
             elapsed = 16;
@@ -1483,7 +1544,11 @@ namespace TeleprompterApp
         var actualOffset = _contentScrollViewer.VerticalOffset;
         if (Math.Abs(actualOffset - previousOffset) < 0.05)
         {
-            _scrollTimer.Stop();
+            if (_scrollRenderingSubscribed)
+            {
+                _scrollRenderingSubscribed = false;
+                System.Windows.Media.CompositionTarget.Rendering -= OnScrollRendering;
+            }
             _scrollStopwatch.Stop();
             _playPauseToggle.IsChecked = false;
             SetStatus(_scrollSpeed > 0 ? "Fine del testo" : "Inizio del testo");
@@ -1601,17 +1666,20 @@ namespace TeleprompterApp
 
         if (_scrollSpeed == 0)
         {
-            if (_playPauseToggle.IsChecked == true)
+            if (_playPauseToggle.IsChecked == true && _scrollRenderingSubscribed)
             {
-                _scrollTimer.Stop();
+                _scrollRenderingSubscribed = false;
+                System.Windows.Media.CompositionTarget.Rendering -= OnScrollRendering;
                 SetStatus("Velocità 0: pausa");
             }
         }
         else if (_playPauseToggle.IsChecked == true)
         {
-            if (!_scrollTimer.IsEnabled)
+            if (!_scrollRenderingSubscribed)
             {
-                _scrollTimer.Start();
+                _scrollRenderingSubscribed = true;
+                System.Windows.Media.CompositionTarget.Rendering += OnScrollRendering;
+                _scrollStopwatch.Restart();
             }
 
             SetStatus(_scrollSpeed > 0 ? "Scorrimento attivo" : "Scorrimento inverso");
@@ -1629,7 +1697,7 @@ namespace TeleprompterApp
             return;
         }
 
-        _speedText.Text = $"Velocità: {_scrollSpeed:F2}";
+        _speedText.Text = $"{_scrollSpeed:F1}";
     }
 
     private void SpeedSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -1688,6 +1756,11 @@ namespace TeleprompterApp
 
     private void Window_Closing(object sender, CancelEventArgs e)
     {
+        if (_scrollRenderingSubscribed)
+        {
+            _scrollRenderingSubscribed = false;
+            System.Windows.Media.CompositionTarget.Rendering -= OnScrollRendering;
+        }
         _displayManager?.Dispose();
         _presenterSync?.Dispose();
         _companionBridge?.Dispose();

@@ -6,26 +6,17 @@
     xmlns:local="clr-namespace:TeleprompterApp"
         mc:Ignorable="d"
         Title="R-Speaker Teleprompter"
-    Width="1260"
-    Height="760"
-    MinWidth="1200"
-    MinHeight="720"
-    WindowStartupLocation="CenterScreen"
-    WindowState="Maximized"
-    Loaded="Window_Loaded"
-    Closing="Window_Closing"
-    KeyDown="Window_KeyDown"
-    PreviewKeyDown="Window_PreviewKeyDown"
-    PreviewMouseWheel="Window_PreviewMouseWheel"
-    AllowDrop="True"
-    DragOver="Window_DragOver"
-    Drop="Window_Drop">
+    Width="1260" Height="760" MinWidth="900" MinHeight="500"
+    WindowStartupLocation="CenterScreen" WindowState="Maximized"
+    Loaded="Window_Loaded" Closing="Window_Closing"
+    KeyDown="Window_KeyDown" PreviewKeyDown="Window_PreviewKeyDown" PreviewMouseWheel="Window_PreviewMouseWheel"
+    AllowDrop="True" DragOver="Window_DragOver" Drop="Window_Drop">
+
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static ApplicationCommands.Save}" Executed="SaveCommand_Executed" CanExecute="SaveCommand_CanExecute" />
         <CommandBinding Command="{x:Static ApplicationCommands.Open}" Executed="OpenCommand_Executed" />
         <CommandBinding Command="{x:Static ApplicationCommands.New}" Executed="NewCommand_Executed" />
     </Window.CommandBindings>
-
     <Window.InputBindings>
         <KeyBinding Command="{x:Static ApplicationCommands.Save}" Modifiers="Control" Key="S" />
         <KeyBinding Command="{x:Static ApplicationCommands.Open}" Modifiers="Control" Key="O" />
@@ -39,43 +30,21 @@
         </LinearGradientBrush>
         <SolidColorBrush x:Key="PanelBrush" Color="#111827" />
         <SolidColorBrush x:Key="AccentBrush" Color="#3B82F6" />
-        <Style x:Key="HeaderSectionBorder" TargetType="Border">
-            <Setter Property="Background" Value="#111C33" />
-            <Setter Property="BorderBrush" Value="#1E2A44" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="14" />
-            <Setter Property="Padding" Value="10" />
-        </Style>
-        <Style x:Key="ToolbarIconText" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="Foreground" Value="#60A5FA" />
-            <Setter Property="Margin" Value="0,0,6,0" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-        <Style x:Key="ToolbarLabelText" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#E2E8F0" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-    <Style x:Key="ToolbarButtonStyle" TargetType="ButtonBase">
+
+        <Style x:Key="TbBtn" TargetType="ButtonBase">
             <Setter Property="Foreground" Value="#E2E8F0" />
             <Setter Property="Background" Value="#19233A" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="Padding" Value="12,8" />
-            <Setter Property="Margin" Value="4,4" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Padding" Value="7,5" />
+            <Setter Property="Margin" Value="2,0" />
             <Setter Property="BorderBrush" Value="#233253" />
             <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ButtonBase">
-                        <Border CornerRadius="14"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
+                        <Border CornerRadius="8" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -83,26 +52,17 @@
                                 <Setter Property="Background" Value="#1F3B68" />
                                 <Setter Property="BorderBrush" Value="#2563EB" />
                             </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#2563EB" />
-                                <Setter Property="BorderBrush" Value="#3B82F6" />
-                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="ToolbarToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource ToolbarButtonStyle}">
+        <Style x:Key="TbTgl" TargetType="ToggleButton" BasedOn="{StaticResource TbBtn}">
             <Setter Property="Background" Value="#1C253F" />
-            <Setter Property="BorderBrush" Value="#2D3B59" />
-            <Setter Property="Padding" Value="12,8" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border CornerRadius="14"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
+                        <Border CornerRadius="8" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -112,47 +72,21 @@
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#1E3A8A" />
-                                <Setter Property="BorderBrush" Value="#3B82F6" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="MonitorToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource ToolbarToggleStyle}">
-            <Setter Property="FontSize" Value="16" />
+        <Style x:Key="MonitorToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource TbTgl}">
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Padding" Value="22,10" />
-            <Setter Property="Background" Value="#1B2A4A" />
-            <Setter Property="BorderBrush" Value="#2563EB" />
+            <Setter Property="Padding" Value="12,5" />
             <Setter Property="Foreground" Value="#F8FAFC" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border CornerRadius="12"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="2">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Background" Value="#2563EB" />
-                                <Setter Property="BorderBrush" Value="#60A5FA" />
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#1E3A8A" />
-                                <Setter Property="BorderBrush" Value="#3B82F6" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
-        <Style x:Key="PlayToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource ToolbarToggleStyle}">
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Padding" Value="28,14" />
+        <Style x:Key="PlayBtn" TargetType="ToggleButton" BasedOn="{StaticResource TbTgl}">
+            <Setter Property="Padding" Value="16,7" />
+            <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="#F8FAFC" />
             <Setter Property="Background">
                 <Setter.Value>
@@ -164,22 +98,11 @@
             </Setter>
             <Setter Property="BorderBrush" Value="#334155" />
             <Setter Property="BorderThickness" Value="2" />
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect Color="#66000000" BlurRadius="18" ShadowDepth="0" Opacity="0.55" />
-                </Setter.Value>
-            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border CornerRadius="32"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <Grid>
-                                <Border CornerRadius="32" Background="#1F293780" Visibility="Collapsed" x:Name="HoverOverlay" />
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Grid>
+                        <Border CornerRadius="20" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
@@ -194,7 +117,6 @@
                                 <Setter Property="BorderBrush" Value="#60A5FA" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="HoverOverlay" Property="Visibility" Value="Visible" />
                                 <Setter Property="BorderBrush" Value="#3B82F6" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -202,20 +124,13 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="EditToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource ToolbarToggleStyle}">
-            <Setter Property="Padding" Value="20,12" />
-            <Setter Property="FontSize" Value="18" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+        <Style x:Key="EditBtn" TargetType="ToggleButton" BasedOn="{StaticResource TbTgl}">
+            <Setter Property="Padding" Value="10,5" />
             <Setter Property="Background" Value="#1F2937" />
-            <Setter Property="BorderBrush" Value="#334155" />
-            <Setter Property="Foreground" Value="#E2E8F0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border CornerRadius="18"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="2">
+                        <Border CornerRadius="10" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="2" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -225,12 +140,22 @@
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#1D4ED8" />
-                                <Setter Property="BorderBrush" Value="#60A5FA" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- keep old names for code-behind FindResource -->
+        <Style x:Key="ToolbarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource TbBtn}" />
+        <Style x:Key="ToolbarToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource TbTgl}" />
+        <Style x:Key="PlayToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource PlayBtn}" />
+        <Style x:Key="EditToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource EditBtn}" />
+        <Style x:Key="HeaderSectionBorder" TargetType="Border">
+            <Setter Property="Background" Value="#111C33" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="4" />
         </Style>
     </Window.Resources>
 
@@ -241,340 +166,147 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-    <Border Grid.Row="0"
-        Margin="24,18,24,8"
-        Background="#0B1223"
-        Padding="12"
-        CornerRadius="20">
-            <Border.Effect>
-                <DropShadowEffect Color="#000000" BlurRadius="25" ShadowDepth="0" Opacity="0.35" />
-            </Border.Effect>
-            <StackPanel>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+        <!-- ═══ ROW 0: TOOLBAR COMPATTA ═══ -->
+        <Border Grid.Row="0" Margin="6,4,6,2" Background="#0B1223" Padding="6,3" CornerRadius="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0" Style="{StaticResource HeaderSectionBorder}" Margin="0,0,12,0">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <WrapPanel Grid.Row="0" VerticalAlignment="Center" Margin="0,0,0,8">
-                                <Button x:Name="OpenFileButton" Style="{StaticResource ToolbarButtonStyle}" Click="OpenFileButton_Click">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="" Style="{StaticResource ToolbarIconText}" />
-                                        <TextBlock Text="Apri" Style="{StaticResource ToolbarLabelText}" />
-                                    </StackPanel>
-                                </Button>
-                                <Button x:Name="NewDocumentButton" Style="{StaticResource ToolbarButtonStyle}" Click="NewDocumentButton_Click">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="" Style="{StaticResource ToolbarIconText}" />
-                                        <TextBlock Text="Nuovo" Style="{StaticResource ToolbarLabelText}" />
-                                    </StackPanel>
-                                </Button>
-                                <Button x:Name="SaveDocumentButton" Style="{StaticResource ToolbarButtonStyle}" Click="SaveDocumentButton_Click">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="" Style="{StaticResource ToolbarIconText}" />
-                                        <TextBlock Text="Salva" Style="{StaticResource ToolbarLabelText}" />
-                                    </StackPanel>
-                                </Button>
-                            </WrapPanel>
-                            <WrapPanel Grid.Row="1" VerticalAlignment="Center">
-                                <Button x:Name="BackgroundButton" Style="{StaticResource ToolbarButtonStyle}" Click="BackgroundButton_Click">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="" Style="{StaticResource ToolbarIconText}" />
-                                        <TextBlock Text="Sfondo" Style="{StaticResource ToolbarLabelText}" />
-                                    </StackPanel>
-                                </Button>
-                                <Button x:Name="ForegroundButton" Style="{StaticResource ToolbarButtonStyle}" Click="ForegroundButton_Click">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="" Style="{StaticResource ToolbarIconText}" />
-                                        <TextBlock Text="Testo" Style="{StaticResource ToolbarLabelText}" />
-                                    </StackPanel>
-                                </Button>
-                                <Button x:Name="FontButton" Style="{StaticResource ToolbarButtonStyle}" Click="FontButton_Click">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="" Style="{StaticResource ToolbarIconText}" />
-                                        <TextBlock Text="Font" Style="{StaticResource ToolbarLabelText}" />
-                                    </StackPanel>
-                                </Button>
-                            </WrapPanel>
-                        </Grid>
-                    </Border>
+                <!-- File -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="OpenFileButton" Style="{StaticResource TbBtn}" Click="OpenFileButton_Click" ToolTip="Apri (Ctrl+O)">
+                        <TextBlock Text="&#xE838;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
+                    </Button>
+                    <Button x:Name="NewDocumentButton" Style="{StaticResource TbBtn}" Click="NewDocumentButton_Click" ToolTip="Nuovo (Ctrl+N)">
+                        <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
+                    </Button>
+                    <Button x:Name="SaveDocumentButton" Style="{StaticResource TbBtn}" Click="SaveDocumentButton_Click" ToolTip="Salva (Ctrl+S)">
+                        <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
+                    </Button>
+                    <Border Width="1" Background="#1E2A44" Margin="4,3" />
+                </StackPanel>
 
-                    <Border Grid.Column="1" Style="{StaticResource HeaderSectionBorder}" Margin="0,0,12,0">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <WrapPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,8">
-                                <ToggleButton Style="{StaticResource ToolbarToggleStyle}" Command="{x:Static EditingCommands.ToggleBold}" CommandTarget="{Binding ElementName=ContentEditor}" Margin="0,0,8,0">
-                                    <TextBlock Text="B" FontWeight="Bold" />
-                                </ToggleButton>
-                                <ToggleButton Style="{StaticResource ToolbarToggleStyle}" Command="{x:Static EditingCommands.ToggleItalic}" CommandTarget="{Binding ElementName=ContentEditor}" Margin="0,0,8,0">
-                                    <TextBlock Text="I" FontStyle="Italic" />
-                                </ToggleButton>
-                <ToggleButton Style="{StaticResource ToolbarToggleStyle}" Command="{x:Static EditingCommands.ToggleUnderline}" CommandTarget="{Binding ElementName=ContentEditor}">
-                                    <TextBlock Text="U" TextDecorations="Underline" />
-                                </ToggleButton>
-                            </WrapPanel>
-                            <WrapPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="Allinea L" Command="{x:Static EditingCommands.AlignLeft}" CommandTarget="{Binding ElementName=ContentEditor}" />
-                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="Allinea C" Command="{x:Static EditingCommands.AlignCenter}" CommandTarget="{Binding ElementName=ContentEditor}" />
-                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="Allinea R" Command="{x:Static EditingCommands.AlignRight}" CommandTarget="{Binding ElementName=ContentEditor}" />
-                                <ComboBox x:Name="FontSizeComboBox"
-                                          Width="70"
-                                          Margin="8,0,0,0"
-                                          VerticalAlignment="Center"
-                                          SelectedValuePath="Content"
-                                          SelectionChanged="FontSizeComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="36" />
-                                    <ComboBoxItem Content="48" />
-                                    <ComboBoxItem Content="60" />
-                                    <ComboBoxItem Content="72" />
-                                    <ComboBoxItem Content="84" />
-                                    <ComboBoxItem Content="96" />
-                                    <ComboBoxItem Content="120" />
-                                </ComboBox>
-                            </WrapPanel>
-                        </Grid>
-                    </Border>
+                <!-- Formattazione -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ToggleButton Style="{StaticResource TbTgl}" Command="{x:Static EditingCommands.ToggleBold}" CommandTarget="{Binding ElementName=ContentEditor}">
+                        <TextBlock Text="B" FontWeight="Bold" FontSize="13" />
+                    </ToggleButton>
+                    <ToggleButton Style="{StaticResource TbTgl}" Command="{x:Static EditingCommands.ToggleItalic}" CommandTarget="{Binding ElementName=ContentEditor}">
+                        <TextBlock Text="I" FontStyle="Italic" FontSize="13" />
+                    </ToggleButton>
+                    <ToggleButton Style="{StaticResource TbTgl}" Command="{x:Static EditingCommands.ToggleUnderline}" CommandTarget="{Binding ElementName=ContentEditor}">
+                        <TextBlock Text="U" TextDecorations="Underline" FontSize="13" />
+                    </ToggleButton>
+                    <ComboBox x:Name="FontSizeComboBox" Width="56" Margin="4,0" VerticalAlignment="Center" SelectedValuePath="Content" SelectionChanged="FontSizeComboBox_SelectionChanged" ToolTip="Dimensione font">
+                        <ComboBoxItem Content="36" /><ComboBoxItem Content="48" /><ComboBoxItem Content="60" />
+                        <ComboBoxItem Content="72" /><ComboBoxItem Content="84" /><ComboBoxItem Content="96" /><ComboBoxItem Content="120" />
+                    </ComboBox>
+                    <Button x:Name="FontButton" Style="{StaticResource TbBtn}" Click="FontButton_Click" ToolTip="Font">
+                        <TextBlock Text="&#xE8D2;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
+                    </Button>
+                    <Button x:Name="BackgroundButton" Style="{StaticResource TbBtn}" Click="BackgroundButton_Click" ToolTip="Sfondo">
+                        <TextBlock Text="&#xE771;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
+                    </Button>
+                    <Button x:Name="ForegroundButton" Style="{StaticResource TbBtn}" Click="ForegroundButton_Click" ToolTip="Colore testo">
+                        <TextBlock Text="&#xE8D3;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
+                    </Button>
+                    <Border Width="1" Background="#1E2A44" Margin="4,3" />
+                </StackPanel>
 
-                    <Border Grid.Column="2" Style="{StaticResource HeaderSectionBorder}" Margin="0,0,12,0">
-                        <StackPanel>
-                            <TextBlock Text="Velocità" Foreground="#93C5FD" FontWeight="SemiBold" Margin="4,0" />
-                <Slider x:Name="SpeedSlider"
-                    Minimum="-20"
-                    Maximum="20"
-                    SmallChange="0.5"
-                    LargeChange="2"
-                    TickFrequency="1"
-                    IsSnapToTickEnabled="False"
-                    Margin="0,6,0,10"
-                    Value="0.5"
-                    ValueChanged="SpeedSlider_ValueChanged" />
-                            <TextBlock x:Name="SpeedText"
-                                       HorizontalAlignment="Center"
-                                       Foreground="White"
-                                       FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Text="Velocità: 0.00"
-                                       Width="160"
-                                       TextAlignment="Center" />
+                <!-- Velocità -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="SpeedText" Text="0.50" Foreground="White" FontSize="13" FontWeight="SemiBold" Width="38" TextAlignment="Center" VerticalAlignment="Center" />
+                    <Slider x:Name="SpeedSlider" Minimum="-20" Maximum="20" SmallChange="0.5" LargeChange="2" IsSnapToTickEnabled="False" Value="0.5" Width="90" VerticalAlignment="Center" ValueChanged="SpeedSlider_ValueChanged" />
+                    <Border Width="1" Background="#1E2A44" Margin="4,3" />
+                </StackPanel>
+
+                <!-- PLAY + navigazione (centro) -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Button x:Name="GoToStartButton" Style="{StaticResource TbBtn}" Click="GoToStartButton_Click" ToolTip="Inizio (Home)">
+                        <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
+                    </Button>
+                    <ToggleButton x:Name="PlayPauseToggle" Style="{StaticResource PlayBtn}" ToolTip="Avvia / Pausa (Spazio)" Checked="PlayPauseToggle_Checked" Unchecked="PlayPauseToggle_Unchecked">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Setter Property="Fill" Value="#F8FAFC" />
+                                        <Setter Property="Data" Value="M2,2 L2,18 L16,10 Z" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                <Setter Property="Data" Value="M2,2 L2,18 L8,18 L8,2 Z M12,2 L12,18 L18,18 L18,2 Z" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                            <TextBlock FontSize="15" FontWeight="Bold" Foreground="#F8FAFC">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="Avvia" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                <Setter Property="Text" Value="Pausa" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </StackPanel>
-                    </Border>
+                    </ToggleButton>
+                    <Button x:Name="GoToEndButton" Style="{StaticResource TbBtn}" Click="GoToEndButton_Click" ToolTip="Fine (End)">
+                        <TextBlock Text="&#xE72A;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
+                    </Button>
+                </StackPanel>
 
-                    <Border Grid.Column="3" Style="{StaticResource HeaderSectionBorder}" Margin="0,0,12,0">
-                        <StackPanel>
-                            <TextBlock Text="Freccia guida" Foreground="#93C5FD" FontWeight="SemiBold" Margin="4,0,4,6" />
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Dimensione" Foreground="#CBD5F5" VerticalAlignment="Center" Margin="0,0,10,0" />
-                                <Slider x:Name="ArrowSizeSlider"
-                                        Minimum="0.5"
-                                        Maximum="2.0"
-                                        Value="1.0"
-                                        Width="120"
-                                        SmallChange="0.1"
-                                        LargeChange="0.2"
-                                        IsSnapToTickEnabled="False"
-                                        ValueChanged="ArrowSizeSlider_ValueChanged" />
-                            </StackPanel>
-                            <Button x:Name="ArrowColorButton"
-                                    Style="{StaticResource ToolbarButtonStyle}"
-                                    Margin="0,10,0,0"
-                                    Content="Colore freccia"
-                                    Click="ArrowColorButton_Click" />
-                            <TextBlock Text="Trascina la freccia nel riquadro di anteprima per riposizionarla."
-                                       Foreground="#64748B"
-                                       FontSize="12"
-                                       TextWrapping="Wrap"
-                                       Margin="0,4,0,0" />
-                            <StackPanel Orientation="Vertical" Margin="0,16,0,0">
-                                <TextBlock Text="Margine sinistro" Foreground="#CBD5F5" FontWeight="SemiBold" />
-                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                    <Slider x:Name="LeftMarginSlider"
-                                            Minimum="0"
-                                            Maximum="640"
-                                            Value="12"
-                                            Width="160"
-                                            SmallChange="4"
-                                            LargeChange="12"
-                                            IsSnapToTickEnabled="False"
-                                            ValueChanged="LeftMarginSlider_ValueChanged"
-                                            IsEnabled="{Binding IsChecked, ElementName=EditModeToggle}" />
-                                    <TextBlock x:Name="LeftMarginValueText"
-                                               Text="0 px"
-                                               Foreground="#CBD5F5"
-                                               FontSize="14"
-                                               Margin="12,0,0,0"
-                                               VerticalAlignment="Center" />
-                                </StackPanel>
-                                <TextBlock Text="Regola lo spazio tra freccia e testo (solo in modifica)."
-                                           Foreground="#64748B"
-                                           FontSize="12"
-                                           Margin="0,8,0,0" />
-                            </StackPanel>
-                            <StackPanel Orientation="Vertical" Margin="0,12,0,0">
-                                <TextBlock Text="Margini esterni" Foreground="#93C5FD" FontWeight="SemiBold" />
-                                <Grid Margin="0,6,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Alto" Foreground="#CBD5F5" VerticalAlignment="Center" Margin="0,0,8,4" />
-                                    <Slider x:Name="MarginTopSlider" Grid.Row="0" Grid.Column="1"
-                                            Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20"
-                                            ValueChanged="MarginTopSlider_ValueChanged" Margin="0,0,0,4" />
-                                    <TextBlock x:Name="MarginTopText" Grid.Row="0" Grid.Column="2" Text="40 px"
-                                               Foreground="#CBD5F5" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,4" Width="50" />
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Destro" Foreground="#CBD5F5" VerticalAlignment="Center" Margin="0,0,8,4" />
-                                    <Slider x:Name="MarginRightSlider" Grid.Row="1" Grid.Column="1"
-                                            Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20"
-                                            ValueChanged="MarginRightSlider_ValueChanged" Margin="0,0,0,4" />
-                                    <TextBlock x:Name="MarginRightText" Grid.Row="1" Grid.Column="2" Text="40 px"
-                                               Foreground="#CBD5F5" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,4" Width="50" />
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Basso" Foreground="#CBD5F5" VerticalAlignment="Center" Margin="0,0,8,4" />
-                                    <Slider x:Name="MarginBottomSlider" Grid.Row="2" Grid.Column="1"
-                                            Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20"
-                                            ValueChanged="MarginBottomSlider_ValueChanged" Margin="0,0,0,4" />
-                                    <TextBlock x:Name="MarginBottomText" Grid.Row="2" Grid.Column="2" Text="40 px"
-                                               Foreground="#CBD5F5" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,4" Width="50" />
-                                </Grid>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
+                <!-- Schermi + NDI + Modifica + Opzioni -->
+                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="1" Background="#1E2A44" Margin="4,3" />
+                    <StackPanel x:Name="MonitorTogglePanel" Orientation="Horizontal" />
+                    <ToggleButton x:Name="NdiToggle" Style="{StaticResource TbTgl}" Content="NDI" Margin="4,0" Checked="NdiToggle_Checked" Unchecked="NdiToggle_Unchecked" FontSize="12" />
+                    <Border Width="1" Background="#1E2A44" Margin="4,3" />
+                    <ToggleButton x:Name="EditModeToggle" Style="{StaticResource EditBtn}" IsChecked="True" Checked="EditModeToggle_Checked" Unchecked="EditModeToggle_Unchecked" ToolTip="Modifica / Presentazione">
+                        <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" />
+                    </ToggleButton>
+                    <ToggleButton x:Name="MirrorToggle" Style="{StaticResource TbTgl}" ToolTip="Specchio" Checked="MirrorToggle_Checked" Unchecked="MirrorToggle_Unchecked">
+                        <TextBlock Text="&#xE7C5;" FontFamily="Segoe MDL2 Assets" FontSize="14" />
+                    </ToggleButton>
+                    <ToggleButton x:Name="TopMostToggle" Style="{StaticResource TbTgl}" ToolTip="Sempre in primo piano" Checked="TopMostToggle_Checked" Unchecked="TopMostToggle_Unchecked">
+                        <TextBlock Text="&#xE718;" FontFamily="Segoe MDL2 Assets" FontSize="14" />
+                    </ToggleButton>
+                </StackPanel>
 
-                    <Border Grid.Column="4" Style="{StaticResource HeaderSectionBorder}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <ToggleButton x:Name="MirrorToggle" Style="{StaticResource ToolbarToggleStyle}" Content="Specchio" Margin="0,0,8,0" Checked="MirrorToggle_Checked" Unchecked="MirrorToggle_Unchecked" />
-                            <ToggleButton x:Name="TopMostToggle" Style="{StaticResource ToolbarToggleStyle}" Content="Top" Checked="TopMostToggle_Checked" Unchecked="TopMostToggle_Unchecked" />
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <Border Margin="0,16,0,0" Background="#10172A" CornerRadius="14" Padding="14">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal" Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock Text="" Style="{StaticResource ToolbarIconText}"/>
-                            <TextBlock Text="Schermi" Foreground="#93C5FD" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0" />
-                            <StackPanel x:Name="MonitorTogglePanel" Orientation="Horizontal" Margin="16,0,0,0" />
-                            <ToggleButton x:Name="NdiToggle"
-                                          Style="{StaticResource ToolbarToggleStyle}"
-                                          Content="NDI"
-                                          Margin="16,0,0,0"
-                                          Checked="NdiToggle_Checked"
-                                          Unchecked="NdiToggle_Unchecked" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <ToggleButton x:Name="PlayPauseToggle"
-                                          Style="{StaticResource PlayToggleStyle}"
-                                          ToolTip="Avvia/Pausa (Spazio)"
-                                          Checked="PlayPauseToggle_Checked"
-                                          Unchecked="PlayPauseToggle_Unchecked">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Path Width="20" Height="20" Stretch="Uniform" Margin="0,0,14,0">
-                                        <Path.Style>
-                                            <Style TargetType="Path">
-                                                <Setter Property="Fill" Value="#F8FAFC" />
-                                                <Setter Property="Data" Value="M2,2 L2,18 L16,10 Z" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                                        <Setter Property="Data" Value="M2,2 L2,18 L8,18 L8,2 Z M12,2 L12,18 L18,18 L18,2 Z" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Path.Style>
-                                    </Path>
-                                    <StackPanel Orientation="Vertical">
-                                        <TextBlock FontSize="14" Foreground="#94A3B8" Text="Teleprompter" />
-                                        <TextBlock FontSize="22" FontWeight="Bold">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="Avvia" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                                            <Setter Property="Text" Value="Pausa" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </StackPanel>
-                                </StackPanel>
-                            </ToggleButton>
-                            <Button x:Name="GoToStartButton"
-                                    Style="{StaticResource ToolbarButtonStyle}"
-                                    Margin="12,0,0,0"
-                                    Click="GoToStartButton_Click"
-                                    ToolTip="Torna all'inizio (Home)">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="&#xE72B;" Style="{StaticResource ToolbarIconText}" />
-                                    <TextBlock Text="Inizio" Style="{StaticResource ToolbarLabelText}" />
-                                </StackPanel>
-                            </Button>
-                            <Button x:Name="GoToEndButton"
-                                    Style="{StaticResource ToolbarButtonStyle}"
-                                    Margin="4,0,0,0"
-                                    Click="GoToEndButton_Click"
-                                    ToolTip="Vai alla fine (End)">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="&#xE72A;" Style="{StaticResource ToolbarIconText}" />
-                                    <TextBlock Text="Fine" Style="{StaticResource ToolbarLabelText}" />
-                                </StackPanel>
-                            </Button>
-                            <ToggleButton x:Name="EditModeToggle"
-                                          Margin="18,0,0,0"
-                                          Style="{StaticResource EditToggleStyle}"
-                                          Content="Modalità modifica"
-                                          IsChecked="True"
-                                          Checked="EditModeToggle_Checked"
-                                          Unchecked="EditModeToggle_Unchecked" />
-                        </StackPanel>
-                        <Border Grid.Column="2" Background="#132037" CornerRadius="12" Padding="10,6" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="" FontFamily="Segoe MDL2 Assets" Foreground="#34D399" Margin="0,0,8,0" />
-                                <StackPanel>
-                                    <TextBlock Text="Stato" Foreground="#6EE7B7" FontWeight="SemiBold" />
-                                    <TextBlock Text="Premi per avviare/fermare" Foreground="#E5E7EB" TextWrapping="Wrap" MaxWidth="200" FontSize="12" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
-            </StackPanel>
+                <!-- Freccia -->
+                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="1" Background="#1E2A44" Margin="4,3" />
+                    <Button x:Name="ArrowColorButton" Style="{StaticResource TbBtn}" Click="ArrowColorButton_Click" ToolTip="Colore freccia">
+                        <TextBlock Text="&#xECA7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#EAB308" />
+                    </Button>
+                    <Slider x:Name="ArrowSizeSlider" Minimum="0.5" Maximum="2.0" Value="1.0" Width="50" SmallChange="0.1" LargeChange="0.2" IsSnapToTickEnabled="False" VerticalAlignment="Center" ValueChanged="ArrowSizeSlider_ValueChanged" ToolTip="Dimensione freccia" />
+                    <Slider x:Name="LeftMarginSlider" Minimum="0" Maximum="640" Value="12" Width="50" SmallChange="4" LargeChange="12" IsSnapToTickEnabled="False" VerticalAlignment="Center" ValueChanged="LeftMarginSlider_ValueChanged" IsEnabled="{Binding IsChecked, ElementName=EditModeToggle}" ToolTip="Margine freccia-testo" />
+                    <TextBlock x:Name="LeftMarginValueText" Text="" Foreground="#CBD5F5" FontSize="10" VerticalAlignment="Center" Width="0" />
+                    <Slider x:Name="MarginTopSlider" Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20" Width="0" Visibility="Collapsed" ValueChanged="MarginTopSlider_ValueChanged" />
+                    <Slider x:Name="MarginRightSlider" Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20" Width="0" Visibility="Collapsed" ValueChanged="MarginRightSlider_ValueChanged" />
+                    <Slider x:Name="MarginBottomSlider" Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20" Width="0" Visibility="Collapsed" ValueChanged="MarginBottomSlider_ValueChanged" />
+                    <TextBlock x:Name="MarginTopText" Width="0" Visibility="Collapsed" />
+                    <TextBlock x:Name="MarginRightText" Width="0" Visibility="Collapsed" />
+                    <TextBlock x:Name="MarginBottomText" Width="0" Visibility="Collapsed" />
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <Border Grid.Row="1" x:Name="ContentOuterBorder"
-                Margin="24,0"
-                Padding="12"
-                CornerRadius="28"
-                Background="#0D1729">
+        <!-- ═══ ROW 1: AREA TELEPROMPT ═══ -->
+        <Border Grid.Row="1" x:Name="ContentOuterBorder" Margin="6,2,6,2" Padding="4" CornerRadius="12" Background="#0D1729">
             <Grid>
-                <Border x:Name="ContentInnerBorder" CornerRadius="24" Background="#111F36" Padding="8" BorderBrush="#1E2A44" BorderThickness="1">
+                <Border x:Name="ContentInnerBorder" CornerRadius="10" Background="#111F36" Padding="4" BorderBrush="#1E2A44" BorderThickness="1">
                     <Grid>
-                        <ScrollViewer x:Name="ContentScrollViewer"
-                                      VerticalScrollBarVisibility="Hidden"
-                                      HorizontalScrollBarVisibility="Hidden"
-                                      Background="Transparent"
-                                      PanningMode="VerticalOnly">
+                        <ScrollViewer x:Name="ContentScrollViewer" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden" Background="Transparent" PanningMode="VerticalOnly">
                             <RichTextBox x:Name="ContentEditor"
                                          AcceptsReturn="True"
                                          VerticalScrollBarVisibility="Hidden"
@@ -584,26 +316,20 @@
                                          Foreground="White"
                                          FontFamily="Segoe UI"
                                          FontSize="72"
-                                         SpellCheck.IsEnabled="True"
+                                         SpellCheck.IsEnabled="False"
                                          CaretBrush="#60A5FA"
                                          SelectionBrush="#3B82F6"
                                          SelectionOpacity="0.25"
-                                         RenderOptions.ClearTypeHint="Enabled">
+                                         RenderOptions.ClearTypeHint="Enabled"
+                                         TextOptions.TextFormattingMode="Display">
                                 <RichTextBox.CacheMode>
                                     <BitmapCache RenderAtScale="1" EnableClearType="True" />
                                 </RichTextBox.CacheMode>
                                 <FlowDocument PagePadding="40" LineHeight="86" TextAlignment="Center" />
                             </RichTextBox>
                         </ScrollViewer>
-                        <Canvas x:Name="ArrowCanvas"
-                                Background="{x:Null}"
-                                SizeChanged="ArrowCanvas_SizeChanged">
-                            <Grid x:Name="ArrowContainer"
-                                  Width="72"
-                                  Height="72"
-                                  Canvas.Left="36"
-                                  Canvas.Top="200"
-                                  Cursor="Hand"
+                        <Canvas x:Name="ArrowCanvas" Background="{x:Null}" SizeChanged="ArrowCanvas_SizeChanged">
+                            <Grid x:Name="ArrowContainer" Width="72" Height="72" Canvas.Left="36" Canvas.Top="200" Cursor="Hand"
                                   MouseLeftButtonDown="ArrowContainer_MouseLeftButtonDown"
                                   MouseMove="ArrowContainer_MouseMove"
                                   MouseLeftButtonUp="ArrowContainer_MouseLeftButtonUp">
@@ -612,10 +338,7 @@
                                 </Grid.RenderTransform>
                                 <Polygon x:Name="ArrowShape"
                                          Points="0,20 34,20 34,6 72,36 34,66 34,52 0,52"
-                                         Fill="#FFEAB308"
-                                         Stroke="#FFFFF08A"
-                                         StrokeThickness="3"
-                                         StrokeLineJoin="Round">
+                                         Fill="#FFEAB308" Stroke="#FFFFF08A" StrokeThickness="3" StrokeLineJoin="Round">
                                     <Polygon.Effect>
                                         <DropShadowEffect Color="#99000000" BlurRadius="12" ShadowDepth="0" Opacity="0.6" />
                                     </Polygon.Effect>
@@ -627,26 +350,22 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="2"
-                Margin="24,12,24,24"
-                Background="#0B1223"
-                CornerRadius="16"
-                Padding="18,14">
+        <!-- ═══ ROW 2: STATUSBAR ═══ -->
+        <Border Grid.Row="2" Margin="6,0,6,4" Background="#0B1223" CornerRadius="8" Padding="10,5">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="StatusText" Foreground="#9CA3AF" FontSize="14" VerticalAlignment="Center" Text="Pronto" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
-                    <TextBlock x:Name="ScrollProgressText" Foreground="#60A5FA" FontSize="13" Text="0%" Margin="0,0,8,0" />
-                    <Border Background="#1E293B" CornerRadius="4" Width="120" Height="8">
-                        <Border x:Name="ScrollProgressBar" Background="#3B82F6" CornerRadius="4"
-                                HorizontalAlignment="Left" Width="0" Height="8" />
+                <TextBlock x:Name="StatusText" Foreground="#9CA3AF" FontSize="12" VerticalAlignment="Center" Text="Pronto" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0">
+                    <TextBlock x:Name="ScrollProgressText" Foreground="#60A5FA" FontSize="12" Text="0%" Margin="0,0,6,0" />
+                    <Border Background="#1E293B" CornerRadius="3" Width="80" Height="6">
+                        <Border x:Name="ScrollProgressBar" Background="#3B82F6" CornerRadius="3" HorizontalAlignment="Left" Width="0" Height="6" />
                     </Border>
                 </StackPanel>
-                <TextBlock Grid.Column="2" Foreground="#4ADE80" FontWeight="SemiBold" VerticalAlignment="Center" Text="Ctrl+S Salva" FontSize="12" />
+                <TextBlock Grid.Column="2" Foreground="#4ADE80" FontWeight="SemiBold" VerticalAlignment="Center" Text="Ctrl+S" FontSize="11" />
             </Grid>
         </Border>
     </Grid>
