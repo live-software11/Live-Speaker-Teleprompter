@@ -1,0 +1,64 @@
+---
+description: Regole per gestione preferenze utente e persistenza stato
+globs: "**/UserPreferences.cs,**/PreferencesService.cs,**/DebouncedPreferencesService.cs"
+alwaysApply: false
+---
+
+# Preferenze e Persistenza
+
+## Modello dati (UserPreferences.cs)
+- Ogni nuova impostazione UI che deve persistere tra sessioni va aggiunta come proprieta pubblica.
+- Usare valori default sensati (es. `FontSizePoints = 72`, `ArrowScale = 1.0`).
+- I colori sono salvati come stringhe hex WPF (es. `"#FF3B82F6"` con canale alpha).
+- Le posizioni normalizzate (0-1) per elementi proporzionali (freccia Y).
+
+## Flusso salvataggio
+```
+UI Event → SavePreferences()
+              │
+              ├── CapturePreferences()  ← legge stato corrente dalla UI
+              │
+              └── DebouncedPreferencesService.SaveDebounced()
+                      │
+                      └── [500ms debounce] → PreferencesService.Save()
+                                                    │
+                                                    └── JSON → AppPaths.PreferencesPath
+                                                         (portable: accanto exe | installato: %APPDATA%)
+```
+
+## Regole critiche
+
+### Aggiungere una nuova preferenza (checklist)
+1. Aggiungere proprieta in `UserPreferences.cs` con valore default
+2. In `ApplyPreferences()`: leggere e applicare alla UI
+3. In `CapturePreferences()`: leggere dalla UI e scrivere nella preferenza
+4. Se ha uno slider/control: aggiungere guard boolean `_isUpdating[Nome]`
+
+### Guard anti-ricorsione
+Ogni slider/toggle che chiama `SavePreferences()` nel suo ValueChanged DEVE avere una guard:
+```csharp
+private bool _isUpdatingMySlider;
+
+private void MySlider_ValueChanged(...)
+{
+    if (_isUpdatingMySlider) return;  // guard
+    // ... logica ...
+    SavePreferences();
+}
+
+// Quando si imposta programmaticamente:
+_isUpdatingMySlider = true;
+_mySlider.Value = savedValue;
+_isUpdatingMySlider = false;
+```
+
+### Shutdown
+In `Window_Closing`:
+1. Chiamare `CapturePreferences()` con stato UI fresco
+2. Disporre `_debouncedPrefs` (cancella timer pending)
+3. Chiamare `PreferencesService.Save(_preferences)` direttamente (non debounced)
+
+### Validazione al load
+- Clamp TUTTI i valori numerici ai range validi in `ApplyPreferences()`.
+- Se un valore e 0 o negativo quando non dovrebbe, usare il default.
+- Se `LastScriptPath` punta a un file inesistente, ignorare silenziosamente.

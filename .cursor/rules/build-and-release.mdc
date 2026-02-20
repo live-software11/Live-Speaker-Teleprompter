@@ -1,0 +1,26 @@
+---
+description: Build, clean e release R-Speaker Teleprompter
+globs: "**/build-installer.ps1,**/clean-and-build*"
+alwaysApply: false
+---
+
+# Build e Release
+
+## Script principale (root)
+- **clean-and-build.ps1** / **clean-and-build.bat** — pulisce bin/obj/portable e crea build completa
+- Lanciare dalla root: `.\clean-and-build.ps1` o doppio clic su `clean-and-build.bat`
+
+## Pipeline (installer/build-installer.ps1)
+1. dotnet publish -c Release (self-contained, single-file, ReadyToRun)
+2. Portable EXE: `R-Speaker-Teleprompter-Portable.exe` (solo exe)
+3. Portable ZIP: contiene solo l'exe
+4. Installer EXE: self-extracting, estrae `R-Speaker Teleprompter.exe`
+
+## Output (portable/)
+- `R-Speaker-Teleprompter-Portable.exe` — eseguibile standalone, nessuna dipendenza
+- `R-Speaker-Teleprompter-Portable.zip` — ZIP con solo l'exe
+- `R-Speaker-Teleprompter-Installer.exe` — installer con collegamenti Start/Desktop
+
+## Pulizia
+- bin/, obj/, publish/ — ignorati da git
+- portable/*.exe, *.zip, *.msi — ignorati da git (artefatti build)

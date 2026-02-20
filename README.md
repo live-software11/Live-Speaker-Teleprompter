@@ -56,9 +56,10 @@ Integrazione completa con **Bitfocus Companion**, **NDI** e **OSC** per il contr
 - Risoluzione e framerate configurabili via OSC (Full HD, HD, 4K, 25–60 fps).
 
 ### Portable
-- **Eseguibile singolo self-contained** (~67 MB compressi). Nessun runtime .NET richiesto.
-- **Preferenze in `%APPDATA%`** — la cartella dell'app resta pulita, perfetta per chiavetta USB.
-- **Installer e ZIP** generati dallo stesso build script.
+- **Eseguibile singolo self-contained** (~67 MB). Nessun runtime .NET richiesto.
+- **Solo exe** — nessun file da estrarre, nessuna installazione. Lancia e usa.
+- **Preferenze e log** accanto all'exe quando esegui da USB/desktop (nessuna traccia sul PC host).
+- **Installer** per chi preferisce collegamenti Start/Desktop.
 - **ReadyToRun** pre-compilato per startup ~40% più rapido.
 
 ---
@@ -80,9 +81,9 @@ Integrazione completa con **Bitfocus Companion**, **NDI** e **OSC** per il contr
 
 ### Versione portable (consigliata)
 
-1. Scarica `R-Speaker-Teleprompter-Portable.zip` dalla cartella `portable/`.
-2. Estrai in una cartella qualsiasi (desktop, chiavetta USB, rete).
-3. Esegui `R-Speaker Teleprompter.exe`.
+1. Scarica `R-Speaker-Teleprompter-Portable.exe` dalla cartella `portable/` (oppure lo ZIP).
+2. Esegui l'exe — nessuna estrazione, nessuna installazione, nessuna dipendenza.
+3. Preferenze e log restano accanto all'exe (chiavetta USB = nessuna traccia sul PC host).
 
 ### Versione installer
 
@@ -427,9 +428,9 @@ installer/                           ← Script di build e packaging
   installer-template.ps1               — Template installer self-extracting
 
 portable/                            ← Output del build
-  R-Speaker Teleprompter.exe           — Eseguibile portable
-  R-Speaker-Teleprompter-Portable.zip  — ZIP portable
-  R-Speaker-Teleprompter-Installer.exe — Installer
+  R-Speaker-Teleprompter-Portable.exe  — Eseguibile portable (solo exe, nessun altro file)
+  R-Speaker-Teleprompter-Portable.zip  — ZIP con solo l'exe
+  R-Speaker-Teleprompter-Installer.exe — Installer self-extracting
 
 icons/                               — Icone dell'applicazione
 docs/                                — Documentazione aggiuntiva

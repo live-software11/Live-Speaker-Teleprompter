@@ -4,11 +4,11 @@
 #      - ReadyToRun pre-compiled for ~40% faster cold startup
 #      - Compression enabled for smaller file size
 #      - .NET 8 runtime embedded: works on ANY Windows 10/11 x64 machine
-#   2. Portable ZIP  (portable/R-Speaker-Teleprompter-Portable.zip)
-#   3. Self-extracting installer EXE (portable/R-Speaker-Teleprompter-Installer.exe)
+#   2. Portable EXE (portable/R-Speaker-Teleprompter-Portable.exe) — solo exe, nessun altro file
+#   3. Portable ZIP (portable/R-Speaker-Teleprompter-Portable.zip) — contiene solo l'exe
+#   4. Self-extracting installer EXE (portable/R-Speaker-Teleprompter-Installer.exe)
 #
-# Both ZIP and Installer contain the EXACT same files, so the portable
-# version is 100% identical to the installed version.
+# Portable e Installer contengono lo stesso eseguibile. Nessuna dipendenza, nessuna estrazione richiesta.
 #
 # Usage:
 #   .\build-installer.ps1                  # full build
@@ -39,7 +39,7 @@ Write-Host ""
 
 # -- Step 1: Publish -----------------------------------------------------
 if (-not $SkipPublish) {
-    Write-Host "[1/4] Publishing self-contained single-file executable..." -ForegroundColor Yellow
+    Write-Host "[1/5] Publishing self-contained single-file executable..." -ForegroundColor Yellow
     Write-Host "  (ReadyToRun + Compression enabled)" -ForegroundColor DarkGray
 
     # Clean previous publish output
@@ -57,7 +57,7 @@ if (-not $SkipPublish) {
         exit 1
     }
 } else {
-    Write-Host "[1/4] Skipping publish (reusing existing output)..." -ForegroundColor DarkGray
+    Write-Host "[1/5] Skipping publish (reusing existing output)..." -ForegroundColor DarkGray
 }
 
 # Validate publish output
@@ -90,24 +90,32 @@ $totalSize = ($publishFiles | Measure-Object -Property Length -Sum).Sum
 Write-Host "  Published: $($publishFiles.Count) files, $([math]::Round($totalSize/1MB, 1)) MB" -ForegroundColor Green
 
 # -- Step 2: Ensure output directory -------------------------------------
-Write-Host "[2/4] Preparing output directory..." -ForegroundColor Yellow
+Write-Host "[2/5] Preparing output directory..." -ForegroundColor Yellow
 if (-not (Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }
 
 # Remove old outputs
-Remove-Item $zipTarget  -Force -ErrorAction SilentlyContinue
-Remove-Item $exeTarget  -Force -ErrorAction SilentlyContinue
+$portableExeTarget = Join-Path $OutputDir "R-Speaker-Teleprompter-Portable.exe"
+Remove-Item $zipTarget       -Force -ErrorAction SilentlyContinue
+Remove-Item $exeTarget      -Force -ErrorAction SilentlyContinue
+Remove-Item $portableExeTarget -Force -ErrorAction SilentlyContinue
 
-# -- Step 3: Create portable ZIP -----------------------------------------
-Write-Host "[3/4] Creating portable ZIP..." -ForegroundColor Yellow
-Compress-Archive -Path "$publishDir\*" -DestinationPath $zipTarget -CompressionLevel Optimal
+# -- Step 3: Portable — solo EXE (nessun pdb, nessun altro file) ---------
+Write-Host "[3/5] Creating portable EXE (single file only)..." -ForegroundColor Yellow
+Copy-Item $friendlyExe $portableExeTarget -Force
+$portableInfo = Get-Item $portableExeTarget
+Write-Host "  Portable EXE: R-Speaker-Teleprompter-Portable.exe ($([math]::Round($portableInfo.Length/1MB, 1)) MB)" -ForegroundColor Green
+
+# -- Step 4: Portable ZIP (solo exe dentro) -------------------------------
+Write-Host "[4/5] Creating portable ZIP (exe only)..." -ForegroundColor Yellow
+Compress-Archive -Path $portableExeTarget -DestinationPath $zipTarget -CompressionLevel Optimal -Force
 
 $zipInfo = Get-Item $zipTarget
 Write-Host "  ZIP: $ZipName ($([math]::Round($zipInfo.Length/1MB, 1)) MB)" -ForegroundColor Green
 
-# -- Step 4: Create self-extracting installer -----------------------------
-Write-Host "[4/4] Creating self-extracting installer..." -ForegroundColor Yellow
+# -- Step 5: Create self-extracting installer -----------------------------
+Write-Host "[5/5] Creating self-extracting installer..." -ForegroundColor Yellow
 
 if (-not (Test-Path $templatePath)) {
     Write-Warning "Installer template not found at $templatePath -- skipping installer."
@@ -116,8 +124,12 @@ if (-not (Test-Path $templatePath)) {
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
     try {
-        # Read the installer template and embed the portable ZIP as base64 payload
-        $zipBytes  = [System.IO.File]::ReadAllBytes($zipTarget)
+        # Installer ZIP: stesso exe ma con nome "R-Speaker Teleprompter.exe" per installazione pulita
+        $installerZipPath = Join-Path $tempDir "installer-payload.zip"
+        Compress-Archive -Path $friendlyExe -DestinationPath $installerZipPath -CompressionLevel Optimal -Force
+
+        # Read the installer template and embed the ZIP as base64 payload
+        $zipBytes  = [System.IO.File]::ReadAllBytes($installerZipPath)
         $zipBase64 = [System.Convert]::ToBase64String($zipBytes)
 
         # Write the final installer script with injected payload
@@ -198,6 +210,9 @@ Write-Host "  Build complete!" -ForegroundColor Green
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Outputs in: $OutputDir" -ForegroundColor Cyan
+if (Test-Path $portableExeTarget) {
+    Write-Host "  [OK] Portable EXE:  R-Speaker-Teleprompter-Portable.exe" -ForegroundColor White
+}
 if (Test-Path $zipTarget) {
     Write-Host "  [OK] Portable ZIP:  $ZipName" -ForegroundColor White
 }
@@ -205,6 +220,6 @@ if (Test-Path $exeTarget) {
     Write-Host "  [OK] Installer EXE: $InstallerName" -ForegroundColor White
 }
 Write-Host ""
-Write-Host "  Both versions contain the exact same self-contained application." -ForegroundColor DarkGray
-Write-Host "  No .NET runtime required on the target machine." -ForegroundColor DarkGray
+Write-Host "  Portable: solo exe, nessuna dipendenza, nessun file da estrarre." -ForegroundColor DarkGray
+Write-Host "  Installer: stesso eseguibile, installazione opzionale." -ForegroundColor DarkGray
 Write-Host ""

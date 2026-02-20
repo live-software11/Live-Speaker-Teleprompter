@@ -9,15 +9,11 @@ namespace TeleprompterApp;
 
 public partial class App : System.Windows.Application
 {
-	// Log to %APPDATA% so the portable exe folder stays clean
-	private static readonly string LogDirectory = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-		"R-Speaker Teleprompter", "logs");
 	private readonly string _logFilePath;
 
 	public App()
 	{
-		_logFilePath = Path.Combine(LogDirectory, $"error-{DateTime.Now:yyyyMMdd-HHmmss}.log");
+		_logFilePath = Path.Combine(AppPaths.LogDirectory, $"error-{DateTime.Now:yyyyMMdd-HHmmss}.log");
 		DispatcherUnhandledException += OnDispatcherUnhandledException;
 		AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 		TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
@@ -54,7 +50,7 @@ public partial class App : System.Windows.Application
 	{
 		try
 		{
-			Directory.CreateDirectory(LogDirectory);
+			Directory.CreateDirectory(AppPaths.LogDirectory);
 			using var writer = new StreamWriter(_logFilePath, append: true);
 			writer.WriteLine($"[{DateTime.Now:O}] Source: {source}");
 			writer.WriteLine(exception);
@@ -79,9 +75,9 @@ public partial class App : System.Windows.Application
 	{
 		try
 		{
-			if (!Directory.Exists(LogDirectory)) return;
+			if (!Directory.Exists(AppPaths.LogDirectory)) return;
 
-			var logFiles = new DirectoryInfo(LogDirectory)
+			var logFiles = new DirectoryInfo(AppPaths.LogDirectory)
 				.GetFiles("error-*.log")
 				.OrderByDescending(f => f.CreationTimeUtc)
 				.Skip(10);

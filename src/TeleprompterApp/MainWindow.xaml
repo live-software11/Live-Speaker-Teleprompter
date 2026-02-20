@@ -353,8 +353,8 @@
                 <Slider x:Name="SpeedSlider"
                     Minimum="-20"
                     Maximum="20"
-                    SmallChange="0.25"
-                    LargeChange="1"
+                    SmallChange="0.5"
+                    LargeChange="2"
                     TickFrequency="1"
                     IsSnapToTickEnabled="False"
                     Margin="0,6,0,10"
@@ -391,6 +391,11 @@
                                     Margin="0,10,0,0"
                                     Content="Colore freccia"
                                     Click="ArrowColorButton_Click" />
+                            <TextBlock Text="Trascina la freccia nel riquadro di anteprima per riposizionarla."
+                                       Foreground="#64748B"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Margin="0,4,0,0" />
                             <StackPanel Orientation="Vertical" Margin="0,16,0,0">
                                 <TextBlock Text="Margine sinistro" Foreground="#CBD5F5" FontWeight="SemiBold" />
                                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
@@ -415,6 +420,39 @@
                                            Foreground="#64748B"
                                            FontSize="12"
                                            Margin="0,8,0,0" />
+                            </StackPanel>
+                            <StackPanel Orientation="Vertical" Margin="0,12,0,0">
+                                <TextBlock Text="Margini esterni" Foreground="#93C5FD" FontWeight="SemiBold" />
+                                <Grid Margin="0,6,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Alto" Foreground="#CBD5F5" VerticalAlignment="Center" Margin="0,0,8,4" />
+                                    <Slider x:Name="MarginTopSlider" Grid.Row="0" Grid.Column="1"
+                                            Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20"
+                                            ValueChanged="MarginTopSlider_ValueChanged" Margin="0,0,0,4" />
+                                    <TextBlock x:Name="MarginTopText" Grid.Row="0" Grid.Column="2" Text="40 px"
+                                               Foreground="#CBD5F5" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,4" Width="50" />
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Destro" Foreground="#CBD5F5" VerticalAlignment="Center" Margin="0,0,8,4" />
+                                    <Slider x:Name="MarginRightSlider" Grid.Row="1" Grid.Column="1"
+                                            Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20"
+                                            ValueChanged="MarginRightSlider_ValueChanged" Margin="0,0,0,4" />
+                                    <TextBlock x:Name="MarginRightText" Grid.Row="1" Grid.Column="2" Text="40 px"
+                                               Foreground="#CBD5F5" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,4" Width="50" />
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Basso" Foreground="#CBD5F5" VerticalAlignment="Center" Margin="0,0,8,4" />
+                                    <Slider x:Name="MarginBottomSlider" Grid.Row="2" Grid.Column="1"
+                                            Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20"
+                                            ValueChanged="MarginBottomSlider_ValueChanged" Margin="0,0,0,4" />
+                                    <TextBlock x:Name="MarginBottomText" Grid.Row="2" Grid.Column="2" Text="40 px"
+                                               Foreground="#CBD5F5" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,4" Width="50" />
+                                </Grid>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -448,6 +486,7 @@
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <ToggleButton x:Name="PlayPauseToggle"
                                           Style="{StaticResource PlayToggleStyle}"
+                                          ToolTip="Avvia/Pausa (Spazio)"
                                           Checked="PlayPauseToggle_Checked"
                                           Unchecked="PlayPauseToggle_Unchecked">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -481,6 +520,26 @@
                                     </StackPanel>
                                 </StackPanel>
                             </ToggleButton>
+                            <Button x:Name="GoToStartButton"
+                                    Style="{StaticResource ToolbarButtonStyle}"
+                                    Margin="12,0,0,0"
+                                    Click="GoToStartButton_Click"
+                                    ToolTip="Torna all'inizio (Home)">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE72B;" Style="{StaticResource ToolbarIconText}" />
+                                    <TextBlock Text="Inizio" Style="{StaticResource ToolbarLabelText}" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="GoToEndButton"
+                                    Style="{StaticResource ToolbarButtonStyle}"
+                                    Margin="4,0,0,0"
+                                    Click="GoToEndButton_Click"
+                                    ToolTip="Vai alla fine (End)">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE72A;" Style="{StaticResource ToolbarIconText}" />
+                                    <TextBlock Text="Fine" Style="{StaticResource ToolbarLabelText}" />
+                                </StackPanel>
+                            </Button>
                             <ToggleButton x:Name="EditModeToggle"
                                           Margin="18,0,0,0"
                                           Style="{StaticResource EditToggleStyle}"
@@ -503,13 +562,13 @@
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="1"
+        <Border Grid.Row="1" x:Name="ContentOuterBorder"
                 Margin="24,0"
-                Padding="28"
+                Padding="12"
                 CornerRadius="28"
                 Background="#0D1729">
             <Grid>
-                <Border CornerRadius="24" Background="#111F36" Padding="16" BorderBrush="#1E2A44" BorderThickness="1">
+                <Border x:Name="ContentInnerBorder" CornerRadius="24" Background="#111F36" Padding="8" BorderBrush="#1E2A44" BorderThickness="1">
                     <Grid>
                         <ScrollViewer x:Name="ContentScrollViewer"
                                       VerticalScrollBarVisibility="Hidden"
@@ -533,7 +592,7 @@
                                 <RichTextBox.CacheMode>
                                     <BitmapCache RenderAtScale="1" EnableClearType="True" />
                                 </RichTextBox.CacheMode>
-                                <FlowDocument PagePadding="96" LineHeight="86" TextAlignment="Center" />
+                                <FlowDocument PagePadding="40" LineHeight="86" TextAlignment="Center" />
                             </RichTextBox>
                         </ScrollViewer>
                         <Canvas x:Name="ArrowCanvas"
@@ -577,9 +636,17 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="StatusText" Foreground="#9CA3AF" FontSize="14" VerticalAlignment="Center" Text="Pronto" />
-                <TextBlock Grid.Column="1" Foreground="#4ADE80" FontWeight="SemiBold" VerticalAlignment="Center" Text="Ctrl + S per salvare il testo" Visibility="Collapsed" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+                    <TextBlock x:Name="ScrollProgressText" Foreground="#60A5FA" FontSize="13" Text="0%" Margin="0,0,8,0" />
+                    <Border Background="#1E293B" CornerRadius="4" Width="120" Height="8">
+                        <Border x:Name="ScrollProgressBar" Background="#3B82F6" CornerRadius="4"
+                                HorizontalAlignment="Left" Width="0" Height="8" />
+                    </Border>
+                </StackPanel>
+                <TextBlock Grid.Column="2" Foreground="#4ADE80" FontWeight="SemiBold" VerticalAlignment="Center" Text="Ctrl+S Salva" FontSize="12" />
             </Grid>
         </Border>
     </Grid>

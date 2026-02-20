@@ -1,0 +1,59 @@
+---
+description: Standard C# per code-behind WPF e servizi del teleprompter
+globs: "**/*.cs"
+alwaysApply: false
+---
+
+# Standard C# - R-Speaker Teleprompter
+
+## Pattern code-behind
+- Il costruttore chiama `LoadView()` → `ResolveNamedElements()` → `AttachRuntimeHandlers()`.
+- MAI accedere a elementi XAML nel costruttore dopo `ResolveNamedElements()`. La logica va in `Window_Loaded`.
+- Usare campi `_isApplyingPreferences`, `_isUpdatingSpeedSlider`, etc. come guard per evitare loop ricorsivi nei ValueChanged.
+
+```csharp
+// CORRETTO: guard contro ricorsione
+private void SpeedSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+{
+    if (_isUpdatingSpeedSlider || !IsLoaded) return;
+    SetSpeed(e.NewValue, fromSlider: true);
+}
+
+// SBAGLIATO: nessuna guard, causa loop infinito
+private void SpeedSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+{
+    SetSpeed(e.NewValue, fromSlider: false); // fromSlider:false aggiorna lo slider → ricorsione
+}
+```
+
+## Gestione errori (stabilita live)
+- OGNI operazione I/O (file, rete, stream) DEVE essere in try/catch.
+- I catch non devono MAI mostrare eccezioni all'utente durante lo scroll/play. Loggare e continuare.
+- `MessageBox` solo per errori di operazioni esplicite dell'utente (apri file, salva).
+- MAI lanciare eccezioni nei timer tick (`OnScrollTimerTick`, `CompositionTarget.Rendering`).
+
+## Sincronizzazione presenter
+- Ogni modifica al documento o layout nella MainWindow che influisce sulla resa visiva DEVE propagarsi al PresenterWindow.
+- Usare `SyncPresenterDocument()` per modifiche immediate (load file, cambio colore).
+- Usare `RequestPresenterSync()` per modifiche continue (typing, debounce 300ms).
+- La posizione scroll usa `SetScrollRatio(ratio)` proporzionale, NON offset assoluto.
+
+## Preferenze
+- Ogni cambio di stato UI persistente chiama `SavePreferences()` (debounced a 500ms).
+- `CapturePreferences()` legge lo stato corrente dalla UI e lo mappa su `UserPreferences`.
+- In `Window_Closing`, chiamare `CapturePreferences()` e poi `PreferencesService.Save()` direttamente (non debounced).
+- Nuove preferenze: aggiungere proprieta in `UserPreferences.cs`, applicarle in `ApplyPreferences()`, catturarle in `CapturePreferences()`.
+
+## Conversioni unita
+```csharp
+// WPF usa device-independent pixels (1/96 inch), non points (1/72 inch)
+private static double ConvertPointsToWpf(double points) => points * 96.0 / 72.0;
+private static double ConvertWpfToPoints(double wpfSize) => wpfSize * 72.0 / 96.0;
+```
+
+## Naming conventions
+- Campi privati: `_camelCase`
+- Costanti: `PascalCase`
+- Metodi handler: `NomeElemento_Evento` (es. `BackgroundButton_Click`)
+- Metodi interni condivisi: `internal` per accesso da CompanionBridge/OscBridge
+- Guard boolean: `_isDoingAction` (es. `_isUpdatingSpeedSlider`)

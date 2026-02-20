@@ -6,8 +6,8 @@ namespace TeleprompterApp;
 
 internal static class PreferencesService
 {
-    private static readonly string AppFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "R-Speaker Teleprompter");
-    private static readonly string PreferencesPath = Path.Combine(AppFolder, "preferences.json");
+    private static string AppFolder => Path.GetDirectoryName(AppPaths.PreferencesPath) ?? AppPaths.BaseDirectory;
+    private static string PreferencesPath => AppPaths.PreferencesPath;
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {

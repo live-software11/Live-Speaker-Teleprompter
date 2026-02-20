@@ -1,0 +1,58 @@
+---
+description: Regole di performance e stabilita per operativita live del teleprompter
+alwaysApply: true
+---
+
+# Performance e Stabilita Live
+
+## Principio fondamentale
+Il software viene usato DURANTE eventi live davanti a un pubblico. Un crash o un freeze e inaccettabile. La stabilita vince SEMPRE sulla feature.
+
+## Scroll engine
+- Il timer di scroll (`DispatcherTimer` 16ms) usa delta-time compensation con `Stopwatch`.
+- MAI chiamare `UpdateLayout()` nel tick di scroll: causa micro-freeze su documenti lunghi.
+- Clamp elapsed time: se >500ms (sistema in sleep), resettare a 16ms per evitare salti.
+- Lo scroll si ferma automaticamente a fine/inizio testo e disattiva il play toggle.
+
+```csharp
+// CORRETTO: solo ScrollToVerticalOffset nel tick
+_contentScrollViewer.ScrollToVerticalOffset(clampedTarget);
+
+// SBAGLIATO: UpdateLayout forzato ogni 16ms
+_contentScrollViewer.ScrollToVerticalOffset(clampedTarget);
+_contentScrollViewer.UpdateLayout(); // costa 2-5ms per frame, causa jank
+```
+
+## Document clone (PresenterSync)
+- Il clone via `XamlPackage` serialization e ~30ms per documenti normali.
+- Il debounce a 300ms per il typing evita clone multipli durante la digitazione veloce.
+- Il clone via `XamlWriter.Save` e il fallback: ~300ms, usare SOLO se XamlPackage fallisce.
+- MAI clonare nel rendering tick o nel scroll tick.
+
+## BitmapCache e GPU
+- `BitmapCache` con `EnableClearType="True"` su tutti i RichTextBox.
+- `RenderAtScale="1"` per display standard, considerare `"2"` per HiDPI.
+- `RenderOptions.BitmapScalingMode="LowQuality"` sulla PresenterWindow per ridurre carico GPU.
+
+## Preferenze e I/O disco
+- Salvataggi debounced a 500ms per evitare micro-freeze durante drag slider.
+- Scrittura atomica: scrivere su file temporaneo e poi rinominare (evita corruzione).
+- MAI salvare preferenze nel scroll tick o nel rendering callback.
+
+## Memoria e risorse
+- `Freeze()` tutti i Brush creati dinamicamente (SolidColorBrush) per evitare leak.
+- `Dispose()` tutti i servizi in `Window_Closing`: DisplayManager, PresenterSync, CompanionBridge, NDI, OSC.
+- I listener `onSnapshot`/event handler devono avere unsubscribe esplicito.
+
+## NDI streaming
+- Il capture usa `CompositionTarget.Rendering` allineato al vsync.
+- Buffer e bitmap cached per evitare allocazioni per-frame.
+- Se NDI SDK non disponibile, disabilitare il toggle e informare l'utente (mai crash).
+
+## Checklist pre-release
+1. Testare con documento vuoto, 1 riga, 100+ righe
+2. Testare hot-plug monitor (connetti/disconnetti durante scroll)
+3. Testare velocita negative (scroll inverso)
+4. Testare con DPI diversi (100%, 125%, 150%, 200%)
+5. Testare mirror mode con freccia e margini
+6. Verificare che il play si fermi correttamente a fine testo

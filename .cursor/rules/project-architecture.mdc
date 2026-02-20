@@ -1,0 +1,53 @@
+---
+description: Architettura progetto R-Speaker Teleprompter - contesto globale obbligatorio
+alwaysApply: true
+---
+
+# R-Speaker Teleprompter - Architettura
+
+## Stack tecnologico
+- **.NET 8.0 WPF** (Windows Presentation Foundation), C# 12+
+- Target: Windows 10/11 x64, self-contained single-file executable
+- UI: XAML con code-behind (no MVVM framework esterno)
+- Integrazioni: NDI (P/Invoke), OSC (UDP), HTTP REST (CompanionBridge)
+
+## Struttura file principali
+```
+clean-and-build.ps1 / .bat  → Pulizia + build completo (root)
+installer/
+  build-installer.ps1       → Pipeline publish + portable + installer
+  installer-template.ps1    → Template installer self-extracting
+portable/                  → Output build (gitignored)
+src/TeleprompterApp/
+  MainWindow.xaml/.cs       → Editor + Preview (finestra principale)
+  PresenterWindow.xaml/.cs  → Output su monitor esterno (full-screen)
+  Services/
+    DisplayManager.cs       → Rilevamento schermi (Win32 + polling)
+    PresenterSyncService.cs → Sync documento (debounce 300ms, XamlPackage clone)
+    DebouncedPreferencesService.cs → Salvataggio preferenze (debounce 500ms)
+  CompanionBridge.cs        → HTTP API porta 3131
+  OscBridge.cs              → OSC UDP porte 8000/8001
+  NDITransmitter.cs         → Streaming NDI via CompositionTarget.Rendering
+  UserPreferences.cs        → Modello preferenze
+  PreferencesService.cs    → I/O file preferenze (usa AppPaths)
+  AppPaths.cs               → Base dir: portable = accanto exe, installato = %APPDATA%
+```
+
+## Principi architetturali
+1. **MainWindow = unica fonte di verita** per il documento e lo stato
+2. **PresenterWindow = clone read-only** sincronizzato via XamlPackage serialization
+3. **Stabilita live e priorita n.1**: mai crashare durante un evento, try/catch su ogni operazione I/O e di rete
+4. **Nessun MVVM framework**: la logica e nel code-behind con servizi separati
+5. **Preferenze debounced**: ogni cambio UI chiama `SavePreferences()` che passa per il debounce a 500ms
+
+## Finestre e loro ruolo
+- **MainWindow**: toolbar (riga 0), area editor/preview (riga 1), statusbar (riga 2). Il `RichTextBox` con `FlowDocument` e sia editor che anteprima.
+- **PresenterWindow**: full-screen WindowStyle=None su monitor esterno. Riceve il documento clonato e lo scroll offset dalla MainWindow. Supporta mirror mode.
+
+## Comunicazione tra finestre
+- `SyncPresenterDocument()` → clone immediato
+- `RequestPresenterSync()` → clone debounced (300ms) per il typing
+- `SetVerticalOffset()` → sync posizione scroll
+- `SetArrowNormalizedY()` → sync posizione freccia (0-1)
+- `SetMirror()` → stato specchio
+- `SetBackgroundColor()` / `SetArrowColor()` → aspetto visivo

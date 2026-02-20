@@ -15,6 +15,7 @@ namespace TeleprompterApp
     {
         private const double ArrowLeftOffset = 12;
         private bool _isMirrored;
+        private Border? _innerBorder;
         private ScrollViewer? _scrollViewer;
         private WpfRichTextBox? _content;
         private Canvas? _arrowCanvas;
@@ -104,11 +105,51 @@ namespace TeleprompterApp
         {
             if (_scrollViewer == null) return;
 
-            // Avoid redundant scroll commands that trigger unnecessary layout passes
             var current = _scrollViewer.VerticalOffset;
             if (Math.Abs(current - offset) < 0.1) return;
 
             _scrollViewer.ScrollToVerticalOffset(offset);
+        }
+
+        public void SetScrollRatio(double ratio)
+        {
+            if (_scrollViewer == null) return;
+
+            _scrollViewer.UpdateLayout();
+            var maxScroll = _scrollViewer.ScrollableHeight;
+            if (double.IsNaN(maxScroll) || maxScroll <= 0)
+            {
+                _scrollViewer.ScrollToVerticalOffset(0);
+                return;
+            }
+
+            var targetOffset = maxScroll * Math.Clamp(ratio, 0, 1);
+
+            var current = _scrollViewer.VerticalOffset;
+            if (Math.Abs(current - targetOffset) < 0.5) return;
+
+            _scrollViewer.ScrollToVerticalOffset(targetOffset);
+        }
+
+        public void SetBackgroundColor(MediaColor color)
+        {
+            var brush = new SolidColorBrush(color);
+            brush.Freeze();
+
+            if (_innerBorder != null)
+            {
+                _innerBorder.Background = brush;
+            }
+
+            if (Content is Grid rootGrid && rootGrid.Children.Count > 0 && rootGrid.Children[0] is Border outerBorder)
+            {
+                outerBorder.Background = brush;
+            }
+
+            if (_content?.Document != null)
+            {
+                _content.Document.Background = brush;
+            }
         }
 
         private double _arrowNormalizedY = 0.5;
@@ -133,8 +174,13 @@ namespace TeleprompterApp
         {
                 if (_arrowShape != null)
                 {
-                    _arrowShape.Fill = new SolidColorBrush(fill);
-                    _arrowShape.Stroke = new SolidColorBrush(stroke);
+                    var fillBrush = new SolidColorBrush(fill);
+                    fillBrush.Freeze();
+                    _arrowShape.Fill = fillBrush;
+
+                    var strokeBrush = new SolidColorBrush(stroke);
+                    strokeBrush.Freeze();
+                    _arrowShape.Stroke = strokeBrush;
                 }
         }
 
@@ -261,6 +307,7 @@ namespace TeleprompterApp
             _arrowContainer = FindElement<Grid>("PresenterArrowContainer");
             _arrowScaleTransform = FindElement<ScaleTransform>("PresenterArrowScaleTransform");
             _arrowShape = FindElement<Polygon>("PresenterArrowShape");
+            _innerBorder = FindElement<Border>("PresenterInnerBorder");
 
             if (_arrowCanvas != null)
             {

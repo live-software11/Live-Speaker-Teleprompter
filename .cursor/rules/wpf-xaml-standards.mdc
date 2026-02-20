@@ -1,0 +1,41 @@
+---
+description: Standard XAML per layout e UI WPF del teleprompter
+globs: "**/*.xaml"
+alwaysApply: false
+---
+
+# Standard XAML - R-Speaker Teleprompter
+
+## Layout e padding
+- Il `FlowDocument` usa `PagePadding` dinamico calcolato da `ComputeMainDocumentPadding()`. NON impostare valori fissi superiori a 40px nel XAML.
+- I Border container attorno al RichTextBox devono avere padding minimo (max 12px) per non ridurre l'area testo.
+- Il padding totale (border + document) non deve MAI superare il 40% della larghezza viewport.
+
+```xml
+<!-- CORRETTO: padding contenuto -->
+<FlowDocument PagePadding="40" LineHeight="86" TextAlignment="Center" />
+
+<!-- SBAGLIATO: padding eccessivo che causa testo verticale -->
+<FlowDocument PagePadding="96" LineHeight="86" TextAlignment="Center" />
+```
+
+## Coerenza MainWindow ↔ PresenterWindow
+- Se il layout del contenuto cambia in MainWindow.xaml, DEVE cambiare analogamente in PresenterWindow.xaml.
+- Il PresenterWindow NON deve avere border decorativi con padding attorno al contenuto: e full-screen puro.
+- La struttura del canvas freccia deve essere identica in entrambe le finestre.
+
+## Stili e naming
+- Ogni stile riutilizzabile va in `Window.Resources` con chiave `x:Key`.
+- Nomi elementi: PascalCase con prefisso funzionale (`ContentEditor`, `PresenterScrollViewer`, `ArrowCanvas`).
+- Tutti i controlli interattivi DEVONO avere `x:Name` per il binding nel code-behind.
+- Usare `ToolTip` su OGNI pulsante con shortcut tastiera associata.
+
+## Icone
+- Font: `Segoe MDL2 Assets` per le icone. Verificare i codepoint prima di usarli.
+- Formato: `<TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" />`
+
+## Performance XAML
+- `BitmapCache` obbligatorio sui RichTextBox per GPU rendering.
+- `RenderOptions.ClearTypeHint="Enabled"` su tutti i RichTextBox.
+- NON usare `DropShadowEffect` su elementi che si aggiornano ogni frame (es. scroll content).
+- `VerticalScrollBarVisibility="Hidden"` e `HorizontalScrollBarVisibility="Disabled"` sempre sul RichTextBox (lo scroll e gestito dal ScrollViewer esterno).

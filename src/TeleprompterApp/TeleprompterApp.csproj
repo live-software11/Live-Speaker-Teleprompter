@@ -14,9 +14,9 @@
     <Company>R-Speaker</Company>
     <Description>Professional teleprompter for multi-screen presentations with NDI, OSC, and Companion support</Description>
     <Copyright>© 2026 R-Speaker. All rights reserved.</Copyright>
-    <Version>2.0.0</Version>
-    <FileVersion>2.0.0.0</FileVersion>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <Version>2.1.0</Version>
+    <FileVersion>2.1.0.0</FileVersion>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
 
     <!-- Performance: server GC + tiered compilation for production workloads -->
     <ServerGarbageCollection>true</ServerGarbageCollection>

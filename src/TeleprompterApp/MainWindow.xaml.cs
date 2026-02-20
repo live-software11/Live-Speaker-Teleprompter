@@ -56,7 +56,7 @@ namespace TeleprompterApp
     private readonly DispatcherTimer _scrollTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
     private readonly Stopwatch _scrollStopwatch = new();
     private double _scrollSpeed;
-    private const double SpeedStep = 0.25;
+    private const double SpeedStep = 0.5;
     private const double MaxSpeed = 20;
 
     // ── Monitors ──
@@ -88,7 +88,11 @@ namespace TeleprompterApp
     private bool _isUpdatingEditToggle;
     private bool _pendingEditMode = true;
     private bool _isUpdatingLeftMargin;
-    private const double BasePagePadding = 72;
+    private bool _isUpdatingMarginSliders;
+    private double _marginTop = 40;
+    private double _marginRight = 40;
+    private double _marginBottom = 40;
+    private const double BasePagePadding = 40;
     private double _arrowPaddingExtra = 12;
     private const double ArrowLeftOffset = 12;
     private const double ArrowBaseWidth = 72;
@@ -215,7 +219,7 @@ namespace TeleprompterApp
                 _presenterWindow.SetDocument(clone);
                 var presenterPadding = GetPresenterPagePadding(_contentEditor.Document.PagePadding);
                 _presenterWindow.SetPagePadding(presenterPadding);
-                _presenterWindow.SetVerticalOffset(_contentScrollViewer.VerticalOffset);
+                SyncPresenterScroll();
                 UpdatePresenterArrowAppearance();
                 UpdatePresenterMirror();
             });
@@ -237,6 +241,8 @@ namespace TeleprompterApp
         {
             FocusManager.SetFocusedElement(this, this);
         }
+
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(UpdateScrollProgressDisplay));
     }
 
     private void StartOscIntegration()
@@ -358,8 +364,7 @@ namespace TeleprompterApp
             var background = CreateBrushFromHex(_preferences.DocumentBackgroundHex);
             if (background != null)
             {
-                _contentEditor.Document.Background = background;
-                _contentEditor.Background = MediaBrushes.Transparent;
+                ApplyBackgroundColor(((SolidColorBrush)background).Color);
             }
         }
 
@@ -441,6 +446,19 @@ namespace TeleprompterApp
         }
     requestedMargin = Math.Clamp(requestedMargin, 0, 640);
         SetArrowPaddingExtra(requestedMargin, fromSlider: false, persist: false);
+
+        _marginTop = Math.Clamp(_preferences.MarginTop, 0, 200);
+        _marginRight = Math.Clamp(_preferences.MarginRight, 0, 200);
+        _marginBottom = Math.Clamp(_preferences.MarginBottom, 0, 200);
+        if (FindName("MarginTopSlider") is WpfSlider topSlider)
+        {
+            _isUpdatingMarginSliders = true;
+            topSlider.Value = _marginTop;
+            if (FindName("MarginRightSlider") is WpfSlider rightSlider) rightSlider.Value = _marginRight;
+            if (FindName("MarginBottomSlider") is WpfSlider bottomSlider) bottomSlider.Value = _marginBottom;
+            _isUpdatingMarginSliders = false;
+        }
+        UpdateMarginDisplay();
 
         _arrowNormalizedPosition = new MediaPoint(
             0,
@@ -680,6 +698,11 @@ namespace TeleprompterApp
 
     private void LoadDocument(string filePath)
     {
+        if (_editModeToggle != null && _editModeToggle.IsChecked != true)
+        {
+            _editModeToggle.IsChecked = true;
+        }
+
         var extension = Path.GetExtension(filePath).ToLowerInvariant();
         var range = new TextRange(_contentEditor.Document.ContentStart, _contentEditor.Document.ContentEnd);
 
@@ -941,19 +964,51 @@ namespace TeleprompterApp
     private void BackgroundButton_Click(object sender, RoutedEventArgs e)
     {
         using var colorDialog = new WF.ColorDialog { FullOpen = true };
+
+        if (_contentEditor.Document.Background is SolidColorBrush currentBg)
+        {
+            colorDialog.Color = SD.Color.FromArgb(currentBg.Color.A, currentBg.Color.R, currentBg.Color.G, currentBg.Color.B);
+        }
+
         if (colorDialog.ShowDialog() == WF.DialogResult.OK)
         {
-            var brush = new SolidColorBrush(MediaColor.FromArgb(colorDialog.Color.A, colorDialog.Color.R, colorDialog.Color.G, colorDialog.Color.B));
-            _contentEditor.Document.Background = brush;
-            _contentEditor.Background = MediaBrushes.Transparent;
-            SavePreferences();
-                SyncPresenterDocument();
+            var color = MediaColor.FromArgb(colorDialog.Color.A, colorDialog.Color.R, colorDialog.Color.G, colorDialog.Color.B);
+            ApplyBackgroundColor(color);
         }
+    }
+
+    private void ApplyBackgroundColor(MediaColor color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+
+        _contentEditor.Document.Background = brush;
+        _contentEditor.Background = MediaBrushes.Transparent;
+
+        if (FindName("ContentOuterBorder") is Border contentOuterBorder)
+        {
+            contentOuterBorder.Background = brush;
+        }
+        if (FindName("ContentInnerBorder") is Border contentInnerBorder)
+        {
+            contentInnerBorder.Background = brush;
+        }
+
+        _presenterWindow?.SetBackgroundColor(color);
+
+        SavePreferences();
+        SyncPresenterDocument();
     }
 
     private void ForegroundButton_Click(object sender, RoutedEventArgs e)
     {
         using var colorDialog = new WF.ColorDialog { FullOpen = true };
+
+        if (_contentEditor.Foreground is SolidColorBrush currentFg)
+        {
+            colorDialog.Color = SD.Color.FromArgb(currentFg.Color.A, currentFg.Color.R, currentFg.Color.G, currentFg.Color.B);
+        }
+
         if (colorDialog.ShowDialog() == WF.DialogResult.OK)
         {
             var brush = new SolidColorBrush(MediaColor.FromArgb(colorDialog.Color.A, colorDialog.Color.R, colorDialog.Color.G, colorDialog.Color.B));
@@ -1033,6 +1088,7 @@ namespace TeleprompterApp
     private void SetDocumentForeground(MediaBrush brush)
     {
         _contentEditor.Foreground = brush;
+        _contentEditor.Document.Foreground = brush;
         ApplyToDocument(range => range.ApplyPropertyValue(TextElement.ForegroundProperty, brush));
         SavePreferences();
         SyncPresenterDocument();
@@ -1061,19 +1117,19 @@ namespace TeleprompterApp
 
     private Thickness ComputeMainDocumentPadding()
     {
-        var basePadding = BasePagePadding;
         var arrowPadding = ComputeArrowSidePadding();
+        var marginLeft = _preferences?.MarginLeft ?? 40;
+        var leftTotal = arrowPadding + marginLeft;
 
-        return new Thickness(arrowPadding, basePadding, basePadding, basePadding);
+        return new Thickness(leftTotal, _marginTop, _marginRight, _marginBottom);
     }
 
     private Thickness GetPresenterPagePadding(Thickness mainPadding)
     {
         if (_mirrorToggle?.IsChecked == true)
         {
-            // In mirror mode: swap left ↔ right so the arrow margin becomes the right edge
             var arrowPadding = ComputeArrowSidePadding();
-            return new Thickness(BasePagePadding, mainPadding.Top, arrowPadding, mainPadding.Bottom);
+            return new Thickness(_marginRight, mainPadding.Top, arrowPadding + (_preferences?.MarginLeft ?? 40), mainPadding.Bottom);
         }
 
         return mainPadding;
@@ -1086,6 +1142,12 @@ namespace TeleprompterApp
         if (double.IsNaN(leftPadding) || double.IsInfinity(leftPadding))
         {
             leftPadding = 0;
+        }
+
+        if (_arrowCanvas != null && _arrowCanvas.ActualWidth > 0)
+        {
+            var maxAllowed = _arrowCanvas.ActualWidth * 0.4;
+            leftPadding = Math.Min(leftPadding, maxAllowed);
         }
 
         return Math.Max(0, leftPadding);
@@ -1132,7 +1194,7 @@ namespace TeleprompterApp
             _presenterWindow.SetDocument(clone);
             var presenterPadding = GetPresenterPagePadding(_contentEditor.Document.PagePadding);
             _presenterWindow.SetPagePadding(presenterPadding);
-            _presenterWindow.SetVerticalOffset(_contentScrollViewer.VerticalOffset);
+            SyncPresenterScroll();
             UpdatePresenterArrowAppearance();
             UpdatePresenterMirror();
         }
@@ -1231,7 +1293,7 @@ namespace TeleprompterApp
 
         _contentEditor.IsReadOnly = !isEditMode;
         _contentEditor.IsReadOnlyCaretVisible = isEditMode;
-        _contentEditor.IsHitTestVisible = isEditMode;
+        _contentEditor.IsHitTestVisible = true;
         _contentEditor.Focusable = isEditMode;
     _contentEditor.Cursor = isEditMode ? MediaCursors.IBeam : MediaCursors.Arrow;
 
@@ -1292,8 +1354,36 @@ namespace TeleprompterApp
 
     private void ContentScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        _presenterWindow?.SetVerticalOffset(e.VerticalOffset);
+        SyncPresenterScroll();
+        UpdateScrollProgressDisplay();
         NotifyOscPosition();
+    }
+
+    private void SyncPresenterScroll()
+    {
+        if (_presenterWindow == null || _contentScrollViewer == null)
+            return;
+
+        var maxScroll = _contentScrollViewer.ScrollableHeight;
+        if (double.IsNaN(maxScroll) || maxScroll <= 0)
+        {
+            _presenterWindow.SetVerticalOffset(0);
+            return;
+        }
+
+        var ratio = Math.Clamp(_contentScrollViewer.VerticalOffset / maxScroll, 0, 1);
+        _presenterWindow.SetScrollRatio(ratio);
+    }
+
+    private void UpdateScrollProgressDisplay()
+    {
+        if (FindName("ScrollProgressText") is WpfTextBlock progressText && FindName("ScrollProgressBar") is Border progressBar)
+        {
+            var ratio = GetScrollRatio();
+            progressText.Text = $"{(int)(ratio * 100)}%";
+            var maxWidth = 120.0;
+            progressBar.Width = maxWidth * ratio;
+        }
     }
 
     private void PlayPauseToggle_Checked(object sender, RoutedEventArgs e)
@@ -1389,7 +1479,6 @@ namespace TeleprompterApp
             : Math.Clamp(previousOffset + scrollDelta, 0, maxOffset);
 
         _contentScrollViewer.ScrollToVerticalOffset(clampedTarget);
-        _contentScrollViewer.UpdateLayout();
 
         var actualOffset = _contentScrollViewer.VerticalOffset;
         if (Math.Abs(actualOffset - previousOffset) < 0.05)
@@ -1461,19 +1550,31 @@ namespace TeleprompterApp
 
     private void Window_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        if (IsEditMode)
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
         {
+            var notches = e.Delta / 120.0;
+            AdjustSpeed(notches * 0.5);
+            e.Handled = true;
             return;
         }
 
-        if (_contentEditor.IsKeyboardFocusWithin && _playPauseToggle.IsChecked != true)
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && !IsEditMode)
         {
+            var notches = e.Delta / 120.0;
+            AdjustSpeed(notches * SpeedStep * 4);
+            e.Handled = true;
             return;
         }
 
-        var delta = e.Delta > 0 ? SpeedStep : -SpeedStep;
-        AdjustSpeed(delta);
-        e.Handled = true;
+        if (!IsEditMode)
+        {
+            if (_contentEditor.IsKeyboardFocusWithin && _playPauseToggle.IsChecked != true)
+                return;
+
+            var notches = e.Delta / 120.0;
+            AdjustSpeed(notches * SpeedStep);
+            e.Handled = true;
+        }
     }
 
     internal void AdjustSpeed(double delta)
@@ -1742,6 +1843,31 @@ namespace TeleprompterApp
         }
     }
 
+    private void GoToStartButton_Click(object sender, RoutedEventArgs e)
+    {
+        _contentScrollViewer.ScrollToTop();
+
+        if (_playPauseToggle.IsChecked == true)
+        {
+            _playPauseToggle.IsChecked = false;
+        }
+
+        SyncPresenterScroll();
+        UpdateScrollProgressDisplay();
+        SetStatus("Testo riportato all'inizio");
+        NotifyOscPosition();
+    }
+
+    private void GoToEndButton_Click(object sender, RoutedEventArgs e)
+    {
+        _contentScrollViewer.ScrollToEnd();
+        _contentScrollViewer.UpdateLayout();
+        SyncPresenterScroll();
+        UpdateScrollProgressDisplay();
+        SetStatus("Vai alla fine del testo");
+        NotifyOscPosition();
+    }
+
     private void ApplyMirrorState()
     {
         ApplyArrowSafePadding();
@@ -1857,6 +1983,9 @@ namespace TeleprompterApp
         _preferences.ArrowHorizontalOffset = 0;
         _preferences.ArrowVerticalOffset = _arrowNormalizedPosition.Y;
         _preferences.ArrowLeftPaddingExtra = _arrowPaddingExtra;
+        _preferences.MarginTop = _marginTop;
+        _preferences.MarginRight = _marginRight;
+        _preferences.MarginBottom = _marginBottom;
     }
 
     private void SavePreferences()
@@ -1900,17 +2029,13 @@ namespace TeleprompterApp
     private void ApplyNormalizedArrowPosition()
     {
         if (_arrowCanvas == null || _arrowContainer == null)
-        {
             return;
-        }
-
         if (_arrowCanvas.ActualWidth <= 0 || _arrowCanvas.ActualHeight <= 0)
-        {
             return;
-        }
 
         var arrowHeight = _arrowContainer.ActualHeight > 0 ? _arrowContainer.ActualHeight : _arrowContainer.Height;
-        var maxTop = Math.Max(0, _arrowCanvas.ActualHeight - arrowHeight);
+        var scaledArrowHeight = arrowHeight * _arrowScale;
+        var maxTop = Math.Max(0, _arrowCanvas.ActualHeight - scaledArrowHeight);
         var top = maxTop * Clamp01(_arrowNormalizedPosition.Y);
 
         MoveArrowTo(ArrowLeftOffset, top);
@@ -2005,6 +2130,46 @@ namespace TeleprompterApp
             var label = _mirrorToggle?.IsChecked == true ? "Margine destro" : "Margine sinistro";
             _leftMarginValueText.Text = $"{label}: {Math.Round(padding)} px";
         }
+    }
+
+    private void UpdateMarginDisplay()
+    {
+        if (FindName("MarginTopText") is WpfTextBlock topText)
+            topText.Text = $"{Math.Round(_marginTop)} px";
+        if (FindName("MarginRightText") is WpfTextBlock rightText)
+            rightText.Text = $"{Math.Round(_marginRight)} px";
+        if (FindName("MarginBottomText") is WpfTextBlock bottomText)
+            bottomText.Text = $"{Math.Round(_marginBottom)} px";
+    }
+
+    private void MarginTopSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_isUpdatingMarginSliders || !IsLoaded) return;
+        _marginTop = Math.Clamp(e.NewValue, 0, 200);
+        _preferences.MarginTop = _marginTop;
+        UpdateMarginDisplay();
+        ApplyArrowSafePadding();
+        SavePreferences();
+    }
+
+    private void MarginRightSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_isUpdatingMarginSliders || !IsLoaded) return;
+        _marginRight = Math.Clamp(e.NewValue, 0, 200);
+        _preferences.MarginRight = _marginRight;
+        UpdateMarginDisplay();
+        ApplyArrowSafePadding();
+        SavePreferences();
+    }
+
+    private void MarginBottomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_isUpdatingMarginSliders || !IsLoaded) return;
+        _marginBottom = Math.Clamp(e.NewValue, 0, 200);
+        _preferences.MarginBottom = _marginBottom;
+        UpdateMarginDisplay();
+        ApplyArrowSafePadding();
+        SavePreferences();
     }
 
     internal void HandleOscMessage(string address, IList<object> args)

@@ -27,3 +27,6 @@ Thumbs.db
 
 # User preferences (generated at runtime)
 preferences.json
+
+# Build temp
+git-status.txt

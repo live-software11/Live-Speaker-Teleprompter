@@ -1,0 +1,56 @@
+---
+description: Regole per sincronizzazione MainWindow-PresenterWindow
+globs: "**/PresenterWindow.xaml.cs,**/PresenterSyncService.cs,**/MainWindow.xaml.cs"
+alwaysApply: false
+---
+
+# Sincronizzazione Presenter
+
+## Architettura sync
+```
+MainWindow (editor/preview)
+    │
+    ├── SyncPresenterDocument() ──→ clone immediato XamlPackage
+    │       usare per: load file, cambio colore, cambio font
+    │
+    ├── RequestPresenterSync() ──→ clone debounced 300ms
+    │       usare per: digitazione utente (TextChanged)
+    │
+    ├── SyncPresenterScroll() ──→ ratio proporzionale 0-1
+    │       usare per: scroll position (ScrollChanged)
+    │
+    └── UpdatePresenterArrowAppearance() ──→ colore, scala, posizione
+            usare per: qualsiasi modifica alla freccia
+    │
+    ▼
+PresenterWindow (output esterno)
+```
+
+## Regole di sync scroll
+- USARE `SetScrollRatio(double ratio)` per sincronizzare lo scroll: calcola il rapporto `offset/scrollableHeight` nella MainWindow e lo applica proporzionalmente nella PresenterWindow.
+- NON usare `SetVerticalOffset(double offset)` con offset assoluto: le viewport hanno dimensioni diverse, lo stesso offset mostra testo diverso.
+- Skip sync se delta < 0.5px per evitare loop e layout pass inutili.
+
+```csharp
+// CORRETTO: sync proporzionale
+var ratio = mainScrollViewer.VerticalOffset / mainScrollViewer.ScrollableHeight;
+presenterWindow.SetScrollRatio(ratio);
+
+// SBAGLIATO: sync assoluto (viewport diverse = testo diverso)
+presenterWindow.SetVerticalOffset(mainScrollViewer.VerticalOffset);
+```
+
+## Regole di sync freccia
+- La posizione freccia usa coordinate normalizzate Y (0-1) rispetto all'altezza del canvas.
+- `SetArrowNormalizedY(double)` applica la stessa proporzione su entrambe le finestre.
+- Tenere conto della scala freccia (`_arrowScale`) nel calcolo dell'altezza effettiva.
+- In mirror mode: la freccia nel presenter si sposta a destra, il testo si specchia.
+
+## Regole di sync documento
+- Il clone copia TUTTE le proprieta document-level: PagePadding, LineHeight, TextAlignment, Background, FontFamily, FontSize, Foreground, FontWeight, FontStyle.
+- Il padding nel PresenterWindow viene ricalcolato da `GetPresenterPagePadding()` in base al mirror mode.
+- In mirror mode: swap left/right nel padding E nella trasformazione del contenuto.
+
+## Regole di sync colori
+- Quando cambia il colore sfondo nella MainWindow, chiamare `_presenterWindow.SetBackgroundColor(color)` per aggiornare ANCHE i border container del presenter.
+- Il FlowDocument.Background da solo non basta: i border attorno restano scuri se non aggiornati.

@@ -21,6 +21,10 @@ public class UserPreferences
     public double ArrowHorizontalOffset { get; set; } = 0.05;
     public double ArrowVerticalOffset { get; set; } = 0.5;
     public double ArrowLeftPaddingExtra { get; set; } = 12;
+    public double MarginTop { get; set; } = 40;
+    public double MarginRight { get; set; } = 40;
+    public double MarginBottom { get; set; } = 40;
+    public double MarginLeft { get; set; } = 40;
     public bool EditModeEnabled { get; set; } = true;
     public DateTime LastUpdatedUtc { get; set; } = DateTime.UtcNow;
 }
