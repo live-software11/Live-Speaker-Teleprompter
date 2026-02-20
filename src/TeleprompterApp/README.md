@@ -38,6 +38,15 @@ dotnet publish -c Release             # Release publish (self-contained)
 cd installer && .\build-installer.ps1 # Full pipeline: exe + zip + installer
 ```
 
+## Key Features (v2.3.0)
+
+- **Header a due righe** — File, formattazione, velocità, play, navigazione, margini, freccia
+- **Margini estesi** — L, D, A, B fino a 400 px; tasto L=D per margini uguali
+- **Velocità -80 … +80** — Scorrimento più rapido
+- **Navigazione** — Home, End, Page Up, Page Down; pulsanti Inizio/Fine in header
+- **Spazio** — Play/Pausa solo in modalità presentazione (non-modifica)
+- **Freccia** — Spostamento solo manuale (drag); barra dimensione in header
+
 ## Key Optimizations (v2.0)
 
 - FlowDocument cloning via XamlPackage (~30ms vs ~300ms with XamlWriter)

@@ -1,30 +1,44 @@
 # R-Speaker Teleprompter - Analisi Completa Bug e Miglioramenti
 
-## Stato: v2.2.0 — Ultra fluido, stabile, professionale
+## Stato: v2.3.0 — Header a due righe, margini estesi, navigazione rapida
 
 Tutti i bug segnalati sono risolti. Ottimizzazioni di performance e fluidità implementate secondo best practice WPF e fonti esterne (Microsoft Docs, Stack Overflow, PerfView).
 
 ---
 
-## RIEPILOGO v2.2.0 (Febbraio 2026)
+## RIEPILOGO v2.3.0 (Febbraio 2026)
 
-### Fluidità e performance
-| Intervento | Descrizione | Fonte |
-|------------|-------------|-------|
-| **Scroll vsync** | `CompositionTarget.Rendering` al posto di `DispatcherTimer` — sincronizzato con refresh monitor, zero micro-stutter | Stack Overflow, Microsoft |
-| **SpellCheck disabilitato** | Con font 72pt causava 50-200ms di latenza per keystroke | Analisi empirica |
-| **TextFormattingMode=Display** | Rendering testo ottimizzato per display (non Ideal per editing) | Microsoft Docs |
-| **Doppio padding rimosso** | `RichTextBox.Padding` duplicava `FlowDocument.PagePadding` → testo verticale | Bug fix |
-| **UpdateLayout rimosso** | Non chiamare `UpdateLayout()` nel tick di scroll | Regole progetto |
-| **RequestPresenterSync** | Debounce 300ms invece di sync immediato in `ApplyArrowSafePadding` | PresenterSyncService |
-
-### Stabilità e UX
+### Header a due righe
 | Intervento | Descrizione |
 |------------|-------------|
-| **Modalità modifica** | `Focus()` + `Keyboard.Focus()` su editor; `Focusable` sempre true |
-| **Supporto Word .docx** | Estrazione testo da `word/document.xml` via `System.IO.Packaging` |
-| **Toolbar compatta** | Una riga, più spazio al teleprompt |
-| **Brush.Freeze()** | PresenterWindow — evita memory leak |
+| **Riga 1** | File, Formattazione, Velocità, Inizio/Fine, Play/Pausa, Schermi, NDI, Modifica, Specchio, TopMost |
+| **Riga 2** | Margini L, D, tasto L=D, margini A, B, barra dimensione freccia, pulsante Freccia |
+
+### Margini e freccia
+| Intervento | Descrizione |
+|------------|-------------|
+| **Margini estesi** | L, D, A, B: range 0–400 px (prima 0–200) |
+| **Tasto L=D** | Imposta margine sinistro e destro uguali (media dei due valori) |
+| **Barra dimensione freccia** | Slider visibile in header (0.5–2.0) |
+| **Freccia solo manuale** | La freccia non si sposta automaticamente quando si modificano margini o dimensione; solo trascinamento manuale |
+| **Margine sinistro minimo** | Il testo inizia sempre dopo la freccia (arrowRightEdge + extra) |
+
+### Velocità e navigazione
+| Intervento | Descrizione |
+|------------|-------------|
+| **Velocità estesa** | Range -80 … +80 (prima -20 … +20) per scorrimento più rapido |
+| **Spazio** | Play/Pausa solo in modalità non-modifica; in modifica lo Spazio digita normalmente |
+| **Tasti navigazione** | Home, End, Page Up, Page Down per spostarsi nel documento (sempre attivi) |
+| **Pulsanti Inizio/Fine** | In header per accesso rapido |
+
+### Fluidità e performance (v2.2.0)
+| Intervento | Descrizione | Fonte |
+|------------|-------------|-------|
+| **Scroll vsync** | `CompositionTarget.Rendering` al posto di `DispatcherTimer` — sincronizzato con refresh monitor | Stack Overflow, Microsoft |
+| **SpellCheck disabilitato** | Con font 72pt causava 50–200ms di latenza per keystroke | Analisi empirica |
+| **TextFormattingMode=Display** | Rendering testo ottimizzato per display | Microsoft Docs |
+| **Doppio padding rimosso** | `RichTextBox.Padding` duplicava `FlowDocument.PagePadding` → testo verticale | Bug fix |
+| **RequestPresenterSync** | Debounce 300ms invece di sync immediato | PresenterSyncService |
 
 ---
 
@@ -43,6 +57,23 @@ Tutti i bug segnalati sono risolti. Ottimizzazioni di performance e fluidità im
 | N2 | CornerRadius visibili su fullscreen | RISOLTO |
 | N3 | SpeedSlider SmallChange incoerente | RISOLTO |
 | N4 | IsHitTestVisible bloccava interazione | RISOLTO |
+
+---
+
+## COMANDI TASTIERA
+
+| Tasto | Modalità modifica | Modalità presentazione |
+|-------|-------------------|-------------------------|
+| **Spazio** | Digita spazio | Play/Pausa |
+| **Home** | Vai all'inizio documento | Vai all'inizio documento |
+| **End** | Vai alla fine documento | Vai alla fine documento |
+| **Page Up** | Scorri su una pagina | Scorri su una pagina |
+| **Page Down** | Scorri giù una pagina | Scorri giù una pagina |
+| **Su/Giù** | — | Modifica velocità |
+| **Sinistra/Destra** | — | Azzera velocità |
+| **Scroll mouse** | Modifica velocità | Modifica velocità |
+| **Ctrl+Scroll** | Velocità fine | Velocità fine |
+| **Shift+Scroll** | Velocità grossa | Velocità grossa |
 
 ---
 
@@ -71,24 +102,20 @@ UI change → SavePreferences() → CapturePreferences() → DebouncedPreference
 
 ---
 
-## RACCOMANDAZIONI DOCUMENTO
-
-- **< 2000 righe**: Performance ottimale
-- **2000–5000 righe**: Fluido, debounce sufficiente
-- **> 5000 righe**: FlowDocument non virtualizzato — considerare split o limiti
-
----
-
 ## CHECKLIST DI VERIFICA
 
-- [ ] Scorrimento fluido (vsync, nessun jank)
-- [ ] Modalità modifica: focus immediato, digitazione reattiva
-- [ ] Apertura .docx importa il testo
-- [ ] Testo orizzontale (no verticale)
-- [ ] Margini, freccia, colori funzionanti
-- [ ] Hot-plug monitor
+- [ ] Header su due righe, menu utilizzabili
+- [ ] Play/Pausa visibile, Spazio funziona solo in modalità presentazione
+- [ ] Velocità -80 … +80, scorrimento rapido
+- [ ] Margini L, D, A, B fino a 400 px
+- [ ] Tasto L=D imposta margini uguali
+- [ ] Barra dimensione freccia in header
+- [ ] Freccia si sposta solo con trascinamento
+- [ ] Home, End, Page Up, Page Down per navigazione
+- [ ] Scorrimento fluido (vsync)
+- [ ] Import Word in background
 - [ ] NDI, OSC, Companion
 
 ---
 
-*Documento aggiornato il 2026-02-20 — R-Speaker Teleprompter v2.2.0*
+*Documento aggiornato il 2026-02-20 — R-Speaker Teleprompter v2.3.0*

@@ -9,7 +9,7 @@
     Width="1260" Height="760" MinWidth="900" MinHeight="500"
     WindowStartupLocation="CenterScreen" WindowState="Maximized"
     Loaded="Window_Loaded" Closing="Window_Closing"
-    KeyDown="Window_KeyDown" PreviewKeyDown="Window_PreviewKeyDown" PreviewMouseWheel="Window_PreviewMouseWheel"
+    PreviewKeyDown="Window_PreviewKeyDown" PreviewMouseWheel="Window_PreviewMouseWheel"
     AllowDrop="True" DragOver="Window_DragOver" Drop="Window_Drop">
 
     <Window.CommandBindings>
@@ -166,20 +166,17 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- ═══ ROW 0: TOOLBAR COMPATTA ═══ -->
-        <Border Grid.Row="0" Margin="6,4,6,2" Background="#0B1223" Padding="6,3" CornerRadius="10">
+        <!-- ═══ ROW 0: TOOLBAR COMPATTA (2 RIGHE) ═══ -->
+        <Border Grid.Row="0" Margin="6,4,6,2" Background="#0B1223" Padding="6,4" CornerRadius="10">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                <!-- File -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Riga 1: File, Formattazione, Velocità, Play, Inizio/Fine, Modifica -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                    <!-- File -->
                     <Button x:Name="OpenFileButton" Style="{StaticResource TbBtn}" Click="OpenFileButton_Click" ToolTip="Apri (Ctrl+O)">
                         <TextBlock Text="&#xE838;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
                     </Button>
@@ -190,10 +187,8 @@
                         <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
                     </Button>
                     <Border Width="1" Background="#1E2A44" Margin="4,3" />
-                </StackPanel>
 
-                <!-- Formattazione -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Formattazione -->
                     <ToggleButton Style="{StaticResource TbTgl}" Command="{x:Static EditingCommands.ToggleBold}" CommandTarget="{Binding ElementName=ContentEditor}">
                         <TextBlock Text="B" FontWeight="Bold" FontSize="13" />
                     </ToggleButton>
@@ -217,21 +212,17 @@
                         <TextBlock Text="&#xE8D3;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
                     </Button>
                     <Border Width="1" Background="#1E2A44" Margin="4,3" />
-                </StackPanel>
 
-                <!-- Velocità -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Velocità -->
                     <TextBlock x:Name="SpeedText" Text="0.50" Foreground="White" FontSize="13" FontWeight="SemiBold" Width="38" TextAlignment="Center" VerticalAlignment="Center" />
-                    <Slider x:Name="SpeedSlider" Minimum="-20" Maximum="20" SmallChange="0.5" LargeChange="2" IsSnapToTickEnabled="False" Value="0.5" Width="90" VerticalAlignment="Center" ValueChanged="SpeedSlider_ValueChanged" />
+                    <Slider x:Name="SpeedSlider" Minimum="-80" Maximum="80" SmallChange="0.5" LargeChange="2" IsSnapToTickEnabled="False" Value="0.5" Width="90" VerticalAlignment="Center" ValueChanged="SpeedSlider_ValueChanged" />
                     <Border Width="1" Background="#1E2A44" Margin="4,3" />
-                </StackPanel>
 
-                <!-- PLAY + navigazione (centro) -->
-                <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!-- Inizio/Fine + Play/Pausa -->
                     <Button x:Name="GoToStartButton" Style="{StaticResource TbBtn}" Click="GoToStartButton_Click" ToolTip="Inizio (Home)">
                         <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
                     </Button>
-                    <ToggleButton x:Name="PlayPauseToggle" Style="{StaticResource PlayBtn}" ToolTip="Avvia / Pausa (Spazio)" Checked="PlayPauseToggle_Checked" Unchecked="PlayPauseToggle_Unchecked">
+                    <ToggleButton x:Name="PlayPauseToggle" Style="{StaticResource PlayBtn}" ToolTip="Avvia / Pausa (Spazio in modalità non-modifica)" Checked="PlayPauseToggle_Checked" Unchecked="PlayPauseToggle_Unchecked">
                         <StackPanel Orientation="Horizontal">
                             <Path Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0">
                                 <Path.Style>
@@ -263,11 +254,9 @@
                     <Button x:Name="GoToEndButton" Style="{StaticResource TbBtn}" Click="GoToEndButton_Click" ToolTip="Fine (End)">
                         <TextBlock Text="&#xE72A;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#60A5FA" />
                     </Button>
-                </StackPanel>
-
-                <!-- Schermi + NDI + Modifica + Opzioni -->
-                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Width="1" Background="#1E2A44" Margin="4,3" />
+
+                    <!-- Schermi + NDI + Modifica + Opzioni -->
                     <StackPanel x:Name="MonitorTogglePanel" Orientation="Horizontal" />
                     <ToggleButton x:Name="NdiToggle" Style="{StaticResource TbTgl}" Content="NDI" Margin="4,0" Checked="NdiToggle_Checked" Unchecked="NdiToggle_Unchecked" FontSize="12" />
                     <Border Width="1" Background="#1E2A44" Margin="4,3" />
@@ -282,24 +271,47 @@
                     </ToggleButton>
                 </StackPanel>
 
-                <!-- Freccia -->
-                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="1" Background="#1E2A44" Margin="4,3" />
-                    <Button x:Name="ArrowColorButton" Style="{StaticResource TbBtn}" Click="ArrowColorButton_Click" ToolTip="Colore freccia">
-                        <TextBlock Text="&#xECA7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#EAB308" />
+                <!-- Riga 2: Margini L, D, L=D, Dimensione freccia, Freccia -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Margini:" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="2,0" />
+                    <TextBlock Text="L" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Sinistra (dopo freccia)" />
+                    <Slider x:Name="LeftMarginSlider" Minimum="0" Maximum="400" Value="40" Width="55" SmallChange="4" LargeChange="20" IsSnapToTickEnabled="False" VerticalAlignment="Center" ValueChanged="LeftMarginSlider_ValueChanged" ToolTip="Margine sinistro (testo dopo freccia)" />
+                    <TextBlock x:Name="LeftMarginValueText" Text="40" Foreground="#94A3B8" FontSize="10" Width="28" VerticalAlignment="Center" Margin="2,0,4,0" />
+                    <TextBlock Text="D" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Destro" />
+                    <Slider x:Name="MarginRightSlider" Minimum="0" Maximum="400" Value="40" Width="55" SmallChange="4" LargeChange="20" IsSnapToTickEnabled="False" VerticalAlignment="Center" ValueChanged="MarginRightSlider_ValueChanged" />
+                    <TextBlock x:Name="MarginRightText" Text="40" Foreground="#94A3B8" FontSize="10" Width="28" VerticalAlignment="Center" Margin="2,0,4,0" />
+                    <Button x:Name="LinkMarginsButton" Style="{StaticResource TbBtn}" Click="LinkMarginsButton_Click" ToolTip="Imposta L=D (margini sinistro e destro uguali)">
+                        <TextBlock Text="L=D" FontSize="11" />
                     </Button>
-                    <Slider x:Name="ArrowSizeSlider" Minimum="0.5" Maximum="2.0" Value="1.0" Width="50" SmallChange="0.1" LargeChange="0.2" IsSnapToTickEnabled="False" VerticalAlignment="Center" ValueChanged="ArrowSizeSlider_ValueChanged" ToolTip="Dimensione freccia" />
-                    <Slider x:Name="LeftMarginSlider" Minimum="0" Maximum="640" Value="12" Width="50" SmallChange="4" LargeChange="12" IsSnapToTickEnabled="False" VerticalAlignment="Center" ValueChanged="LeftMarginSlider_ValueChanged" IsEnabled="{Binding IsChecked, ElementName=EditModeToggle}" ToolTip="Margine freccia-testo" />
-                    <TextBlock x:Name="LeftMarginValueText" Text="" Foreground="#CBD5F5" FontSize="10" VerticalAlignment="Center" Width="0" />
-                    <Slider x:Name="MarginTopSlider" Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20" Width="0" Visibility="Collapsed" ValueChanged="MarginTopSlider_ValueChanged" />
-                    <Slider x:Name="MarginRightSlider" Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20" Width="0" Visibility="Collapsed" ValueChanged="MarginRightSlider_ValueChanged" />
-                    <Slider x:Name="MarginBottomSlider" Minimum="0" Maximum="200" Value="40" SmallChange="4" LargeChange="20" Width="0" Visibility="Collapsed" ValueChanged="MarginBottomSlider_ValueChanged" />
-                    <TextBlock x:Name="MarginTopText" Width="0" Visibility="Collapsed" />
-                    <TextBlock x:Name="MarginRightText" Width="0" Visibility="Collapsed" />
-                    <TextBlock x:Name="MarginBottomText" Width="0" Visibility="Collapsed" />
+                    <Border Width="1" Background="#1E2A44" Margin="4,3" />
+                    <TextBlock Text="A" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Alto" />
+                    <Slider x:Name="MarginTopSlider" Minimum="0" Maximum="400" Value="40" Width="45" SmallChange="4" LargeChange="20" VerticalAlignment="Center" ValueChanged="MarginTopSlider_ValueChanged" />
+                    <TextBlock x:Name="MarginTopText" Text="40" Foreground="#94A3B8" FontSize="10" Width="24" VerticalAlignment="Center" Margin="2,0,4,0" />
+                    <TextBlock Text="B" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Basso" />
+                    <Slider x:Name="MarginBottomSlider" Minimum="0" Maximum="400" Value="40" Width="45" SmallChange="4" LargeChange="20" VerticalAlignment="Center" ValueChanged="MarginBottomSlider_ValueChanged" />
+                    <TextBlock x:Name="MarginBottomText" Text="40" Foreground="#94A3B8" FontSize="10" Width="24" VerticalAlignment="Center" Margin="2,0,6,0" />
+                    <Border Width="1" Background="#1E2A44" Margin="4,3" />
+                    <TextBlock Text="Freccia:" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="2,0" />
+                    <Slider x:Name="ArrowSizeSlider" Minimum="0.5" Maximum="2.0" Value="1.0" Width="80" SmallChange="0.1" LargeChange="0.2" IsSnapToTickEnabled="False" VerticalAlignment="Center" ValueChanged="ArrowSizeSlider_ValueChanged" ToolTip="Dimensione freccia" />
+                    <Button x:Name="ArrowStyleButton" Style="{StaticResource TbBtn}" Click="ArrowStyleButton_Click" ToolTip="Freccia: colore e opzioni (trascina per posizione)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xECA7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#EAB308" Margin="0,0,4,0" />
+                            <TextBlock Text="Freccia" FontSize="12" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
+
+        <!-- Popup Freccia: colore -->
+        <Popup x:Name="ArrowStylePopup" Placement="Bottom" PlacementTarget="{Binding ElementName=ArrowStyleButton}" StaysOpen="False">
+            <Border Background="#1E293B" CornerRadius="8" Padding="12" BorderBrush="#334155" BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="Freccia guida" Foreground="#93C5FD" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <Button x:Name="ArrowColorButton" Style="{StaticResource TbBtn}" Content="Colore freccia" Click="ArrowColorButton_Click" HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+        </Popup>
 
         <!-- ═══ ROW 1: AREA TELEPROMPT ═══ -->
         <Border Grid.Row="1" x:Name="ContentOuterBorder" Margin="6,2,6,2" Padding="4" CornerRadius="12" Background="#0D1729">
