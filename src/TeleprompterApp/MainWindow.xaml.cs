@@ -52,9 +52,9 @@ namespace TeleprompterApp
 {
     public partial class MainWindow : Window
     {
-    // ── Scroll (vsync-aligned per fluidità massima) ──
+    // ── Scroll (DispatcherTimer per affidabilità, evita conflitti con Space/ScrollViewer) ──
     private readonly Stopwatch _scrollStopwatch = new();
-    private bool _scrollRenderingSubscribed;
+    private DispatcherTimer? _scrollTimer;
     private double _scrollSpeed;
     private const double SpeedStep = 0.5;
     private const double MaxSpeed = 80;
@@ -95,6 +95,10 @@ namespace TeleprompterApp
     private const double BasePagePadding = 40;
     private double _arrowPaddingExtra = 12;
     private const double ArrowLeftOffset = 12;
+    private const double MaxMargin = 800;
+    private string? _marginThumbDragging;
+    private double _marginThumbStartValue;
+    private MediaPoint _marginThumbStartPos;
     private const double ArrowBaseWidth = 72;
     private const int CompanionPort = 3131;
     private CompanionBridge? _companionBridge;
@@ -107,6 +111,9 @@ namespace TeleprompterApp
 
     private const int OscListenPort = 8000;
     private const int OscFeedbackPort = 8001;
+
+    private readonly Stopwatch _onAirTimer = new();
+    private DispatcherTimer? _onAirTimerDisplay;
 
     // ── Public API for CompanionBridge / OscBridge ──
     public bool IsPlaying => _playPauseToggle?.IsChecked == true;
@@ -125,7 +132,9 @@ namespace TeleprompterApp
     private WpfSlider _arrowSizeSlider = null!;
     private WpfSlider _leftMarginSlider = null!;
     private WpfTextBlock _leftMarginValueText = null!;
+    private WpfToggleButton _marginsLinkedToggle = null!;
     private WpfCanvas _arrowCanvas = null!;
+    private WpfCanvas _marginThumbsCanvas = null!;
     private WpfGrid _arrowContainer = null!;
     private WpfScaleTransform _arrowScaleTransform = null!;
     private WpfPolygon _arrowShape = null!;
@@ -160,7 +169,9 @@ namespace TeleprompterApp
     _arrowSizeSlider = GetRequiredElement<WpfSlider>("ArrowSizeSlider");
     _leftMarginSlider = GetRequiredElement<WpfSlider>("LeftMarginSlider");
     _leftMarginValueText = GetRequiredElement<WpfTextBlock>("LeftMarginValueText");
+    _marginsLinkedToggle = GetRequiredElement<WpfToggleButton>("MarginsLinkedToggle");
     _arrowCanvas = GetRequiredElement<WpfCanvas>("ArrowCanvas");
+    _marginThumbsCanvas = GetRequiredElement<WpfCanvas>("MarginThumbsCanvas");
     _arrowContainer = GetRequiredElement<WpfGrid>("ArrowContainer");
     _arrowScaleTransform = GetRequiredElement<WpfScaleTransform>("ArrowScaleTransform");
     _arrowShape = GetRequiredElement<WpfPolygon>("ArrowShape");
@@ -228,6 +239,11 @@ namespace TeleprompterApp
         StartCompanionIntegration();
     StartOscIntegration();
         _isApplyingPreferences = false;
+
+        if (_onAirToggle?.IsChecked == true)
+            StartOnAirTimer();
+        else
+            StopOnAirTimer();
 
         _pendingEditMode = _onAirToggle?.IsChecked != true;
         ApplyEditMode(_pendingEditMode);
@@ -386,6 +402,7 @@ namespace TeleprompterApp
 
         _topMostToggle.IsChecked = _preferences.TopMostEnabled;
         _mirrorToggle.IsChecked = _preferences.MirrorEnabled;
+        _marginsLinkedToggle.IsChecked = _preferences.MarginsLinked;
 
         if (_onAirToggle != null)
         {
@@ -443,12 +460,12 @@ namespace TeleprompterApp
         {
             requestedMargin = 12;
         }
-        requestedMargin = Math.Clamp(requestedMargin, 0, 400);
+        requestedMargin = Math.Clamp(requestedMargin, 0, MaxMargin);
         SetArrowPaddingExtra(requestedMargin, fromSlider: false, persist: false);
 
-        _marginTop = Math.Clamp(_preferences.MarginTop, 0, 400);
-        _marginRight = Math.Clamp(_preferences.MarginRight, 0, 400);
-        _marginBottom = Math.Clamp(_preferences.MarginBottom, 0, 400);
+        _marginTop = Math.Clamp(_preferences.MarginTop, 0, MaxMargin);
+        _marginRight = Math.Clamp(_preferences.MarginRight, 0, MaxMargin);
+        _marginBottom = Math.Clamp(_preferences.MarginBottom, 0, MaxMargin);
         if (FindName("MarginTopSlider") is WpfSlider topSlider)
         {
             _isUpdatingMarginSliders = true;
@@ -460,7 +477,7 @@ namespace TeleprompterApp
         UpdateMarginDisplay();
 
         _arrowNormalizedPosition = new MediaPoint(
-            0,
+            Clamp01(_preferences.ArrowHorizontalOffset),
             Clamp01(_preferences.ArrowVerticalOffset));
 
         Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(ApplyNormalizedArrowPosition));
@@ -1201,6 +1218,7 @@ namespace TeleprompterApp
 
         UpdateLeftMarginDisplay();
         UpdateMarginDisplay();
+        UpdateMarginThumbsPosition();
         RequestPresenterSync();
     }
 
@@ -1238,12 +1256,6 @@ namespace TeleprompterApp
         if (double.IsNaN(leftPadding) || double.IsInfinity(leftPadding))
         {
             leftPadding = 0;
-        }
-
-        if (_arrowCanvas != null && _arrowCanvas.ActualWidth > 0)
-        {
-            var maxAllowed = _arrowCanvas.ActualWidth * 0.4;
-            leftPadding = Math.Min(leftPadding, maxAllowed);
         }
 
         return Math.Max(0, leftPadding);
@@ -1374,7 +1386,9 @@ namespace TeleprompterApp
         var stroke = (_arrowShape.Stroke as SolidColorBrush)?.Color ?? MediaColor.FromRgb(255, 240, 138);
         _presenterWindow.SetArrowColor(fill, stroke);
         _presenterWindow.SetArrowScale(_arrowScale);
-        _presenterWindow.SetArrowNormalizedY(_arrowNormalizedPosition.Y);
+        _presenterWindow.SetArrowNormalizedX(_arrowNormalizedPosition.X);
+        var arrowTop = double.IsNaN(Canvas.GetTop(_arrowContainer)) ? 0 : Canvas.GetTop(_arrowContainer);
+        _presenterWindow.SetArrowViewportY(arrowTop);
     }
 
     private double GetArrowEffectiveWidth()
@@ -1457,6 +1471,13 @@ namespace TeleprompterApp
         RequestPresenterSync();
     }
 
+    private void ContentScrollViewer_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (IsEditMode) return;
+        if (e.Key == Key.Space || e.Key == Key.Up || e.Key == Key.Down || e.Key == Key.Left || e.Key == Key.Right)
+            e.Handled = true;
+    }
+
     private void ContentScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
         SyncPresenterScroll();
@@ -1469,15 +1490,8 @@ namespace TeleprompterApp
         if (_presenterWindow == null || _contentScrollViewer == null)
             return;
 
-        var maxScroll = _contentScrollViewer.ScrollableHeight;
-        if (double.IsNaN(maxScroll) || maxScroll <= 0)
-        {
-            _presenterWindow.SetVerticalOffset(0);
-            return;
-        }
-
-        var ratio = Math.Clamp(_contentScrollViewer.VerticalOffset / maxScroll, 0, 1);
-        _presenterWindow.SetScrollRatio(ratio);
+        var offset = _contentScrollViewer.VerticalOffset;
+        _presenterWindow.SetVerticalOffset(offset);
     }
 
     private void UpdateScrollProgressDisplay()
@@ -1511,25 +1525,26 @@ namespace TeleprompterApp
 
         SetSpeed(desiredSpeed, fromSlider: false);
 
-        if (!_scrollRenderingSubscribed)
+        if (_scrollTimer == null)
         {
-            _scrollRenderingSubscribed = true;
-            System.Windows.Media.CompositionTarget.Rendering += OnScrollRendering;
+            _scrollTimer = new DispatcherTimer(DispatcherPriority.Render, Dispatcher)
+            {
+                Interval = TimeSpan.FromMilliseconds(16)
+            };
+            _scrollTimer.Tick += ScrollTimer_Tick;
         }
+        _scrollTimer.Stop();
+        _scrollTimer.Start();
         _scrollStopwatch.Restart();
 
-        _contentScrollViewer?.Focus();
+        FocusManager.SetFocusedElement(this, this);
         SetStatus("Scorrimento attivo");
         NotifyOscPlaybackState();
     }
 
     private void PlayPauseToggle_Unchecked(object sender, RoutedEventArgs e)
     {
-        if (_scrollRenderingSubscribed)
-        {
-            _scrollRenderingSubscribed = false;
-            System.Windows.Media.CompositionTarget.Rendering -= OnScrollRendering;
-        }
+        _scrollTimer?.Stop();
         _scrollStopwatch.Stop();
         SetStatus("In pausa");
         NotifyOscPlaybackState();
@@ -1559,11 +1574,7 @@ namespace TeleprompterApp
         SavePreferences();
     }
 
-    /// <summary>
-    /// Scroll vsync-aligned: CompositionTarget.Rendering è sincronizzato con il refresh del monitor.
-    /// Più fluido di DispatcherTimer perché evita micro-stutter e tearing.
-    /// </summary>
-    private void OnScrollRendering(object? sender, EventArgs e)
+    private void ScrollTimer_Tick(object? sender, EventArgs e)
     {
         if (_scrollSpeed == 0 || _contentScrollViewer == null)
         {
@@ -1597,11 +1608,7 @@ namespace TeleprompterApp
         var actualOffset = _contentScrollViewer.VerticalOffset;
         if (Math.Abs(actualOffset - previousOffset) < 0.05)
         {
-            if (_scrollRenderingSubscribed)
-            {
-                _scrollRenderingSubscribed = false;
-                System.Windows.Media.CompositionTarget.Rendering -= OnScrollRendering;
-            }
+            _scrollTimer?.Stop();
             _scrollStopwatch.Stop();
             _playPauseToggle.IsChecked = false;
             SetStatus(_scrollSpeed > 0 ? "Fine del testo" : "Inizio del testo");
@@ -1610,7 +1617,25 @@ namespace TeleprompterApp
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if (e.Key == Key.Space && !IsEditMode && !e.IsRepeat)
+        {
+            TogglePlayPause();
+            e.Handled = true;
+            return;
+        }
         HandlePresentationKey(e);
+    }
+
+    private void Window_PreviewKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == Key.Space && !IsEditMode)
+            e.Handled = true;
+    }
+
+    private void TogglePlayPause()
+    {
+        if (_playPauseToggle == null) return;
+        _playPauseToggle.IsChecked = !_playPauseToggle.IsChecked;
     }
 
     private void HandlePresentationKey(System.Windows.Input.KeyEventArgs e)
@@ -1618,6 +1643,7 @@ namespace TeleprompterApp
         if (e.Key == Key.Home)
         {
             _contentScrollViewer.ScrollToTop();
+            ResetOnAirTimer();
             SyncPresenterScroll();
             UpdateScrollProgressDisplay();
             e.Handled = true;
@@ -1651,9 +1677,8 @@ namespace TeleprompterApp
             return;
         }
 
-        if (e.Key == Key.Space && !IsEditMode && !e.IsRepeat)
+        if (e.Key == Key.Space && !IsEditMode)
         {
-            _playPauseToggle.IsChecked = !_playPauseToggle.IsChecked;
             e.Handled = true;
             return;
         }
@@ -1694,6 +1719,7 @@ namespace TeleprompterApp
 
     private void Window_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
+        if (IsEditMode) return;
         var notches = e.Delta / 120.0;
         if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
         {
@@ -1737,22 +1763,25 @@ namespace TeleprompterApp
 
         if (_scrollSpeed == 0)
         {
-            if (_playPauseToggle.IsChecked == true && _scrollRenderingSubscribed)
+            if (_playPauseToggle.IsChecked == true)
             {
-                _scrollRenderingSubscribed = false;
-                System.Windows.Media.CompositionTarget.Rendering -= OnScrollRendering;
+                _scrollTimer?.Stop();
                 SetStatus("Velocità 0: pausa");
             }
         }
         else if (_playPauseToggle.IsChecked == true)
         {
-            if (!_scrollRenderingSubscribed)
+            if (_scrollTimer == null)
             {
-                _scrollRenderingSubscribed = true;
-                System.Windows.Media.CompositionTarget.Rendering += OnScrollRendering;
-                _scrollStopwatch.Restart();
+                _scrollTimer = new DispatcherTimer(DispatcherPriority.Render, Dispatcher)
+                {
+                    Interval = TimeSpan.FromMilliseconds(16)
+                };
+                _scrollTimer.Tick += ScrollTimer_Tick;
             }
-
+            _scrollTimer.Stop();
+            _scrollTimer.Start();
+            _scrollStopwatch.Restart();
             SetStatus(_scrollSpeed > 0 ? "Scorrimento attivo" : "Scorrimento inverso");
         }
 
@@ -1800,11 +1829,8 @@ namespace TeleprompterApp
 
     private void LeftMarginSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (_isUpdatingLeftMargin)
-        {
-            return;
-        }
-
+        if (_isUpdatingLeftMargin) return;
+        if (MarginsLinked) { SetAllMargins(e.NewValue); return; }
         SetArrowPaddingExtra(e.NewValue, fromSlider: true);
     }
 
@@ -1827,11 +1853,7 @@ namespace TeleprompterApp
 
     private void Window_Closing(object sender, CancelEventArgs e)
     {
-        if (_scrollRenderingSubscribed)
-        {
-            _scrollRenderingSubscribed = false;
-            System.Windows.Media.CompositionTarget.Rendering -= OnScrollRendering;
-        }
+        _scrollTimer?.Stop();
         _displayManager?.Dispose();
         _presenterSync?.Dispose();
         _companionBridge?.Dispose();
@@ -1920,6 +1942,135 @@ namespace TeleprompterApp
         UpdatePresenterArrowAppearance();
     }
 
+    private void MarginThumbsCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateMarginThumbsPosition();
+    }
+
+    private void UpdateMarginThumbsPosition()
+    {
+        if (_marginThumbsCanvas == null || _marginThumbsCanvas.ActualWidth <= 0 || _marginThumbsCanvas.ActualHeight <= 0)
+            return;
+
+        var w = _marginThumbsCanvas.ActualWidth;
+        var h = _marginThumbsCanvas.ActualHeight;
+        var leftPadding = ComputeArrowSidePadding();
+
+        if (FindName("LeftMarginThumb") is System.Windows.Controls.Border leftThumb)
+        {
+            Canvas.SetLeft(leftThumb, Math.Max(0, leftPadding - 4));
+            Canvas.SetTop(leftThumb, 0);
+            leftThumb.Height = h;
+        }
+        if (FindName("RightMarginThumb") is System.Windows.Controls.Border rightThumb)
+        {
+            Canvas.SetLeft(rightThumb, Math.Min(w - 8, w - _marginRight - 4));
+            Canvas.SetTop(rightThumb, 0);
+            rightThumb.Height = h;
+        }
+        if (FindName("TopMarginThumb") is System.Windows.Controls.Border topThumb)
+        {
+            Canvas.SetLeft(topThumb, 0);
+            Canvas.SetTop(topThumb, Math.Max(0, _marginTop - 4));
+            topThumb.Width = w;
+        }
+        if (FindName("BottomMarginThumb") is System.Windows.Controls.Border bottomThumb)
+        {
+            Canvas.SetLeft(bottomThumb, 0);
+            Canvas.SetTop(bottomThumb, Math.Min(h - 8, h - _marginBottom - 4));
+            bottomThumb.Width = w;
+        }
+    }
+
+    private void MarginThumb_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement el || el.Tag is not string tag || _marginThumbsCanvas == null)
+            return;
+        _marginThumbDragging = tag;
+        _marginThumbStartPos = e.GetPosition(_marginThumbsCanvas);
+        if (tag == "Left")
+            _marginThumbStartValue = _arrowPaddingExtra;
+        else if (tag == "Right")
+            _marginThumbStartValue = _marginRight;
+        else if (tag == "Top")
+            _marginThumbStartValue = _marginTop;
+        else if (tag == "Bottom")
+            _marginThumbStartValue = _marginBottom;
+        _marginThumbsCanvas.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void MarginThumbsCanvas_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_marginThumbDragging) || _marginThumbsCanvas == null)
+            return;
+        var pos = e.GetPosition(_marginThumbsCanvas);
+        var deltaX = pos.X - _marginThumbStartPos.X;
+        var deltaY = pos.Y - _marginThumbStartPos.Y;
+
+        double newVal;
+        if (_marginThumbDragging == "Left")
+            newVal = Math.Clamp(_marginThumbStartValue + deltaX, 0, MaxMargin);
+        else if (_marginThumbDragging == "Right")
+            newVal = Math.Clamp(_marginThumbStartValue - deltaX, 0, MaxMargin);
+        else if (_marginThumbDragging == "Top")
+            newVal = Math.Clamp(_marginThumbStartValue + deltaY, 0, MaxMargin);
+        else if (_marginThumbDragging == "Bottom")
+            newVal = Math.Clamp(_marginThumbStartValue - deltaY, 0, MaxMargin);
+        else return;
+
+        if (MarginsLinked)
+        {
+            SetAllMargins(newVal);
+            return;
+        }
+
+        if (_marginThumbDragging == "Left")
+            SetArrowPaddingExtra(newVal, fromSlider: false, persist: true);
+        else if (_marginThumbDragging == "Right")
+        {
+            _marginRight = newVal;
+            _preferences.MarginRight = _marginRight;
+            _isUpdatingMarginSliders = true;
+            if (FindName("MarginRightSlider") is WpfSlider rs) rs.Value = newVal;
+            _isUpdatingMarginSliders = false;
+            UpdateMarginDisplay();
+            ApplyArrowSafePadding();
+            SavePreferences();
+        }
+        else if (_marginThumbDragging == "Top")
+        {
+            _marginTop = newVal;
+            _preferences.MarginTop = _marginTop;
+            _isUpdatingMarginSliders = true;
+            if (FindName("MarginTopSlider") is WpfSlider ts) ts.Value = newVal;
+            _isUpdatingMarginSliders = false;
+            UpdateMarginDisplay();
+            ApplyArrowSafePadding();
+            SavePreferences();
+        }
+        else if (_marginThumbDragging == "Bottom")
+        {
+            _marginBottom = newVal;
+            _preferences.MarginBottom = _marginBottom;
+            _isUpdatingMarginSliders = true;
+            if (FindName("MarginBottomSlider") is WpfSlider bs) bs.Value = newVal;
+            _isUpdatingMarginSliders = false;
+            UpdateMarginDisplay();
+            ApplyArrowSafePadding();
+            SavePreferences();
+        }
+    }
+
+    private void MarginThumbsCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_marginThumbDragging) && _marginThumbsCanvas != null)
+        {
+            _marginThumbsCanvas.ReleaseMouseCapture();
+            _marginThumbDragging = null;
+        }
+    }
+
     private void ArrowContainer_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _isDraggingArrow = true;
@@ -1971,13 +2122,47 @@ namespace TeleprompterApp
         ArrowStylePopup.IsOpen = !ArrowStylePopup.IsOpen;
     }
 
+    private bool MarginsLinked => _marginsLinkedToggle?.IsChecked == true;
+
+    private void SetAllMargins(double value)
+    {
+        var clamped = Math.Clamp(value, 0, MaxMargin);
+        _arrowPaddingExtra = clamped;
+        _marginRight = clamped;
+        _marginTop = clamped;
+        _marginBottom = clamped;
+        _preferences.ArrowLeftPaddingExtra = clamped;
+        _preferences.MarginRight = clamped;
+        _preferences.MarginTop = clamped;
+        _preferences.MarginBottom = clamped;
+        _isUpdatingLeftMargin = true;
+        _isUpdatingMarginSliders = true;
+        if (_leftMarginSlider != null) _leftMarginSlider.Value = clamped;
+        if (FindName("MarginRightSlider") is WpfSlider rs) rs.Value = clamped;
+        if (FindName("MarginTopSlider") is WpfSlider ts) ts.Value = clamped;
+        if (FindName("MarginBottomSlider") is WpfSlider bs) bs.Value = clamped;
+        _isUpdatingLeftMargin = false;
+        _isUpdatingMarginSliders = false;
+        UpdateLeftMarginDisplay();
+        UpdateMarginDisplay();
+        ApplyArrowSafePadding();
+        SavePreferences();
+    }
+
+    private void MarginsLinkedToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        _preferences.MarginsLinked = MarginsLinked;
+        SavePreferences();
+        SetStatus(MarginsLinked ? "Margini collegati: modifica uno = modifica tutti" : "Margini individuali");
+    }
+
     private void LinkMarginsButton_Click(object sender, RoutedEventArgs e)
     {
         var val = (_arrowPaddingExtra + _marginRight) / 2.0;
         _isUpdatingLeftMargin = true;
         _isUpdatingMarginSliders = true;
         SetArrowPaddingExtra(val, fromSlider: false, persist: false);
-        _marginRight = Math.Clamp(val, 0, 400);
+        _marginRight = Math.Clamp(val, 0, MaxMargin);
         _preferences.MarginRight = _marginRight;
         if (_leftMarginSlider != null) _leftMarginSlider.Value = val;
         if (FindName("MarginRightSlider") is WpfSlider rightSlider) rightSlider.Value = val;
@@ -2020,10 +2205,58 @@ namespace TeleprompterApp
             _playPauseToggle.IsChecked = false;
         }
 
+        ResetOnAirTimer();
         SyncPresenterScroll();
         UpdateScrollProgressDisplay();
         SetStatus("Testo riportato all'inizio");
         NotifyOscPosition();
+    }
+
+    private void TimerResetButton_Click(object sender, RoutedEventArgs e)
+    {
+        ResetOnAirTimer();
+        SetStatus("Timer azzerato");
+    }
+
+    private void StartOnAirTimer()
+    {
+        _onAirTimer.Start();
+        if (_onAirTimerDisplay == null)
+        {
+            _onAirTimerDisplay = new DispatcherTimer(DispatcherPriority.Background, Dispatcher)
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            _onAirTimerDisplay.Tick += (s, _) => UpdateOnAirTimerDisplay();
+        }
+        _onAirTimerDisplay.Stop();
+        _onAirTimerDisplay.Start();
+        UpdateOnAirTimerDisplay();
+    }
+
+    private void StopOnAirTimer()
+    {
+        _onAirTimer.Stop();
+        _onAirTimerDisplay?.Stop();
+        UpdateOnAirTimerDisplay();
+    }
+
+    private void ResetOnAirTimer()
+    {
+        _onAirTimer.Reset();
+        if (_onAirToggle?.IsChecked == true)
+            _onAirTimer.Start();
+        UpdateOnAirTimerDisplay();
+    }
+
+    private void UpdateOnAirTimerDisplay()
+    {
+        if (FindName("OnAirTimerText") is not WpfTextBlock tb) return;
+        var elapsed = _onAirTimer.Elapsed;
+        var s = elapsed.TotalSeconds >= 3600
+            ? $"{(int)elapsed.TotalHours}:{elapsed.Minutes:D2}:{elapsed.Seconds:D2}"
+            : $"{(int)elapsed.TotalMinutes:D2}:{elapsed.Seconds:D2}";
+        tb.Text = s;
     }
 
     private void GoToEndButton_Click(object sender, RoutedEventArgs e)
@@ -2073,11 +2306,13 @@ namespace TeleprompterApp
         if (isOnAir)
         {
             SetStatus("On-Air attivo: testo bloccato, schermo esterno = preview");
+            StartOnAirTimer();
         }
         else
         {
             _contentEditor.Focus();
             SetStatus("On-Air spento: modifica script, relatore vede in diretta");
+            StopOnAirTimer();
         }
 
         SavePreferences();
@@ -2148,12 +2383,13 @@ namespace TeleprompterApp
         }
 
         _preferences.ArrowScale = _arrowScale;
-        _preferences.ArrowHorizontalOffset = 0;
+        _preferences.ArrowHorizontalOffset = _arrowNormalizedPosition.X;
         _preferences.ArrowVerticalOffset = _arrowNormalizedPosition.Y;
         _preferences.ArrowLeftPaddingExtra = _arrowPaddingExtra;
         _preferences.MarginTop = _marginTop;
         _preferences.MarginRight = _marginRight;
         _preferences.MarginBottom = _marginBottom;
+        _preferences.MarginsLinked = MarginsLinked;
     }
 
     private void SavePreferences()
@@ -2205,8 +2441,12 @@ namespace TeleprompterApp
         var scaledArrowHeight = arrowHeight * _arrowScale;
         var maxTop = Math.Max(0, _arrowCanvas.ActualHeight - scaledArrowHeight);
         var top = maxTop * Clamp01(_arrowNormalizedPosition.Y);
+        var arrowWidth = _arrowContainer.ActualWidth > 0 ? _arrowContainer.ActualWidth : _arrowContainer.Width;
+        var maxLeft = Math.Max(0, _arrowCanvas.ActualWidth - arrowWidth - 2 * ArrowLeftOffset);
+        var left = ArrowLeftOffset + maxLeft * Clamp01(_arrowNormalizedPosition.X);
 
-        MoveArrowTo(ArrowLeftOffset, top);
+        MoveArrowTo(left, top);
+        _presenterWindow?.SetArrowNormalizedX(_arrowNormalizedPosition.X);
         _presenterWindow?.SetArrowNormalizedY(_arrowNormalizedPosition.Y);
     }
 
@@ -2225,16 +2465,10 @@ namespace TeleprompterApp
         var maxLeft = Math.Max(ArrowLeftOffset, _arrowCanvas.ActualWidth - arrowWidth - ArrowLeftOffset);
         var arrowLeft = double.IsNaN(left) ? ArrowLeftOffset : Math.Clamp(left, ArrowLeftOffset, maxLeft);
 
-        if (_mirrorToggle?.IsChecked == true)
-        {
-            arrowLeft = ArrowLeftOffset;
-        }
-
         Canvas.SetLeft(_arrowContainer, arrowLeft);
         Canvas.SetTop(_arrowContainer, top);
 
-        var normalized = maxTop > 0 ? top / maxTop : 0;
-        _presenterWindow?.SetArrowNormalizedY(Clamp01(normalized));
+        UpdateArrowNormalizedFromCurrent();
     }
 
     private void UpdateArrowScale(double scale, bool fromSlider, bool persist = true)
@@ -2266,7 +2500,7 @@ namespace TeleprompterApp
 
     private void SetArrowPaddingExtra(double value, bool fromSlider, bool persist = true)
     {
-        var clamped = Math.Clamp(value, 0, 400);
+        var clamped = Math.Clamp(value, 0, MaxMargin);
         _arrowPaddingExtra = clamped;
 
         if (!fromSlider && _leftMarginSlider != null)
@@ -2309,7 +2543,8 @@ namespace TeleprompterApp
     private void MarginTopSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_isUpdatingMarginSliders || !IsLoaded) return;
-        _marginTop = Math.Clamp(e.NewValue, 0, 400);
+        if (MarginsLinked) { SetAllMargins(e.NewValue); return; }
+        _marginTop = Math.Clamp(e.NewValue, 0, MaxMargin);
         _preferences.MarginTop = _marginTop;
         UpdateMarginDisplay();
         ApplyArrowSafePadding();
@@ -2319,7 +2554,8 @@ namespace TeleprompterApp
     private void MarginRightSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_isUpdatingMarginSliders || !IsLoaded) return;
-        _marginRight = Math.Clamp(e.NewValue, 0, 400);
+        if (MarginsLinked) { SetAllMargins(e.NewValue); return; }
+        _marginRight = Math.Clamp(e.NewValue, 0, MaxMargin);
         _preferences.MarginRight = _marginRight;
         UpdateMarginDisplay();
         ApplyArrowSafePadding();
@@ -2329,7 +2565,8 @@ namespace TeleprompterApp
     private void MarginBottomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_isUpdatingMarginSliders || !IsLoaded) return;
-        _marginBottom = Math.Clamp(e.NewValue, 0, 400);
+        if (MarginsLinked) { SetAllMargins(e.NewValue); return; }
+        _marginBottom = Math.Clamp(e.NewValue, 0, MaxMargin);
         _preferences.MarginBottom = _marginBottom;
         UpdateMarginDisplay();
         ApplyArrowSafePadding();
@@ -2799,15 +3036,20 @@ namespace TeleprompterApp
         }
 
         var arrowHeight = _arrowContainer.ActualHeight > 0 ? _arrowContainer.ActualHeight : _arrowContainer.Height;
+        var arrowWidth = _arrowContainer.ActualWidth > 0 ? _arrowContainer.ActualWidth : _arrowContainer.Width;
         var maxTop = Math.Max(1, _arrowCanvas.ActualHeight - arrowHeight);
+        var maxLeft = Math.Max(0, _arrowCanvas.ActualWidth - arrowWidth - 2 * ArrowLeftOffset);
 
         var currentTop = double.IsNaN(Canvas.GetTop(_arrowContainer)) ? 0 : Canvas.GetTop(_arrowContainer);
+        var currentLeft = double.IsNaN(Canvas.GetLeft(_arrowContainer)) ? ArrowLeftOffset : Canvas.GetLeft(_arrowContainer);
 
-        _arrowNormalizedPosition = new MediaPoint(
-            0,
-            Clamp01(currentTop / maxTop));
+        var normX = maxLeft > 0 ? Clamp01((currentLeft - ArrowLeftOffset) / maxLeft) : 0;
+        var normY = Clamp01(currentTop / maxTop);
 
-    _presenterWindow?.SetArrowNormalizedY(_arrowNormalizedPosition.Y);
+        _arrowNormalizedPosition = new MediaPoint(normX, normY);
+
+        _presenterWindow?.SetArrowNormalizedX(_arrowNormalizedPosition.X);
+        _presenterWindow?.SetArrowNormalizedY(_arrowNormalizedPosition.Y);
     }
 
     private static double Clamp01(double value) => Math.Max(0, Math.Min(1, value));

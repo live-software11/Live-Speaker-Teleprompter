@@ -89,7 +89,7 @@ namespace TeleprompterApp
                     : padding;
 
                 doc.PagePadding = effectivePadding;
-                _content.Padding = effectivePadding;
+                _content.Padding = new Thickness(0);
             }
         }
 
@@ -173,10 +173,25 @@ namespace TeleprompterApp
         }
 
         private double _arrowNormalizedY = 0.5;
+        private double _arrowNormalizedX = 0;
+        private double? _arrowViewportYOverride;
+
+        public void SetArrowViewportY(double viewportY)
+        {
+            _arrowViewportYOverride = viewportY;
+            UpdateArrowPosition();
+        }
 
         public void SetArrowNormalizedY(double normalizedY)
         {
+            _arrowViewportYOverride = null;
             _arrowNormalizedY = Math.Clamp(normalizedY, 0, 1);
+            UpdateArrowPosition();
+        }
+
+        public void SetArrowNormalizedX(double normalizedX)
+        {
+            _arrowNormalizedX = Math.Clamp(normalizedX, 0, 1);
             UpdateArrowPosition();
         }
 
@@ -219,14 +234,20 @@ namespace TeleprompterApp
                 var arrowHeight = _arrowContainer.ActualHeight > 0 ? _arrowContainer.ActualHeight : _arrowContainer.Height;
                 var arrowWidth = _arrowContainer.ActualWidth > 0 ? _arrowContainer.ActualWidth : _arrowContainer.Width;
                 var maxTop = Math.Max(0, _arrowCanvas.ActualHeight - arrowHeight);
-            var top = maxTop * _arrowNormalizedY;
+                double top;
+                if (_arrowViewportYOverride.HasValue)
+                {
+                    top = Math.Clamp(_arrowViewportYOverride.Value, 0, maxTop);
+                }
+                else
+                {
+                    top = maxTop * _arrowNormalizedY;
+                }
 
-            var left = ArrowLeftOffset;
                 var canvasWidth = _arrowCanvas.ActualWidth;
-            if (_isMirrored && canvasWidth > 0)
-            {
-                left = Math.Max(ArrowLeftOffset, canvasWidth - arrowWidth - ArrowLeftOffset);
-            }
+                var range = Math.Max(0, canvasWidth - arrowWidth - 2 * ArrowLeftOffset);
+                var normalizedX = _isMirrored ? (1 - _arrowNormalizedX) : _arrowNormalizedX;
+                var left = ArrowLeftOffset + range * normalizedX;
 
                 Canvas.SetLeft(_arrowContainer, left);
                 Canvas.SetTop(_arrowContainer, top);

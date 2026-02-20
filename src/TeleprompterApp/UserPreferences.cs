@@ -25,6 +25,7 @@ public class UserPreferences
     public double MarginRight { get; set; } = 40;
     public double MarginBottom { get; set; } = 40;
     public double MarginLeft { get; set; } = 40;
+    public bool MarginsLinked { get; set; }
     public bool EditModeEnabled { get; set; } = true;
     public DateTime LastUpdatedUtc { get; set; } = DateTime.UtcNow;
 }
