@@ -52,9 +52,11 @@ namespace TeleprompterApp
 {
     public partial class MainWindow : Window
     {
-    // ── Scroll (DispatcherTimer per affidabilità, evita conflitti con Space/ScrollViewer) ──
+    // ── Scroll ──
     private readonly Stopwatch _scrollStopwatch = new();
     private DispatcherTimer? _scrollTimer;
+    private double _scrollAccumulator;
+    private int _scrollStuckFrames;
     private double _scrollSpeed;
     private const double SpeedStep = 0.5;
     private const double MaxSpeed = 80;
@@ -1534,6 +1536,8 @@ namespace TeleprompterApp
             _scrollTimer.Tick += ScrollTimer_Tick;
         }
         _scrollTimer.Stop();
+        _scrollAccumulator = 0;
+        _scrollStuckFrames = 0;
         _scrollTimer.Start();
         _scrollStopwatch.Restart();
 
@@ -1577,41 +1581,51 @@ namespace TeleprompterApp
     private void ScrollTimer_Tick(object? sender, EventArgs e)
     {
         if (_scrollSpeed == 0 || _contentScrollViewer == null)
-        {
             return;
-        }
 
         var elapsed = _scrollStopwatch.Elapsed.TotalMilliseconds;
         _scrollStopwatch.Restart();
-
         if (elapsed <= 0 || elapsed > 500)
-        {
             elapsed = 16;
-        }
 
         var dtFactor = elapsed / 16.0;
-        var scrollDelta = _scrollSpeed * dtFactor;
+        _scrollAccumulator += _scrollSpeed * dtFactor;
+
+        if (Math.Abs(_scrollAccumulator) < 1.0)
+            return;
+
+        var scrollDelta = _scrollAccumulator;
+        _scrollAccumulator = 0;
 
         var previousOffset = _contentScrollViewer.VerticalOffset;
         var maxOffset = _contentScrollViewer.ScrollableHeight;
         if (double.IsNaN(maxOffset) || maxOffset < 0)
-        {
             maxOffset = 0;
-        }
 
-        var clampedTarget = maxOffset <= 0
+        var target = maxOffset <= 0
             ? previousOffset + scrollDelta
             : Math.Clamp(previousOffset + scrollDelta, 0, maxOffset);
 
-        _contentScrollViewer.ScrollToVerticalOffset(clampedTarget);
+        _contentScrollViewer.ScrollToVerticalOffset(target);
+        SyncPresenterScroll();
+        UpdateScrollProgressDisplay();
 
         var actualOffset = _contentScrollViewer.VerticalOffset;
-        if (Math.Abs(actualOffset - previousOffset) < 0.05)
+        if (Math.Abs(actualOffset - previousOffset) < 0.1)
         {
-            _scrollTimer?.Stop();
-            _scrollStopwatch.Stop();
-            _playPauseToggle.IsChecked = false;
-            SetStatus(_scrollSpeed > 0 ? "Fine del testo" : "Inizio del testo");
+            _scrollStuckFrames++;
+            if (_scrollStuckFrames > 30)
+            {
+                _scrollTimer?.Stop();
+                _scrollStopwatch.Stop();
+                _scrollStuckFrames = 0;
+                _playPauseToggle.IsChecked = false;
+                SetStatus(_scrollSpeed > 0 ? "Fine del testo" : "Inizio del testo");
+            }
+        }
+        else
+        {
+            _scrollStuckFrames = 0;
         }
     }
 
@@ -1780,6 +1794,8 @@ namespace TeleprompterApp
                 _scrollTimer.Tick += ScrollTimer_Tick;
             }
             _scrollTimer.Stop();
+            _scrollAccumulator = 0;
+            _scrollStuckFrames = 0;
             _scrollTimer.Start();
             _scrollStopwatch.Restart();
             SetStatus(_scrollSpeed > 0 ? "Scorrimento attivo" : "Scorrimento inverso");
