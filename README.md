@@ -379,10 +379,14 @@ dotnet run
 # Publish Release (self-contained, ReadyToRun, compresso)
 dotnet publish -c Release
 
-# Build completa (portable ZIP + installer EXE)
+# Build completa (portable ZIP + installer EXE con icona)
+.\clean-and-build.ps1
+# oppure:
 cd installer
 .\build-installer.ps1
 ```
+
+**Nota:** `clean-and-build.ps1` genera automaticamente l'icona da `icons/Logo Teleprompter.png` prima del build.
 
 ### Output del build
 
@@ -433,7 +437,10 @@ portable/                            ← Output del build
   R-Speaker-Teleprompter-Portable.zip  — ZIP con solo l'exe
   R-Speaker-Teleprompter-Installer.exe — Installer self-extracting
 
-icons/                               — Icone dell'applicazione
+icons/                               — Icona app (app-icon.ico) + Logo Teleprompter.png (sorgente)
+scripts/                             — Tool di supporto
+  convert-logo.ps1                     — Converte logo in app-icon.ico (chiamato da clean-and-build)
+  PngToIco/                            — Tool .NET per conversione immagine→ICO
 docs/                                — Documentazione aggiuntiva
 ```
 

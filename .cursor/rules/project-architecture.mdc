@@ -18,6 +18,8 @@ installer/
   build-installer.ps1       → Pipeline publish + portable + installer
   installer-template.ps1    → Template installer self-extracting
 portable/                  → Output build (gitignored)
+icons/                     → Logo Teleprompter.png (sorgente) + app-icon.ico (generato)
+scripts/                   → convert-logo.ps1, PngToIco/ (PNG/WebP → ICO)
 src/TeleprompterApp/
   MainWindow.xaml/.cs       → Editor + Preview (finestra principale)
   PresenterWindow.xaml/.cs  → Output su monitor esterno (full-screen)
@@ -26,7 +28,7 @@ src/TeleprompterApp/
     PresenterSyncService.cs → Sync documento (debounce 300ms, XamlPackage clone)
     DebouncedPreferencesService.cs → Salvataggio preferenze (debounce 500ms)
     LayoutPresetService.cs  → Save/Load preset layout S1–S4 / L1–L4 (layout-presets.json)
-  LayoutPreset.cs           → Modello snapshot layout (colori, font, margini, freccia)
+  LayoutPreset.cs           → Modello snapshot layout
   CompanionBridge.cs        → HTTP API porta 3131
   OscBridge.cs              → OSC UDP porte 8000/8001
   NDITransmitter.cs         → Streaming NDI via CompositionTarget.Rendering
@@ -50,7 +52,7 @@ src/TeleprompterApp/
 - `SyncPresenterDocument()` → clone immediato
 - `RequestPresenterSync()` → clone debounced (300ms) per il typing
 - `SetVerticalOffset()` → sync posizione scroll
-- `SetArrowNormalizedY()` → sync posizione freccia (0-1)
+- `SetArrowAbsoluteY()` → sync posizione freccia (pixel dal top, stessa riga testo)
 - `SetMirror()` → stato specchio
 - `SetBackgroundColor()` / `SetArrowColor()` → aspetto visivo
 - `SyncPresenterAppearance()` → sync completo sfondo, freccia (colore, scala, posizione) al presenter

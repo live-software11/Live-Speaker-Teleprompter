@@ -12,7 +12,7 @@ Write-Host "========================================================" -Foregroun
 Write-Host ""
 
 # -- 1. Pulizia bin/ obj/ publish/ ---------------------------------------
-Write-Host "[1/4] Pulizia cartelle build obsolete..." -ForegroundColor Yellow
+Write-Host "[1/5] Pulizia cartelle build obsolete..." -ForegroundColor Yellow
 $dirsToClean = @(
     (Join-Path $root "src\TeleprompterApp\bin"),
     (Join-Path $root "src\TeleprompterApp\obj"),
@@ -27,7 +27,7 @@ foreach ($d in $dirsToClean) {
 Write-Host "  Pulizia bin/obj completata." -ForegroundColor Green
 
 # -- 2. Pulizia output portable ------------------------------------------
-Write-Host "[2/4] Pulizia output portable obsoleti..." -ForegroundColor Yellow
+Write-Host "[2/5] Pulizia output portable obsoleti..." -ForegroundColor Yellow
 $portableDir = Join-Path $root "portable"
 if (-not (Test-Path $portableDir)) {
     New-Item -ItemType Directory -Path $portableDir -Force | Out-Null
@@ -46,8 +46,22 @@ foreach ($pattern in $portableFiles) {
 }
 Write-Host "  Pulizia portable completata." -ForegroundColor Green
 
-# -- 3. dotnet restore ---------------------------------------------------
-Write-Host "[3/4] dotnet restore..." -ForegroundColor Yellow
+# -- 3. Genera icona da logo (se PNG presente) ---------------------------
+Write-Host "[3/5] Generazione icona da logo..." -ForegroundColor Yellow
+$convertScript = Join-Path $root "scripts\convert-logo.ps1"
+if (Test-Path $convertScript) {
+    & $convertScript
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  Icona aggiornata." -ForegroundColor Green
+    } else {
+        Write-Host "  Logo PNG non trovato, uso icona esistente se presente." -ForegroundColor DarkGray
+    }
+} else {
+    Write-Host "  Script convert-logo.ps1 non trovato, salto." -ForegroundColor DarkGray
+}
+
+# -- 4. dotnet restore ---------------------------------------------------
+Write-Host "[4/5] dotnet restore..." -ForegroundColor Yellow
 Push-Location $root
 dotnet restore --nologo -v minimal
 if ($LASTEXITCODE -ne 0) {
@@ -58,8 +72,8 @@ if ($LASTEXITCODE -ne 0) {
 Pop-Location
 Write-Host "  Restore completato." -ForegroundColor Green
 
-# -- 4. Build completo (publish + portable + installer) ------------------
-Write-Host "[4/4] Build completo (publish, portable, installer)..." -ForegroundColor Yellow
+# -- 5. Build completo (publish + portable + installer) ------------------
+Write-Host "[5/5] Build completo (publish, portable, installer)..." -ForegroundColor Yellow
 & (Join-Path $root "installer\build-installer.ps1")
 
 if ($LASTEXITCODE -ne 0) {

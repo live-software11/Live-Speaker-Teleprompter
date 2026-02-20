@@ -10,11 +10,18 @@ alwaysApply: false
 - **clean-and-build.ps1** / **clean-and-build.bat** — pulisce bin/obj/portable e crea build completa
 - Lanciare dalla root: `.\clean-and-build.ps1` o doppio clic su `clean-and-build.bat`
 
-## Pipeline (installer/build-installer.ps1)
-1. dotnet publish -c Release (self-contained, single-file, ReadyToRun)
+## Pipeline (clean-and-build.ps1)
+1. Pulizia bin/obj/portable
+2. Genera icona: `scripts\convert-logo.ps1` (da `Logo Teleprompter.png` → `icons\app-icon.ico`)
+3. dotnet restore
+4. build-installer.ps1: dotnet publish -c Release (self-contained, single-file, ReadyToRun)
 2. Portable EXE: `R-Speaker-Teleprompter-Portable.exe` (solo exe)
 3. Portable ZIP: contiene solo l'exe
 4. Installer EXE: self-extracting, estrae `R-Speaker Teleprompter.exe`
+
+## Icona
+- `icons\Logo Teleprompter.png` → `scripts\convert-logo.ps1` → `icons\app-icon.ico`
+- L'icona è generata automaticamente da clean-and-build prima del publish.
 
 ## Output (portable/)
 - `R-Speaker-Teleprompter-Portable.exe` — eseguibile standalone, nessuna dipendenza
