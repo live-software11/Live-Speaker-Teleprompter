@@ -94,14 +94,70 @@ if (-not (Test-Path $OutputDir)) {
 
 # Remove old outputs
 $portableExeTarget = Join-Path $OutputDir "Live-Speaker-Teleprompter-Portable.exe"
+$portableItaExe = Join-Path $OutputDir "Live-Speaker-Teleprompter-Portable-ITA.exe"
+$portableEngExe = Join-Path $OutputDir "Live-Speaker-Teleprompter-Portable-ENG.exe"
 Remove-Item $exeTarget      -Force -ErrorAction SilentlyContinue
 Remove-Item $portableExeTarget -Force -ErrorAction SilentlyContinue
+Remove-Item $portableItaExe -Force -ErrorAction SilentlyContinue
+Remove-Item $portableEngExe -Force -ErrorAction SilentlyContinue
 
-# -- Step 3: Portable — solo EXE (nessun pdb, nessun altro file) ---------
-Write-Host "[3/4] Creating portable EXE (single file only)..." -ForegroundColor Yellow
+# -- Step 3: Portable — EXE + versioni ITA/ENG (self-extracting EXE con lingua) ---
+Write-Host "[3/4] Creating portable EXE and versions ITA/ENG..." -ForegroundColor Yellow
 Copy-Item $friendlyExe $portableExeTarget -Force
 $portableInfo = Get-Item $portableExeTarget
 Write-Host "  Portable EXE: Live-Speaker-Teleprompter-Portable.exe ($([math]::Round($portableInfo.Length/1MB, 1)) MB)" -ForegroundColor Green
+
+$portableExtractorTemplate = Join-Path $PSScriptRoot "portable-extractor-template.ps1"
+$iexpressExe = Join-Path $env:SystemRoot "System32\iexpress.exe"
+
+function Build-PortableLangExe {
+    param([string]$Lang, [string]$Culture, [string]$OutExe)
+    $tempDir = Join-Path $env:TEMP ("live-speaker-$Lang-" + [guid]::NewGuid().ToString('N').Substring(0,8))
+    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+    try {
+        Copy-Item $friendlyExe (Join-Path $tempDir "Live Speaker Teleprompter.exe") -Force
+        $Culture | Out-File -FilePath (Join-Path $tempDir "install-language.txt") -Encoding UTF8 -NoNewline
+        $zipPath = Join-Path $tempDir "payload.zip"
+        Compress-Archive -Path (Join-Path $tempDir "Live Speaker Teleprompter.exe"), (Join-Path $tempDir "install-language.txt") -DestinationPath $zipPath -CompressionLevel Optimal -Force
+        $zipBase64 = [System.Convert]::ToBase64String([System.IO.File]::ReadAllBytes($zipPath))
+        $extractScript = (Get-Content $portableExtractorTemplate -Raw).Replace('##EMBEDDED_ZIP##', $zipBase64)
+        $extractScriptPath = Join-Path $tempDir "extract.ps1"
+        [System.IO.File]::WriteAllText($extractScriptPath, $extractScript, [System.Text.Encoding]::UTF8)
+        $sedPath = Join-Path $tempDir "portable.sed"
+        $sedContent = "[Version]`r`nClass=IEXPRESS`r`nSEDVersion=3`r`n"
+        $sedContent += "[Options]`r`nPackagePurpose=InstallApp`r`nShowInstallProgramWindow=0`r`nHideExtractAnimation=1`r`n"
+        $sedContent += "UseLongFileName=1`r`nInsideCompressed=0`r`nCAB_FixedSize=0`r`nRebootMode=N`r`n"
+        $sedContent += "InstallPrompt=%InstallPrompt%`r`nDisplayLicense=%DisplayLicense%`r`nFinishMessage=%FinishMessage%`r`n"
+        $sedContent += "TargetName=%TargetName%`r`nFriendlyName=%FriendlyName%`r`nAppLaunched=%AppLaunched%`r`n"
+        $sedContent += "PostInstallCmd=%PostInstallCmd%`r`nAdminQuietInstCmd=%AdminQuietInstCmd%`r`nUserQuietInstCmd=%UserQuietInstCmd%`r`n"
+        $sedContent += "SourceFiles=SourceFiles`r`n`r`n[Strings]`r`n"
+        $sedContent += "InstallPrompt=`r`nDisplayLicense=`r`nFinishMessage=`r`n"
+        $sedContent += "TargetName=$OutExe`r`n"
+        $sedContent += "FriendlyName=Live Speaker Teleprompter Portable $Lang`r`n"
+        $sedContent += "AppLaunched=cmd /c powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"extract.ps1`"`r`n"
+        $sedContent += "PostInstallCmd=<None>`r`nAdminQuietInstCmd=`r`nUserQuietInstCmd=`r`n"
+        $sedContent += 'FILE0="extract.ps1"' + "`r`n`r`n[SourceFiles]`r`nSourceFiles0=$tempDir\`r`n`r`n[SourceFiles0]`r`n%FILE0%=`r`n"
+        [System.IO.File]::WriteAllText($sedPath, $sedContent, [System.Text.Encoding]::ASCII)
+        if (Test-Path $iexpressExe) {
+            & $iexpressExe /N $sedPath | Out-Null
+            if (Test-Path $OutExe) {
+                $info = Get-Item $OutExe
+                Write-Host "  Portable $Lang`: Live-Speaker-Teleprompter-Portable-$Lang.exe ($([math]::Round($info.Length/1MB, 1)) MB)" -ForegroundColor Green
+            }
+        } else {
+            Write-Warning "IExpress not found -- skipping portable $Lang EXE."
+        }
+    } finally {
+        Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+if (Test-Path $portableExtractorTemplate) {
+    Build-PortableLangExe -Lang "ITA" -Culture "it" -OutExe $portableItaExe
+    Build-PortableLangExe -Lang "ENG" -Culture "en" -OutExe $portableEngExe
+} else {
+    Write-Warning "portable-extractor-template.ps1 not found -- skipping portable ITA/ENG."
+}
 
 # -- Step 4: Create self-extracting installer -----------------------------
 Write-Host "[4/4] Creating self-extracting installer..." -ForegroundColor Yellow
@@ -202,10 +258,17 @@ Write-Host "  Outputs in: $OutputDir" -ForegroundColor Cyan
 if (Test-Path $portableExeTarget) {
     Write-Host "  [OK] Portable EXE:  Live-Speaker-Teleprompter-Portable.exe" -ForegroundColor White
 }
+if (Test-Path $portableItaExe) {
+    Write-Host "  [OK] Portable ITA:  Live-Speaker-Teleprompter-Portable-ITA.exe" -ForegroundColor White
+}
+if (Test-Path $portableEngExe) {
+    Write-Host "  [OK] Portable ENG:  Live-Speaker-Teleprompter-Portable-ENG.exe" -ForegroundColor White
+}
 if (Test-Path $exeTarget) {
     Write-Host "  [OK] Installer EXE: $InstallerName" -ForegroundColor White
 }
 Write-Host ""
 Write-Host "  Portable: solo exe, nessuna dipendenza, nessun file da estrarre." -ForegroundColor DarkGray
+Write-Host "  Portable ITA/ENG: self-extracting EXE, lingua predefinita nel nome." -ForegroundColor DarkGray
 Write-Host "  Installer: stesso eseguibile, installazione opzionale." -ForegroundColor DarkGray
 Write-Host ""

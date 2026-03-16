@@ -217,7 +217,7 @@ namespace TeleprompterApp
         _presenterSync = new PresenterSyncService(Dispatcher);
 
         var placeholder = string.IsNullOrWhiteSpace(_preferences.LastScriptPath)
-            ? "Carica un file di testo o inizia a scrivere..."
+            ? Localization.Get("Status_LoadFile")
             : null;
 
         ApplyDocumentDefaults(placeholder);
@@ -267,7 +267,67 @@ namespace TeleprompterApp
             FocusManager.SetFocusedElement(this, this);
         }
 
+        ApplyLocalization();
         Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(UpdateScrollProgressDisplay));
+    }
+
+    private void ApplyLocalization()
+    {
+        OpenFileButton.ToolTip = Localization.Get("Tooltip_Open");
+        NewDocumentButton.ToolTip = Localization.Get("Tooltip_New");
+        SaveDocumentButton.ToolTip = Localization.Get("Tooltip_Save");
+        FontSizeComboBox.ToolTip = Localization.Get("Tooltip_FontSize");
+        FontButton.ToolTip = Localization.Get("Tooltip_Font");
+        BackgroundButton.ToolTip = Localization.Get("Tooltip_Background");
+        ForegroundButton.ToolTip = Localization.Get("Tooltip_TextColor");
+        GoToStartButton.ToolTip = Localization.Get("Tooltip_Start");
+        PlayPauseToggle.ToolTip = Localization.Get("Tooltip_PlayPause");
+        GoToEndButton.ToolTip = Localization.Get("Tooltip_End");
+        OnAirToggle.ToolTip = Localization.Get("Tooltip_OnAir");
+        MirrorToggle.ToolTip = Localization.Get("Tooltip_Mirror");
+        TopMostToggle.ToolTip = Localization.Get("Tooltip_TopMost");
+        if (FindName("MarginsLabel") is System.Windows.Controls.TextBlock ml) { ml.Text = Localization.Get("Label_Margins"); }
+        if (FindName("LeftLabel") is System.Windows.Controls.TextBlock ll) { ll.Text = Localization.Get("Label_Left"); ll.ToolTip = Localization.Get("Tooltip_LeftShort"); }
+        if (FindName("RightLabel") is System.Windows.Controls.TextBlock rl) { rl.Text = Localization.Get("Label_Right"); rl.ToolTip = Localization.Get("Tooltip_RightShort"); }
+        if (FindName("TopLabel") is System.Windows.Controls.TextBlock tl) { tl.Text = Localization.Get("Label_Top"); tl.ToolTip = Localization.Get("Tooltip_TopShort"); }
+        if (FindName("BottomLabel") is System.Windows.Controls.TextBlock bl) { bl.Text = Localization.Get("Label_Bottom"); bl.ToolTip = Localization.Get("Tooltip_BottomShort"); }
+        if (FindName("ArrowLabel") is System.Windows.Controls.TextBlock al) { al.Text = Localization.Get("Label_Arrow"); }
+        if (FindName("PresetLabel") is System.Windows.Controls.TextBlock presetLbl) { presetLbl.Text = Localization.Get("Label_Preset"); }
+        if (FindName("ArrowButtonText") is System.Windows.Controls.TextBlock abt) abt.Text = Localization.Get("Btn_Arrow");
+        LeftMarginSlider.ToolTip = Localization.Get("Tooltip_LeftMargin");
+        MarginRightSlider.ToolTip = Localization.Get("Tooltip_RightMargin");
+        LinkMarginsButton.ToolTip = Localization.Get("Tooltip_LinkMargins");
+        MarginsLinkedToggle.ToolTip = Localization.Get("Tooltip_MarginsLinked");
+        ArrowSizeSlider.ToolTip = Localization.Get("Tooltip_ArrowSize");
+        ArrowStyleButton.ToolTip = Localization.Get("Tooltip_Arrow");
+        ArrowColorButton.Content = Localization.Get("Btn_ArrowColor");
+        TimerResetButton.ToolTip = Localization.Get("Tooltip_TimerReset");
+        LeftMarginThumb.ToolTip = Localization.Get("Tooltip_MarginLeftThumb");
+        RightMarginThumb.ToolTip = Localization.Get("Tooltip_MarginRightThumb");
+        TopMarginThumb.ToolTip = Localization.Get("Tooltip_MarginTopThumb");
+        BottomMarginThumb.ToolTip = Localization.Get("Tooltip_MarginBottomThumb");
+        for (var i = 1; i <= 4; i++)
+        {
+            if (FindName($"PresetSave{i}") is ToggleButton ps) ps.ToolTip = Localization.Get("Tooltip_PresetSave", i);
+            if (FindName($"PresetLoad{i}") is System.Windows.Controls.Button pl) pl.ToolTip = Localization.Get("Tooltip_PresetLoad", i);
+        }
+        if (FindName("ArrowPopupTitle") is System.Windows.Controls.TextBlock arrowTb)
+            arrowTb.Text = Localization.Get("Popup_ArrowTitle");
+        UpdatePlayPauseLabel();
+        UpdateOnAirLabel();
+        if (_statusText != null) _statusText.Text = Localization.Get("Status_Ready");
+    }
+
+    private void UpdatePlayPauseLabel()
+    {
+        var label = FindName("PlayPauseLabelText") as System.Windows.Controls.TextBlock;
+        if (label != null) label.Text = _playPauseToggle?.IsChecked == true ? Localization.Get("Btn_Pause") : Localization.Get("Btn_Play");
+    }
+
+    private void UpdateOnAirLabel()
+    {
+        var label = FindName("OnAirLabelText") as System.Windows.Controls.TextBlock;
+        if (label != null) label.Text = _onAirToggle?.IsChecked == true ? Localization.Get("Btn_OnAir") : Localization.Get("Btn_Off");
     }
 
     private void StartOscIntegration()
@@ -285,7 +345,7 @@ namespace TeleprompterApp
         }
         else
         {
-            SetStatus($"OSC non disponibile (porta {OscListenPort}).");
+            SetStatus(Localization.Get("Status_OSCUnavailable", OscListenPort));
         }
     }
 
@@ -303,7 +363,7 @@ namespace TeleprompterApp
         }
         else
         {
-            SetStatus($"Companion non disponibile (porta {CompanionPort}).");
+            SetStatus(Localization.Get("Status_CompanionUnavailable", CompanionPort));
         }
     }
 
@@ -311,7 +371,7 @@ namespace TeleprompterApp
     {
         if (_contentScrollViewer == null)
         {
-            SetStatus("NDI non disponibile: contenuto non pronto.");
+            SetStatus(Localization.Get("Status_NDIUnavailable"));
             if (_ndiToggle != null)
             {
                 _ndiToggle.IsChecked = false;
@@ -327,11 +387,11 @@ namespace TeleprompterApp
 
         if (_ndiTransmitter.TryStart())
         {
-            SetStatus("Trasmissione NDI attiva.");
+            SetStatus(Localization.Get("Status_NDIActive"));
         }
         else
         {
-            SetStatus("Impossibile avviare NDI: installa il runtime NewTek.");
+            SetStatus(Localization.Get("Status_NDIStartFailed"));
             if (_ndiToggle != null)
             {
                 _ndiToggle.IsChecked = false;
@@ -349,7 +409,7 @@ namespace TeleprompterApp
         }
 
         _ndiTransmitter.Stop();
-        SetStatus("Trasmissione NDI disattivata.");
+        SetStatus(Localization.Get("Status_NDIInactive"));
         NotifyOscNdiStatus();
     }
 
@@ -498,16 +558,16 @@ namespace TeleprompterApp
             {
                 LoadDocument(_preferences.LastScriptPath);
                 _currentDocumentPath = _preferences.LastScriptPath;
-                SetStatus($"Ripristinato: {Path.GetFileName(_currentDocumentPath)}");
+                SetStatus(Localization.Get("Status_Restored", Path.GetFileName(_currentDocumentPath)));
             }
             catch
             {
-                SetStatus("Pronto: carica un file o scrivi il tuo copione.");
+                SetStatus(Localization.Get("Status_ReadyLoadFile"));
             }
         }
         else
         {
-            SetStatus("Pronto: carica un file o scrivi il tuo copione.");
+            SetStatus(Localization.Get("Status_ReadyLoadFile"));
         }
     }
 
@@ -592,15 +652,15 @@ namespace TeleprompterApp
 
         if (_screenInfos.Count > 1)
         {
-            SetStatus($"Schermi rilevati: {string.Join(", ", _screenInfos.Select(o => o.DisplayLabel))}");
+            SetStatus(Localization.Get("Status_ScreensDetected", string.Join(", ", _screenInfos.Select(o => o.DisplayLabel))));
         }
         else if (_screenInfos.Count == 1)
         {
-            SetStatus($"Schermo attivo: {_screenInfos[0].DisplayLabel}");
+            SetStatus(Localization.Get("Status_ScreenActive", _screenInfos[0].DisplayLabel));
         }
         else
         {
-            SetStatus("Nessun monitor rilevato");
+            SetStatus(Localization.Get("Status_NoMonitor"));
         }
     }
 
@@ -624,11 +684,11 @@ namespace TeleprompterApp
         var presenterShown = MoveWindowToScreen(option);
         if (presenterShown)
         {
-            SetStatus($"Presenter su {option.DisplayLabel}");
+            SetStatus(Localization.Get("Status_PresenterOn", option.DisplayLabel));
         }
         else
         {
-            SetStatus("Presenter nascosto: usa un display esterno per attivarlo.");
+            SetStatus(Localization.Get("Status_PresenterHidden"));
         }
     }
 
@@ -687,13 +747,13 @@ namespace TeleprompterApp
                 }
                 catch (Exception ex)
                 {
-                    SetStatus($"Sync presenter: {ex.Message}");
+                    SetStatus(Localization.Get("Status_SyncPresenter", ex.Message));
                 }
             });
         }
         catch (Exception ex)
         {
-            SetStatus($"Errore schermo esterno: {ex.Message}");
+            SetStatus(Localization.Get("Status_ErrorScreen", ex.Message));
             return false;
         }
         return true;
@@ -737,11 +797,11 @@ namespace TeleprompterApp
             {
                 LoadDocument(dialog.FileName);
                 _contentScrollViewer.ScrollToTop();
-                SetStatus($"Caricato: {Path.GetFileName(dialog.FileName)}");
+                SetStatus(Localization.Get("Status_Loaded", Path.GetFileName(dialog.FileName)));
             }
             catch (Exception ex)
             {
-                MediaMessageBox.Show(this, $"Impossibile aprire il file.\n{ex.Message}", "Errore", MessageBoxButton.OK, MessageBoxImage.Error);
+                MediaMessageBox.Show(this, Localization.Get("Error_OpenFile", ex.Message), Localization.Get("Error_Title"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
@@ -757,7 +817,7 @@ namespace TeleprompterApp
 
         if (extension == ".docx" || extension == ".doc")
         {
-            SetStatus("Importazione Word in corso...");
+            SetStatus(Localization.Get("Status_ImportingWord"));
             var path = filePath;
             _ = Task.Run(() =>
             {
@@ -772,7 +832,7 @@ namespace TeleprompterApp
                     ApplyArrowSafePadding();
                     SavePreferences();
                     SyncPresenterDocument();
-                    SetStatus($"Importato: {Path.GetFileName(path)}");
+                    SetStatus(Localization.Get("Status_Imported", Path.GetFileName(path)));
                 });
             });
             return;
@@ -873,7 +933,7 @@ namespace TeleprompterApp
         }
         else
         {
-            SetStatus("Salvataggio annullato.");
+            SetStatus(Localization.Get("Status_SaveCancelled"));
         }
     }
 
@@ -881,7 +941,7 @@ namespace TeleprompterApp
     {
         if (_contentEditor == null)
         {
-            SetStatus("Impossibile salvare: editor non pronto.");
+            SetStatus(Localization.Get("Status_EditorNotReady"));
             return;
         }
         try
@@ -899,8 +959,7 @@ namespace TeleprompterApp
 
             if (!preserveFormatting)
             {
-                var question = "Il formato scelto non conserva la formattazione. Vuoi salvarlo come Documento Teleprompter (.rstp) per mantenere colori, font e stile?";
-                var choice = MediaMessageBox.Show(this, question, "Formato limitato", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                var choice = MediaMessageBox.Show(this, Localization.Get("Question_LimitedFormat"), Localization.Get("Title_LimitedFormat"), MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (choice == MessageBoxResult.Yes)
                 {
                     filePath = Path.ChangeExtension(filePath, ".rstp");
@@ -950,21 +1009,21 @@ namespace TeleprompterApp
 
             if (forcedRichFormat)
             {
-                SetStatus($"Salvato come documento completo: {Path.GetFileName(filePath)}");
+                SetStatus(Localization.Get("Status_SavedFull", Path.GetFileName(filePath)));
             }
             else if (!preserveFormatting)
             {
-                SetStatus($"Salvato (solo testo): {Path.GetFileName(filePath)}");
+                SetStatus(Localization.Get("Status_SavedPlain", Path.GetFileName(filePath)));
             }
             else
             {
-                SetStatus($"Salvato: {Path.GetFileName(filePath)}");
+                SetStatus(Localization.Get("Status_Saved", Path.GetFileName(filePath)));
             }
             SavePreferences();
         }
         catch (Exception ex)
         {
-            MediaMessageBox.Show(this, $"Impossibile salvare il file.\n{ex.Message}", "Errore", MessageBoxButton.OK, MessageBoxImage.Error);
+            MediaMessageBox.Show(this, Localization.Get("Error_SaveFile", ex.Message), Localization.Get("Error_Title"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -1117,7 +1176,7 @@ namespace TeleprompterApp
     {
         ApplyDocumentDefaults();
         _contentScrollViewer.ScrollToTop();
-        SetStatus("Nuovo copione pronto.");
+        SetStatus(Localization.Get("Status_NewReady"));
         _currentDocumentPath = null;
         SavePreferences();
     }
@@ -1604,6 +1663,7 @@ namespace TeleprompterApp
 
     private void PlayPauseToggle_Checked(object sender, RoutedEventArgs e)
     {
+        UpdatePlayPauseLabel();
         if (_onAirToggle != null && _onAirToggle.IsChecked != true)
         {
             _onAirToggle.IsChecked = true;
@@ -1631,19 +1691,20 @@ namespace TeleprompterApp
         _scrollStopwatch.Restart();
 
         FocusManager.SetFocusedElement(this, this);
-        SetStatus("Scorrimento attivo");
+        SetStatus(Localization.Get("Status_Scrolling"));
         NotifyOscPlaybackState();
     }
 
     private void PlayPauseToggle_Unchecked(object sender, RoutedEventArgs e)
     {
+        UpdatePlayPauseLabel();
         if (_isScrollRenderingSubscribed)
         {
             CompositionTarget.Rendering -= OnScrollRendering;
             _isScrollRenderingSubscribed = false;
         }
         _scrollStopwatch.Stop();
-        SetStatus("In pausa");
+        SetStatus(Localization.Get("Status_Paused"));
         NotifyOscPlaybackState();
     }
 
@@ -1715,7 +1776,7 @@ namespace TeleprompterApp
             _scrollStopwatch.Stop();
             _isAutoScrolling = false;
             _playPauseToggle.IsChecked = false;
-            SetStatus(_scrollSpeed > 0 ? "Fine del testo" : "Inizio del testo");
+            SetStatus(_scrollSpeed > 0 ? Localization.Get("Status_EndOfText") : Localization.Get("Status_StartOfText"));
             return;
         }
 
@@ -1770,7 +1831,7 @@ namespace TeleprompterApp
                 ResetOnAirTimer();
                 SyncPresenterScroll();
                 UpdateScrollProgressDisplay();
-                SetStatus("Inizio testo");
+                SetStatus(Localization.Get("Status_AtStart"));
                 NotifyOscPosition();
                 e.Handled = true;
                 return;
@@ -1782,7 +1843,7 @@ namespace TeleprompterApp
                 if (_playPauseToggle?.IsChecked == true) _playPauseToggle.IsChecked = false;
                 SyncPresenterScroll();
                 UpdateScrollProgressDisplay();
-                SetStatus("Fine testo");
+                SetStatus(Localization.Get("Status_AtEnd"));
                 NotifyOscPosition();
                 e.Handled = true;
                 return;
@@ -1838,7 +1899,7 @@ namespace TeleprompterApp
                 if (Math.Abs(_scrollSpeed) > 0.01)
                 {
                     SetSpeed(0, fromSlider: false);
-                    SetStatus("Velocità azzerata");
+                    SetStatus(Localization.Get("Status_SpeedZero"));
                 }
                 break;
         }
@@ -1894,7 +1955,7 @@ namespace TeleprompterApp
             {
                 CompositionTarget.Rendering -= OnScrollRendering;
                 _isScrollRenderingSubscribed = false;
-                SetStatus("Velocità 0: pausa");
+                SetStatus(Localization.Get("Status_SpeedPause"));
             }
         }
         else if (_playPauseToggle.IsChecked == true)
@@ -1906,7 +1967,7 @@ namespace TeleprompterApp
             }
             _scrollAccumulator = 0;
             _scrollStopwatch.Restart();
-            SetStatus(_scrollSpeed > 0 ? "Scorrimento attivo" : "Scorrimento inverso");
+            SetStatus(_scrollSpeed > 0 ? Localization.Get("Status_Scrolling") : Localization.Get("Status_ScrollReverse"));
         }
 
         NotifyOscSpeed();
@@ -2046,11 +2107,11 @@ namespace TeleprompterApp
                 {
                     LoadDocument(path);
                     _contentScrollViewer.ScrollToTop();
-                    SetStatus($"Caricato da drag & drop: {Path.GetFileName(path)}");
+                    SetStatus(Localization.Get("Status_DragLoaded", Path.GetFileName(path)));
                 }
                 catch (Exception ex)
                 {
-                    MediaMessageBox.Show(this, $"Impossibile aprire il file trascinato.\n{ex.Message}", "Errore", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MediaMessageBox.Show(this, Localization.Get("Error_DragFile", ex.Message), Localization.Get("Error_Title"), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
 
@@ -2064,7 +2125,7 @@ namespace TeleprompterApp
             {
                 SetPlainTextDocument(text);
                 _currentDocumentPath = null;
-                SetStatus("Testo applicato dal trascinamento.");
+                SetStatus(Localization.Get("Status_DragText"));
                 SavePreferences();
             }
         }
@@ -2259,7 +2320,7 @@ namespace TeleprompterApp
         _arrowContainer.ReleaseMouseCapture();
         UpdateArrowNormalizedFromCurrent();
         UpdatePresenterArrowAppearance();
-        SetStatus("Freccia aggiornata");
+        SetStatus(Localization.Get("Status_ArrowUpdated"));
         SavePreferences();
         e.Handled = true;
     }
@@ -2276,7 +2337,7 @@ namespace TeleprompterApp
         var preset = CaptureLayoutPreset();
         Services.LayoutPresetService.Save(slot, preset);
         SetPresetSaveToggle(slot);
-        SetStatus($"Preset {slot} salvato");
+        SetStatus(Localization.Get("Status_PresetSaved", slot));
     }
 
     private void SetPresetSaveToggle(int slot)
@@ -2299,7 +2360,7 @@ namespace TeleprompterApp
             return;
         }
         ApplyLayoutPreset(preset);
-        SetStatus($"Preset {slot} caricato");
+        SetStatus(Localization.Get("Status_PresetLoaded", slot));
     }
 
     private static int GetPresetSlot(object sender)
@@ -2421,7 +2482,7 @@ namespace TeleprompterApp
     {
         _preferences.MarginsLinked = MarginsLinked;
         SavePreferences();
-        SetStatus(MarginsLinked ? "Margini collegati: modifica uno = modifica tutti" : "Margini individuali");
+        SetStatus(MarginsLinked ? Localization.Get("Status_MarginsLinked") : Localization.Get("Status_MarginsIndividual"));
     }
 
     private void LinkMarginsButton_Click(object sender, RoutedEventArgs e)
@@ -2440,7 +2501,7 @@ namespace TeleprompterApp
         UpdateMarginDisplay();
         ApplyArrowSafePadding();
         SavePreferences();
-        SetStatus($"Margini L=D impostati a {Math.Round(val)}");
+        SetStatus(Localization.Get("Status_MarginsSet", Math.Round(val)));
     }
 
     private void ArrowColorButton_Click(object sender, RoutedEventArgs e)
@@ -2460,7 +2521,7 @@ namespace TeleprompterApp
         {
             var mediaColor = MediaColor.FromArgb(dialog.Color.A, dialog.Color.R, dialog.Color.G, dialog.Color.B);
             SetArrowColor(mediaColor);
-            SetStatus("Colore freccia aggiornato");
+            SetStatus(Localization.Get("Status_ArrowColorUpdated"));
         }
     }
 
@@ -2476,14 +2537,14 @@ namespace TeleprompterApp
         ResetOnAirTimer();
         SyncPresenterScroll();
         UpdateScrollProgressDisplay();
-        SetStatus("Testo riportato all'inizio");
+        SetStatus(Localization.Get("Status_AtStartShort"));
         NotifyOscPosition();
     }
 
     private void TimerResetButton_Click(object sender, RoutedEventArgs e)
     {
         ResetOnAirTimer();
-        SetStatus("Timer azzerato");
+        SetStatus(Localization.Get("Status_TimerReset"));
     }
 
     private void StartOnAirTimer()
@@ -2533,7 +2594,7 @@ namespace TeleprompterApp
         _contentScrollViewer.UpdateLayout();
         SyncPresenterScroll();
         UpdateScrollProgressDisplay();
-        SetStatus("Vai alla fine del testo");
+        SetStatus(Localization.Get("Status_GoToEnd"));
         NotifyOscPosition();
     }
 
@@ -2547,11 +2608,13 @@ namespace TeleprompterApp
 
     private void OnAirToggle_Checked(object sender, RoutedEventArgs e)
     {
+        UpdateOnAirLabel();
         OnOnAirChanged(true);
     }
 
     private void OnAirToggle_Unchecked(object sender, RoutedEventArgs e)
     {
+        UpdateOnAirLabel();
         OnOnAirChanged(false);
     }
 
@@ -2573,13 +2636,13 @@ namespace TeleprompterApp
 
         if (isOnAir)
         {
-            SetStatus("On-Air attivo: testo bloccato, schermo esterno = preview");
+            SetStatus(Localization.Get("Status_OnAirOn"));
             StartOnAirTimer();
         }
         else
         {
             _contentEditor.Focus();
-            SetStatus("On-Air spento: modifica script, relatore vede in diretta");
+            SetStatus(Localization.Get("Status_OnAirOff"));
             StopOnAirTimer();
         }
 
@@ -2865,7 +2928,7 @@ namespace TeleprompterApp
             case "/teleprompter/reset":
                 _contentScrollViewer?.ScrollToTop();
                 NotifyOscPosition();
-                SetStatus("OSC: riposizionamento all'inizio");
+                SetStatus(Localization.Get("Status_OSCReset"));
                 break;
 
             case "/teleprompter/speed":
@@ -3113,7 +3176,7 @@ namespace TeleprompterApp
 
         if (!_ndiTransmitter.TryStart())
         {
-            SetStatus("Impossibile riavviare NDI con le impostazioni correnti.");
+            SetStatus(Localization.Get("Status_NDIRestartFailed"));
             if (_ndiToggle != null)
             {
                 _ndiToggle.IsChecked = false;

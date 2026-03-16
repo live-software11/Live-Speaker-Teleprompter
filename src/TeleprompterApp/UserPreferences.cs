@@ -4,6 +4,9 @@ namespace TeleprompterApp;
 
 public class UserPreferences
 {
+    /// <summary>UI culture: "it" or "en". Set at install or from preferences.</summary>
+    public string? CultureName { get; set; }
+
     public string? DocumentBackgroundHex { get; set; }
     public string? TextForegroundHex { get; set; }
     public string? FontFamily { get; set; }

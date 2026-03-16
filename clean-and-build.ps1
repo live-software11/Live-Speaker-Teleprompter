@@ -35,6 +35,8 @@ if (-not (Test-Path $portableDir)) {
 $portableFiles = @(
     "Live-Speaker-Teleprompter-Portable.exe",
     "Live-Speaker-Teleprompter-Portable.zip",
+    "Live-Speaker-Teleprompter-Portable-ITA.exe",
+    "Live-Speaker-Teleprompter-Portable-ENG.exe",
     "Live-Speaker-Teleprompter-Installer.exe",
     "*.msi"
 )

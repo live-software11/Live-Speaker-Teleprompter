@@ -5,6 +5,11 @@ alwaysApply: true
 
 # Live Speaker Teleprompter - Architettura
 
+## ⚠️ REGOLA OBBLIGATORIA — Documento di architettura
+Il file **`docs/ARCHITECTURE.md`** è la fonte di verità tecnica del progetto.
+**Ad ogni modifica strutturale al codice** (nuovi file, nuovi servizi, nuove funzioni pubbliche, cambi di architettura, nuove dipendenze, nuovi endpoint OSC/HTTP, cambi al build system) l'agente DEVE aggiornare `docs/ARCHITECTURE.md` nella sezione pertinente prima di chiudere il task.
+Non è necessario aggiornarlo per bugfix o refactoring interni che non cambiano l'interfaccia pubblica dei componenti.
+
 ## Repository e account
 - **GitHub:** https://github.com/live-software11/Live-Speaker-Teleprompter
 - **Account:** live-software11 (live.software11@gmail.com)
@@ -67,3 +72,6 @@ src/TeleprompterApp/
 - `SetBackgroundColor()` / `SetArrowColor()` → aspetto visivo
 - `SyncPresenterAppearance()` → sync completo sfondo, freccia (colore, scala, posizione) al presenter
 - Durante auto-scroll: `OnScrollRendering` chiama `SetVerticalOffset` direttamente; `ScrollChanged` ignora sync se `_isAutoScrolling`
+
+## Documentazione tecnica dettagliata
+Vedi **`docs/ARCHITECTURE.md`** per la documentazione completa di ogni componente, funzione, modello dati, flusso di avvio, scroll engine, localizzazione, build pipeline e checklist pre-release.

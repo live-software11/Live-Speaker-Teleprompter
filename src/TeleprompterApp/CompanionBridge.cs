@@ -130,7 +130,7 @@ internal sealed class CompanionBridge : IDisposable
         {
             statusCode = 500;
             payload = BuildResponse(error: ex.Message);
-            _owner.Dispatcher.Invoke(() => _owner.SetStatus($"Companion errore: {ex.Message}"));
+            _owner.Dispatcher.Invoke(() => _owner.SetStatus(Localization.Get("Error_Companion", ex.Message)));
         }
 
         try
@@ -195,7 +195,7 @@ internal sealed class CompanionBridge : IDisposable
                 await _owner.Dispatcher.InvokeAsync(() =>
                 {
                     _owner.SetPlayState(true);
-                    _owner.SetStatus("Companion: play");
+                    _owner.SetStatus(Localization.Get("Status_CompanionPlay"));
                 });
                 responseMessage = "Riproduzione avviata";
                 break;
@@ -203,7 +203,7 @@ internal sealed class CompanionBridge : IDisposable
                 await _owner.Dispatcher.InvokeAsync(() =>
                 {
                     _owner.SetPlayState(false);
-                    _owner.SetStatus("Companion: pausa");
+                    _owner.SetStatus(Localization.Get("Status_CompanionPause"));
                 });
                 responseMessage = "Riproduzione in pausa";
                 break;
@@ -212,7 +212,7 @@ internal sealed class CompanionBridge : IDisposable
                 {
                     var current = _owner.IsPlaying;
                     _owner.SetPlayState(!current);
-                    _owner.SetStatus(current ? "Companion: pausa" : "Companion: play");
+                    _owner.SetStatus(current ? Localization.Get("Status_CompanionPause") : Localization.Get("Status_CompanionPlay"));
                 });
                 responseMessage = "Stato play/pausa invertito";
                 break;
@@ -237,7 +237,7 @@ internal sealed class CompanionBridge : IDisposable
                 await _owner.Dispatcher.InvokeAsync(() =>
                 {
                     _owner.AdjustSpeed(SpeedStep);
-                    _owner.SetStatus("Companion: velocità +");
+                    _owner.SetStatus(Localization.Get("Status_CompanionSpeedUp"));
                 });
                 message = "Velocità aumentata";
                 break;
@@ -245,7 +245,7 @@ internal sealed class CompanionBridge : IDisposable
                 await _owner.Dispatcher.InvokeAsync(() =>
                 {
                     _owner.AdjustSpeed(-SpeedStep);
-                    _owner.SetStatus("Companion: velocità -");
+                    _owner.SetStatus(Localization.Get("Status_CompanionSpeedDown"));
                 });
                 message = "Velocità diminuita";
                 break;
@@ -253,7 +253,7 @@ internal sealed class CompanionBridge : IDisposable
                 await _owner.Dispatcher.InvokeAsync(() =>
                 {
                     _owner.SetSpeed(0, fromSlider: false);
-                    _owner.SetStatus("Companion: velocità 0");
+                    _owner.SetStatus(Localization.Get("Status_CompanionSpeedZero"));
                 });
                 message = "Velocità azzerata";
                 break;
@@ -274,7 +274,7 @@ internal sealed class CompanionBridge : IDisposable
                 await _owner.Dispatcher.InvokeAsync(() =>
                 {
                     _owner.SetSpeed(target, fromSlider: false);
-                    _owner.SetStatus($"Companion: velocità {target:F2}");
+                    _owner.SetStatus(Localization.Get("Status_CompanionSpeed", target));
                 });
                 message = $"Velocità impostata a {target:F2}";
                 break;

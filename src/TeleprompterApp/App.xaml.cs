@@ -24,6 +24,28 @@ public partial class App : System.Windows.Application
 		// Force hardware GPU rendering for best performance on external screens
 		RenderOptions.ProcessRenderMode = RenderMode.Default;
 
+		// Localization: installer writes install-language.txt; otherwise use preferences
+		var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+		var installLangPath = Path.Combine(baseDir, "install-language.txt");
+		string? cultureFromInstaller = null;
+		if (File.Exists(installLangPath))
+		{
+			try
+			{
+				cultureFromInstaller = File.ReadAllText(installLangPath).Trim();
+				File.Delete(installLangPath);
+			}
+			catch { /* ignore */ }
+		}
+
+		var prefs = PreferencesService.Load();
+		Localization.Initialize(cultureFromInstaller, prefs.CultureName);
+		if (!string.IsNullOrEmpty(cultureFromInstaller))
+		{
+			prefs.CultureName = cultureFromInstaller;
+			PreferencesService.Save(prefs);
+		}
+
 		// Clean up old log files (keep last 10)
 		CleanupOldLogs();
 
@@ -33,7 +55,7 @@ public partial class App : System.Windows.Application
 	private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
 	{
 		LogException("Dispatcher", e.Exception);
-	System.Windows.MessageBox.Show($"Errore imprevisto: {e.Exception.Message}\nDettagli salvati nei log.", "Errore", MessageBoxButton.OK, MessageBoxImage.Error);
+	System.Windows.MessageBox.Show(Localization.Get("Error_Unhandled", e.Exception.Message), Localization.Get("Error_Title"), MessageBoxButton.OK, MessageBoxImage.Error);
 		e.Handled = true;
 		Shutdown(-1);
 	}

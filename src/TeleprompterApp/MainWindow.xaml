@@ -239,18 +239,7 @@
                                     </Style>
                                 </Path.Style>
                             </Path>
-                            <TextBlock FontSize="15" FontWeight="Bold" Foreground="#F8FAFC">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="Avvia" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                                <Setter Property="Text" Value="Pausa" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
+                            <TextBlock x:Name="PlayPauseLabelText" FontSize="15" FontWeight="Bold" Foreground="#F8FAFC" Text="Avvia" />
                         </StackPanel>
                     </ToggleButton>
                     <Button x:Name="GoToEndButton" Style="{StaticResource TbBtn}" Click="GoToEndButton_Click" ToolTip="Fine (End)">
@@ -276,14 +265,12 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8">
+                            <TextBlock x:Name="OnAirLabelText" FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8" Text="OFF">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="OFF" />
                                         <Setter Property="Foreground" Value="#94A3B8" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                                <Setter Property="Text" Value="ON AIR" />
                                                 <Setter Property="Foreground" Value="#FEE2E2" />
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -302,11 +289,11 @@
 
                 <!-- Riga 2: Margini L, D, L=D, Dimensione freccia, Freccia -->
                 <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Margini:" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="2,0" />
-                    <TextBlock Text="L" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Sinistra (dopo freccia)" />
+                    <TextBlock x:Name="MarginsLabel" Text="Margini:" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="2,0" />
+                    <TextBlock x:Name="LeftLabel" Text="L" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Sinistra (dopo freccia)" />
                     <Slider x:Name="LeftMarginSlider" Minimum="0" Maximum="800" Value="40" Width="55" SmallChange="4" LargeChange="20" IsSnapToTickEnabled="False" VerticalAlignment="Center" ValueChanged="LeftMarginSlider_ValueChanged" ToolTip="Margine sinistro (testo dopo freccia)" />
                     <TextBlock x:Name="LeftMarginValueText" Text="40" Foreground="#94A3B8" FontSize="10" Width="28" VerticalAlignment="Center" Margin="2,0,4,0" />
-                    <TextBlock Text="D" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Destro" />
+                    <TextBlock x:Name="RightLabel" Text="D" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Destro" />
                     <Slider x:Name="MarginRightSlider" Minimum="0" Maximum="800" Value="40" Width="55" SmallChange="4" LargeChange="20" IsSnapToTickEnabled="False" VerticalAlignment="Center" ValueChanged="MarginRightSlider_ValueChanged" />
                     <TextBlock x:Name="MarginRightText" Text="40" Foreground="#94A3B8" FontSize="10" Width="28" VerticalAlignment="Center" Margin="2,0,4,0" />
                     <Button x:Name="LinkMarginsButton" Style="{StaticResource TbBtn}" Click="LinkMarginsButton_Click" ToolTip="Imposta L=D (margini sinistro e destro uguali)">
@@ -316,10 +303,10 @@
                         <TextBlock Text="&#xE8AB;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
                     </ToggleButton>
                     <Border Width="1" Background="#1E2A44" Margin="4,3" />
-                    <TextBlock Text="A" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Alto" />
+                    <TextBlock x:Name="TopLabel" Text="A" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Alto" />
                     <Slider x:Name="MarginTopSlider" Minimum="0" Maximum="800" Value="40" Width="45" SmallChange="4" LargeChange="20" VerticalAlignment="Center" ValueChanged="MarginTopSlider_ValueChanged" />
                     <TextBlock x:Name="MarginTopText" Text="40" Foreground="#94A3B8" FontSize="10" Width="24" VerticalAlignment="Center" Margin="2,0,4,0" />
-                    <TextBlock Text="B" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Basso" />
+                    <TextBlock x:Name="BottomLabel" Text="B" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Basso" />
                     <Slider x:Name="MarginBottomSlider" Minimum="0" Maximum="800" Value="40" Width="45" SmallChange="4" LargeChange="20" VerticalAlignment="Center" ValueChanged="MarginBottomSlider_ValueChanged" />
                     <TextBlock x:Name="MarginBottomText" Text="40" Foreground="#94A3B8" FontSize="10" Width="24" VerticalAlignment="Center" Margin="2,0,6,0" />
                     <Border Width="1" Background="#1E2A44" Margin="4,3" />
@@ -328,11 +315,11 @@
                     <Button x:Name="ArrowStyleButton" Style="{StaticResource TbBtn}" Click="ArrowStyleButton_Click" ToolTip="Freccia: colore e opzioni (trascina per posizione)">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xECA7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#EAB308" Margin="0,0,4,0" />
-                            <TextBlock Text="Freccia" FontSize="12" />
+                            <TextBlock x:Name="ArrowButtonText" Text="Freccia" FontSize="12" />
                         </StackPanel>
                     </Button>
                     <Border Width="1" Background="#1E2A44" Margin="4,3" />
-                    <TextBlock Text="Preset:" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="2,0" />
+                    <TextBlock x:Name="PresetLabel" Text="Preset:" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="2,0" />
                     <ToggleButton x:Name="PresetSave1" Style="{StaticResource TbTgl}" Click="PresetSave_Click" Tag="1" ToolTip="Salva preset 1" Content="S1" FontSize="11" Padding="6,2" />
                     <Button x:Name="PresetLoad1" Style="{StaticResource TbBtn}" Click="PresetLoad_Click" Tag="1" ToolTip="Carica preset 1" Content="L1" FontSize="11" Padding="6,2" />
                     <ToggleButton x:Name="PresetSave2" Style="{StaticResource TbTgl}" Click="PresetSave_Click" Tag="2" ToolTip="Salva preset 2" Content="S2" FontSize="11" Padding="6,2" />
@@ -349,7 +336,7 @@
         <Popup x:Name="ArrowStylePopup" Placement="Bottom" PlacementTarget="{Binding ElementName=ArrowStyleButton}" StaysOpen="False">
             <Border Background="#1E293B" CornerRadius="8" Padding="12" BorderBrush="#334155" BorderThickness="1">
                 <StackPanel>
-                    <TextBlock Text="Freccia guida" Foreground="#93C5FD" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <TextBlock x:Name="ArrowPopupTitle" Text="Freccia guida" Foreground="#93C5FD" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <Button x:Name="ArrowColorButton" Style="{StaticResource TbBtn}" Content="Colore freccia" Click="ArrowColorButton_Click" HorizontalAlignment="Left" />
                 </StackPanel>
             </Border>
