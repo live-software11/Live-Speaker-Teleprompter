@@ -31,7 +31,9 @@ PresenterWindow (output esterno)
 
 ## Regole di sync scroll
 - USARE `SetVerticalOffset(offset)` — stesso documento clonato = stesso layout = stesso offset mostra testo identico.
-- `SyncPresenterScroll` viene chiamato da `ContentScrollViewer_ScrollChanged` (non nel tick) per evitare lavoro ridondante.
+- `SetVerticalOffset` usa coalescing: `Dispatcher.BeginInvoke(DispatcherPriority.Render)` per evitare flood durante scroll veloce.
+- Durante auto-scroll: `OnScrollRendering` chiama `SetVerticalOffset` direttamente; `ScrollChanged` salta sync se `_isAutoScrolling`.
+- Throttling: `UpdateScrollProgressDisplay` e `NotifyOscPosition` max ogni 50ms (ScrollNotifyMinIntervalMs).
 
 ## Regole di sync freccia
 - **Y assoluta**: `SetArrowAbsoluteY(double top)` — posizione in pixel dal top della viewport. Stessa Y = stessa riga di testo (riferimento testo, non schermo).
@@ -40,6 +42,7 @@ PresenterWindow (output esterno)
 - **Freccia stabile**: `UpdatePresenterArrowAppearance()` invia `SetArrowAbsoluteY(arrowTop)` dalla MainWindow; non usa coordinate normalizzate Y.
 
 ## Regole di sync documento
+- PresenterSyncService: flag `_isSyncing` evita re-entrancy; se sync in corso, marca dirty e risincronizza dopo.
 - Il clone copia TUTTE le proprieta document-level: PagePadding, LineHeight, TextAlignment, Background, FontFamily, FontSize, Foreground, FontWeight, FontStyle.
 - Il padding nel PresenterWindow viene ricalcolato da `GetPresenterPagePadding()` in base al mirror mode.
 - In mirror mode: swap left/right nel padding E nella trasformazione del contenuto.

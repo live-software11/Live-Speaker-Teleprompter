@@ -6,6 +6,10 @@ alwaysApply: false
 
 # Build e Release
 
+## Repository
+- **GitHub:** https://github.com/live-software11/Live-Speaker-Teleprompter
+- **Account:** live-software11
+
 ## Script principale (root)
 - **clean-and-build.ps1** / **clean-and-build.bat** — pulisce bin/obj/portable e crea build completa
 - Lanciare dalla root: `.\clean-and-build.ps1` o doppio clic su `clean-and-build.bat`

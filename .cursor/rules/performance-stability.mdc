@@ -15,7 +15,8 @@ Il software viene usato DURANTE eventi live davanti a un pubblico. Un crash o un
 - MAI chiamare `UpdateLayout()` nel tick di scroll: causa micro-freeze su documenti lunghi.
 - Clamp elapsed time: se >500ms (sistema in sleep), resettare a 16ms per evitare salti.
 - Lo scroll si ferma automaticamente a fine (100%) o inizio (0%) testo; nessun loop, nessun ritorno automatico.
-- `SyncPresenterScroll` e `UpdateScrollProgressDisplay` solo in `ScrollChanged`, non nel tick.
+- Durante auto-scroll: `OnScrollRendering` chiama `SetVerticalOffset` direttamente; `ScrollChanged` salta sync se `_isAutoScrolling`.
+- `UpdateScrollProgressDisplay` e `NotifyOscPosition` throttled a 50ms in `ScrollChanged` per evitare flood.
 
 ```csharp
 // CORRETTO: solo ScrollToVerticalOffset nel tick
@@ -46,7 +47,8 @@ _contentScrollViewer.UpdateLayout(); // costa 2-5ms per frame, causa jank
 
 ## Memoria e risorse
 - `Freeze()` tutti i Brush creati dinamicamente (SolidColorBrush) per evitare leak.
-- `Dispose()` tutti i servizi in `Window_Closing`: DisplayManager, PresenterSync, CompanionBridge, NDI, OSC.
+- `Dispose()` tutti i servizi in `Window_Closing`: NDI, CompanionBridge, OSC, DisplayManager, PresenterSync — ogni Dispose in try/catch separato.
+- `_presenterWindow?.Close()` esplicito prima di chiusura app.
 - I listener `onSnapshot`/event handler devono avere unsubscribe esplicito.
 
 ## NDI streaming

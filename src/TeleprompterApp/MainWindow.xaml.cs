@@ -1557,8 +1557,13 @@ namespace TeleprompterApp
 
     private void ContentScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        // During auto-scroll, OnScrollRendering already syncs the presenter directly
-        if (!_isAutoScrolling)
+        // During auto-scroll, OnScrollRendering already synced the presenter directly.
+        // ScrollChanged fires async after ScrollToVerticalOffset; reset flag here to avoid double-sync.
+        if (_isAutoScrolling)
+        {
+            _isAutoScrolling = false;
+        }
+        else
         {
             SyncPresenterScroll();
         }
@@ -1716,9 +1721,10 @@ namespace TeleprompterApp
 
         _isAutoScrolling = true;
         _contentScrollViewer.ScrollToVerticalOffset(target);
-        // Directly sync presenter during auto-scroll to avoid ScrollChanged overhead
+        // Directly sync presenter during auto-scroll. Do NOT reset _isAutoScrolling here:
+        // ScrollToVerticalOffset queues layout async, so ScrollChanged fires after we return.
+        // We reset _isAutoScrolling in ScrollChanged when we skip the sync.
         _presenterWindow?.SetVerticalOffset(target);
-        _isAutoScrolling = false;
     }
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)

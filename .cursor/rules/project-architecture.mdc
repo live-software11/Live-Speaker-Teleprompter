@@ -5,11 +5,16 @@ alwaysApply: true
 
 # Live Speaker Teleprompter - Architettura
 
+## Repository e account
+- **GitHub:** https://github.com/live-software11/Live-Speaker-Teleprompter
+- **Account:** live-software11 (live.software11@gmail.com)
+- **Nome breve:** Live Teleprompter (Companion shortname: liveteleprompter)
+
 ## Stack tecnologico
 - **.NET 8.0 WPF** (Windows Presentation Foundation), C# 12+
 - Target: Windows 10/11 x64, self-contained single-file executable
 - UI: XAML con code-behind (no MVVM framework esterno)
-- Integrazioni: NDI (P/Invoke), OSC (UDP), HTTP REST (CompanionBridge)
+- Integrazioni: NDI (P/Invoke, nome sorgente "Live Speaker NDI"), OSC (UDP), HTTP REST (CompanionBridge)
 
 ## Struttura file principali
 ```
@@ -34,7 +39,7 @@ src/TeleprompterApp/
   NDITransmitter.cs         → Streaming NDI via CompositionTarget.Rendering
   UserPreferences.cs        → Modello preferenze
   PreferencesService.cs    → I/O file preferenze (usa AppPaths)
-  AppPaths.cs               → Base dir: portable = accanto exe, installato = %APPDATA%
+  AppPaths.cs               → Base dir: portable = accanto exe, installato = %APPDATA%\Live Speaker Teleprompter
 ```
 
 ## Principi architetturali
@@ -48,6 +53,11 @@ src/TeleprompterApp/
 - **MainWindow**: header a due righe (toolbar), area editor/preview, statusbar. Il `RichTextBox` con `FlowDocument` è sia editor che anteprima. Riga 2: margini, freccia, preset S1–S4 / L1–L4.
 - **PresenterWindow**: full-screen WindowStyle=None su monitor esterno. Riceve il documento clonato e lo scroll offset dalla MainWindow. Supporta mirror mode.
 
+## Salvataggio file (atomicità)
+- Salvataggio documento: scrivere su `.tmp`, poi `File.Move(overwrite: true)` — evita perdita dati su crash.
+- Salvataggio preferenze (PreferencesService, LayoutPresetService): stesso pattern atomico.
+- Preferenze: recovery automatico da `.tmp` se file principale corrotto/vuoto.
+
 ## Comunicazione tra finestre
 - `SyncPresenterDocument()` → clone immediato
 - `RequestPresenterSync()` → clone debounced (300ms) per il typing
@@ -56,3 +66,4 @@ src/TeleprompterApp/
 - `SetMirror()` → stato specchio
 - `SetBackgroundColor()` / `SetArrowColor()` → aspetto visivo
 - `SyncPresenterAppearance()` → sync completo sfondo, freccia (colore, scala, posizione) al presenter
+- Durante auto-scroll: `OnScrollRendering` chiama `SetVerticalOffset` direttamente; `ScrollChanged` ignora sync se `_isAutoScrolling`

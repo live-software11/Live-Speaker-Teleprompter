@@ -23,7 +23,7 @@ UI Event → SavePreferences()
                       └── [500ms debounce] → PreferencesService.Save()
                                                     │
                                                     └── JSON → AppPaths.PreferencesPath
-                                                         (portable: accanto exe | installato: %APPDATA%)
+                                                         (portable: accanto exe | installato: %APPDATA%\Live Speaker Teleprompter)
 ```
 
 ## Regole critiche
@@ -51,6 +51,10 @@ _isUpdatingMySlider = true;
 _mySlider.Value = savedValue;
 _isUpdatingMySlider = false;
 ```
+
+### Scrittura atomica
+- PreferencesService.Save: scrivere su `.tmp`, poi `File.Move(overwrite: true)`.
+- Load: se file principale vuoto/corrotto, tentare recovery da `.tmp`.
 
 ### Shutdown
 In `Window_Closing`:
