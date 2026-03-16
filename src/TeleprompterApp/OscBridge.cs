@@ -176,16 +176,16 @@ internal sealed class OscBridge : IDisposable
         {
         }
 
-        _udpClient?.Dispose();
+        try { _udpClient?.Dispose(); } catch { }
         _udpClient = null;
 
-        _cts?.Dispose();
+        try { _cts?.Dispose(); } catch { }
         _cts = null;
     }
 
     public void Dispose()
     {
         Stop();
-        _feedbackClient.Dispose();
+        try { _feedbackClient.Dispose(); } catch { }
     }
 }

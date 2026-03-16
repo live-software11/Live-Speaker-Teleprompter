@@ -1,5 +1,5 @@
 ---
-description: Build, clean e release R-Speaker Teleprompter
+description: Build, clean e release Live Speaker Teleprompter
 globs: "**/build-installer.ps1,**/clean-and-build*"
 alwaysApply: false
 ---
@@ -12,21 +12,17 @@ alwaysApply: false
 
 ## Pipeline (clean-and-build.ps1)
 1. Pulizia bin/obj/portable
-2. Genera icona: `scripts\convert-logo.ps1` (da `Logo Teleprompter.png` → `icons\app-icon.ico`)
+2. Genera icona: `scripts\convert-logo.ps1` (da `icons\Logo Teleprompter.png` → `icons\app-icon.ico`)
 3. dotnet restore
-4. build-installer.ps1: dotnet publish -c Release (self-contained, single-file, ReadyToRun)
-2. Portable EXE: `R-Speaker-Teleprompter-Portable.exe` (solo exe)
-3. Portable ZIP: contiene solo l'exe
-4. Installer EXE: self-extracting, estrae `R-Speaker Teleprompter.exe`
+4. build-installer.ps1: publish + portable EXE + installer EXE (no ZIP)
 
 ## Icona
 - `icons\Logo Teleprompter.png` → `scripts\convert-logo.ps1` → `icons\app-icon.ico`
 - L'icona è generata automaticamente da clean-and-build prima del publish.
 
 ## Output (portable/)
-- `R-Speaker-Teleprompter-Portable.exe` — eseguibile standalone, nessuna dipendenza
-- `R-Speaker-Teleprompter-Portable.zip` — ZIP con solo l'exe
-- `R-Speaker-Teleprompter-Installer.exe` — installer con collegamenti Start/Desktop
+- `Live-Speaker-Teleprompter-Portable.exe` — eseguibile standalone, nessuna dipendenza
+- `Live-Speaker-Teleprompter-Installer.exe` — installer con collegamenti Start/Desktop
 
 ## Pulizia
 - bin/, obj/, publish/ — ignorati da git

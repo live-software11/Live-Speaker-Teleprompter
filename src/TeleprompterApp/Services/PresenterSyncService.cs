@@ -10,7 +10,7 @@ namespace TeleprompterApp.Services;
 
 /// <summary>
 /// Debounced synchronization of FlowDocument content from the editor to the PresenterWindow.
-/// Avoids the expensive XamlWriter.Save + XamlReader.Load on every keystroke.
+/// Serialization happens on UI thread (required by WPF), but is coalesced via debounce.
 /// Uses a 300ms debounce: marks dirty on TextChanged, syncs after typing stops.
 /// </summary>
 internal sealed class PresenterSyncService : IDisposable
@@ -21,6 +21,7 @@ internal sealed class PresenterSyncService : IDisposable
     private DispatcherTimer? _debounceTimer;
     private bool _isDirty;
     private bool _disposed;
+    private bool _isSyncing;
 
     private Func<FlowDocument?>? _getSourceDocument;
     private Action<FlowDocument>? _applyToPresenter;
@@ -30,18 +31,12 @@ internal sealed class PresenterSyncService : IDisposable
         _dispatcher = dispatcher;
     }
 
-    /// <summary>
-    /// Configures the source and target for document synchronization.
-    /// </summary>
     public void Configure(Func<FlowDocument?> getSourceDocument, Action<FlowDocument> applyToPresenter)
     {
         _getSourceDocument = getSourceDocument;
         _applyToPresenter = applyToPresenter;
     }
 
-    /// <summary>
-    /// Marks the document as dirty. The actual sync will happen after the debounce period.
-    /// </summary>
     public void MarkDirty()
     {
         if (_disposed)
@@ -64,9 +59,6 @@ internal sealed class PresenterSyncService : IDisposable
         _debounceTimer.Start();
     }
 
-    /// <summary>
-    /// Forces an immediate sync, bypassing the debounce (e.g., when loading a new document).
-    /// </summary>
     public void SyncNow()
     {
         _debounceTimer?.Stop();
@@ -92,62 +84,89 @@ internal sealed class PresenterSyncService : IDisposable
             return;
         }
 
+        if (_isSyncing)
+        {
+            _isDirty = true;
+            return;
+        }
+
         var source = _getSourceDocument();
         if (source == null)
         {
             return;
         }
 
+        _isSyncing = true;
         try
         {
-            var clone = CloneDocument(source);
+            // Serialize on UI thread (required by WPF), then apply
+            var serialized = SerializeDocument(source);
+            if (serialized == null)
+            {
+                return;
+            }
+
+            var clone = DeserializeDocument(serialized.Value.data, serialized.Value.props);
             _applyToPresenter(clone);
         }
         catch
         {
             // Ignore serialization issues to avoid disrupting the operator
         }
+        finally
+        {
+            _isSyncing = false;
+        }
     }
 
-    /// <summary>
-    /// Clones a FlowDocument via XamlPackage serialization (faster than XamlWriter/XamlReader).
-    /// </summary>
-    private static FlowDocument CloneDocument(FlowDocument source)
+    private record struct DocProps(
+        Thickness PagePadding, double PageWidth, double LineHeight,
+        TextAlignment TextAlignment, System.Windows.Media.Brush? Background,
+        System.Windows.Media.FontFamily? FontFamily, double FontSize,
+        System.Windows.Media.Brush? Foreground, FontWeight FontWeight,
+        System.Windows.FontStyle FontStyle);
+
+    private static (byte[] data, DocProps props)? SerializeDocument(FlowDocument source)
     {
-        // Try the faster XamlPackage approach first
         try
         {
             using var stream = new MemoryStream();
             var sourceRange = new TextRange(source.ContentStart, source.ContentEnd);
             sourceRange.Save(stream, System.Windows.DataFormats.XamlPackage);
-            stream.Position = 0;
 
-            var clone = new FlowDocument();
-            var cloneRange = new TextRange(clone.ContentStart, clone.ContentEnd);
-            cloneRange.Load(stream, System.Windows.DataFormats.XamlPackage);
+            var props = new DocProps(
+                source.PagePadding, source.PageWidth, source.LineHeight,
+                source.TextAlignment, source.Background,
+                source.FontFamily, source.FontSize,
+                source.Foreground, source.FontWeight, source.FontStyle);
 
-            // Copy document-level properties (PageWidth critico per preview=program identico)
-            clone.PagePadding = source.PagePadding;
-            clone.PageWidth = source.PageWidth;
-            clone.LineHeight = source.LineHeight;
-            clone.TextAlignment = source.TextAlignment;
-            clone.Background = source.Background;
-            clone.FontFamily = source.FontFamily;
-            clone.FontSize = source.FontSize;
-            clone.Foreground = source.Foreground;
-            clone.FontWeight = source.FontWeight;
-            clone.FontStyle = source.FontStyle;
-
-            return clone;
+            return (stream.ToArray(), props);
         }
         catch
         {
-            // Fall back to XamlWriter/XamlReader
-            var xaml = XamlWriter.Save(source);
-            using var stringReader = new StringReader(xaml);
-            using var xmlReader = XmlReader.Create(stringReader);
-            return (FlowDocument)XamlReader.Load(xmlReader);
+            return null;
         }
+    }
+
+    private static FlowDocument DeserializeDocument(byte[] data, DocProps props)
+    {
+        var clone = new FlowDocument();
+        using var stream = new MemoryStream(data);
+        var cloneRange = new TextRange(clone.ContentStart, clone.ContentEnd);
+        cloneRange.Load(stream, System.Windows.DataFormats.XamlPackage);
+
+        clone.PagePadding = props.PagePadding;
+        clone.PageWidth = props.PageWidth;
+        clone.LineHeight = props.LineHeight;
+        clone.TextAlignment = props.TextAlignment;
+        clone.Background = props.Background;
+        clone.FontFamily = props.FontFamily;
+        clone.FontSize = props.FontSize;
+        clone.Foreground = props.Foreground;
+        clone.FontWeight = props.FontWeight;
+        clone.FontStyle = props.FontStyle;
+
+        return clone;
     }
 
     public void Dispose()

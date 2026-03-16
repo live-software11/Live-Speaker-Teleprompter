@@ -4,7 +4,7 @@ globs: "**/*.xaml"
 alwaysApply: false
 ---
 
-# Standard XAML - R-Speaker Teleprompter
+# Standard XAML - Live Speaker Teleprompter
 
 ## Layout e padding
 - Il `FlowDocument` usa `PagePadding` dinamico calcolato da `ComputeMainDocumentPadding()`. NON impostare valori fissi superiori a 40px nel XAML.

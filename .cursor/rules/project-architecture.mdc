@@ -1,9 +1,9 @@
 ---
-description: Architettura progetto R-Speaker Teleprompter - contesto globale obbligatorio
+description: Architettura progetto Live Speaker Teleprompter - contesto globale obbligatorio
 alwaysApply: true
 ---
 
-# R-Speaker Teleprompter - Architettura
+# Live Speaker Teleprompter - Architettura
 
 ## Stack tecnologico
 - **.NET 8.0 WPF** (Windows Presentation Foundation), C# 12+

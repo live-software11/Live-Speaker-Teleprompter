@@ -1,4 +1,4 @@
-# R-Speaker Teleprompter
+# Live Speaker Teleprompter
 
 Teleprompter professionale per presentazioni multi-schermo. Singolo eseguibile portable, nessuna installazione richiesta.  
 Integrazione completa con **Bitfocus Companion**, **NDI** e **OSC** per il controllo remoto in produzione live.
@@ -81,14 +81,14 @@ Integrazione completa con **Bitfocus Companion**, **NDI** e **OSC** per il contr
 
 ### Versione portable (consigliata)
 
-1. Scarica `R-Speaker-Teleprompter-Portable.exe` dalla cartella `portable/` (oppure lo ZIP).
+1. Scarica `Live-Speaker-Teleprompter-Portable.exe` dalla cartella `portable/` (oppure lo ZIP).
 2. Esegui l'exe — nessuna estrazione, nessuna installazione, nessuna dipendenza.
 3. Preferenze e log restano accanto all'exe (chiavetta USB = nessuna traccia sul PC host).
 
 ### Versione installer
 
-1. Esegui `R-Speaker-Teleprompter-Installer.exe`.
-2. Scegli la cartella di installazione (default: `%LOCALAPPDATA%\R-Speaker\R-Speaker Teleprompter`).
+1. Esegui `Live-Speaker-Teleprompter-Installer.exe`.
+2. Scegli la cartella di installazione (default: `%LOCALAPPDATA%\Live Speaker\Live Speaker Teleprompter`).
 3. L'installer crea un collegamento sul desktop e nel menu Start.
 
 ### Avvio
@@ -150,13 +150,13 @@ La finestra Presenter usa le coordinate fisiche (`Bounds`) del display per posiz
 
 1. Installa il [NewTek NDI Tools/Runtime](https://www.ndi.tv/tools/) sul PC.
 2. Nell'app, clicca il toggle **NDI** nel pannello "Schermi".
-3. Il flusso apparirà come **"R-Speaker NDI"** su qualsiasi client NDI della rete locale.
+3. Il flusso apparirà come **"Live Speaker NDI"** su qualsiasi client NDI della rete locale.
 
 ### Caratteristiche tecniche
 
 | Parametro | Valore default | Intervallo |
 |-----------|---------------|------------|
-| Nome sorgente | `R-Speaker NDI` | Configurabile via OSC |
+| Nome sorgente | `Live Speaker NDI` | Configurabile via OSC |
 | Risoluzione | Segue la finestra | Configurabile: 1280×720, 1920×1080, 3840×2160 |
 | Framerate | 30 fps | 5–120 fps |
 | Formato pixel | BGRA 32-bit | Progressivo |
@@ -182,7 +182,7 @@ La finestra Presenter usa le coordinate fisiche (`Bounds`) del display per posiz
 | `/ndi/available` | string | `"yes"` / `"no"` |
 | `/ndi/resolution/current` | string | `"1920x1080"` |
 | `/ndi/framerate/current` | string | `"30.00"` |
-| `/ndi/sourcename/current` | string | `"R-Speaker NDI"` |
+| `/ndi/sourcename/current` | string | `"Live Speaker NDI"` |
 
 ---
 
@@ -288,7 +288,7 @@ Il modulo si trova nella cartella `companion-module/` e offre:
 ### Installazione rapida
 
 1. Copia la cartella `companion-module/` nel path dei moduli custom di Companion.
-2. Riavvia Companion, aggiungi connessione **"R-Speaker Teleprompter"**.
+2. Riavvia Companion, aggiungi connessione **"Live Speaker Teleprompter"**.
 3. Inserisci la porta OSC (default: `8000`) e l'indirizzo della macchina (default: `127.0.0.1`).
 4. I preset appaiono nella libreria, pronti per il drag & drop.
 
@@ -328,7 +328,7 @@ Il modulo si trova nella cartella `companion-module/` e offre:
 Le preferenze vengono salvate automaticamente (con debounce 500 ms) in:
 
 ```
-%APPDATA%\R-Speaker Teleprompter\preferences.json
+%APPDATA%\Live Speaker Teleprompter\preferences.json
 ```
 
 ### Dati salvati
@@ -352,7 +352,7 @@ Per ripristinare le impostazioni predefinite, elimina il file `preferences.json`
 I log degli errori vengono salvati in:
 
 ```
-%APPDATA%\R-Speaker Teleprompter\logs\error-YYYYMMDD-HHmmss.log
+%APPDATA%\Live Speaker Teleprompter\logs\error-YYYYMMDD-HHmmss.log
 ```
 
 Vengono mantenuti solo gli ultimi 10 file di log. I log più vecchi vengono eliminati automaticamente all'avvio.
@@ -394,9 +394,8 @@ Il build script produce tre file nella cartella `portable/`:
 
 | File | Dimensione | Descrizione |
 |------|-----------|-------------|
-| `R-Speaker Teleprompter.exe` | ~73 MB | Eseguibile diretto (copia dalla publish) |
-| `R-Speaker-Teleprompter-Portable.zip` | ~67 MB | ZIP portable (stesso contenuto) |
-| `R-Speaker-Teleprompter-Installer.exe` | ~67 MB | Installer self-extracting con scelta cartella |
+| `Live-Speaker-Teleprompter-Portable.exe` | ~73 MB | Eseguibile portable standalone |
+| `Live-Speaker-Teleprompter-Installer.exe` | ~67 MB | Installer self-extracting con scelta cartella |
 
 Tutti e tre contengono la **stessa identica app** self-contained. Nessun runtime .NET richiesto.
 
@@ -433,9 +432,8 @@ installer/                           ← Script di build e packaging
   installer-template.ps1               — Template installer self-extracting
 
 portable/                            ← Output del build
-  R-Speaker-Teleprompter-Portable.exe  — Eseguibile portable (solo exe, nessun altro file)
-  R-Speaker-Teleprompter-Portable.zip  — ZIP con solo l'exe
-  R-Speaker-Teleprompter-Installer.exe — Installer self-extracting
+  Live-Speaker-Teleprompter-Portable.exe  — Eseguibile portable (solo exe)
+  Live-Speaker-Teleprompter-Installer.exe — Installer self-extracting
 
 icons/                               — Icona app (app-icon.ico) + Logo Teleprompter.png (sorgente)
 scripts/                             — Tool di supporto

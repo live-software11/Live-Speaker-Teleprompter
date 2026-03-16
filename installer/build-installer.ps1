@@ -1,12 +1,11 @@
-# R-Speaker Teleprompter - Unified Build Script
+# Live Speaker Teleprompter - Unified Build Script
 # Produces:
 #   1. Self-contained single-file publish (dotnet publish)
 #      - ReadyToRun pre-compiled for ~40% faster cold startup
 #      - Compression enabled for smaller file size
 #      - .NET 8 runtime embedded: works on ANY Windows 10/11 x64 machine
-#   2. Portable EXE (portable/R-Speaker-Teleprompter-Portable.exe) — solo exe, nessun altro file
-#   3. Portable ZIP (portable/R-Speaker-Teleprompter-Portable.zip) — contiene solo l'exe
-#   4. Self-extracting installer EXE (portable/R-Speaker-Teleprompter-Installer.exe)
+#   2. Portable EXE (portable/Live-Speaker-Teleprompter-Portable.exe) — solo exe, nessun altro file
+#   3. Self-extracting installer EXE (portable/Live-Speaker-Teleprompter-Installer.exe)
 #
 # Portable e Installer contengono lo stesso eseguibile. Nessuna dipendenza, nessuna estrazione richiesta.
 #
@@ -17,8 +16,7 @@
 param(
     [string]$ProjectDir  = (Resolve-Path "$PSScriptRoot\..\src\TeleprompterApp"),
     [string]$OutputDir   = (Resolve-Path "$PSScriptRoot\..\portable"),
-    [string]$ZipName     = "R-Speaker-Teleprompter-Portable.zip",
-    [string]$InstallerName = "R-Speaker-Teleprompter-Installer.exe",
+    [string]$InstallerName = "Live-Speaker-Teleprompter-Installer.exe",
     [switch]$SkipPublish
 )
 
@@ -26,27 +24,26 @@ $ErrorActionPreference = "Stop"
 
 # -- Paths ---------------------------------------------------------------
 $publishDir   = Join-Path $ProjectDir "bin\Release\net8.0-windows\win-x64\publish"
-$zipTarget    = Join-Path $OutputDir $ZipName
 $exeTarget    = Join-Path $OutputDir $InstallerName
 $templatePath = Join-Path $PSScriptRoot "installer-template.ps1"
 
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host "  R-Speaker Teleprompter - Build Pipeline v2.0" -ForegroundColor Cyan
+Write-Host "  Live Speaker Teleprompter - Build Pipeline v2.0" -ForegroundColor Cyan
 Write-Host "  Self-contained portable build (no .NET required)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
 # -- Step 1: Publish -----------------------------------------------------
 if (-not $SkipPublish) {
-    Write-Host "[1/5] Publishing self-contained single-file executable..." -ForegroundColor Yellow
+    Write-Host "[1/4] Publishing self-contained single-file executable..." -ForegroundColor Yellow
     Write-Host "  (ReadyToRun + Compression enabled)" -ForegroundColor DarkGray
 
-    # Clean previous publish output
+    # Clean previous publish output e obj per forzare rebuild icona
     $releaseDir = Join-Path $ProjectDir "bin\Release"
-    if (Test-Path $releaseDir) {
-        Remove-Item $releaseDir -Recurse -Force
-    }
+    $objDir = Join-Path $ProjectDir "obj"
+    if (Test-Path $releaseDir) { Remove-Item $releaseDir -Recurse -Force }
+    if (Test-Path $objDir) { Remove-Item $objDir -Recurse -Force }
 
     Push-Location $ProjectDir
     dotnet publish -c Release --nologo -v minimal
@@ -57,7 +54,7 @@ if (-not $SkipPublish) {
         exit 1
     }
 } else {
-    Write-Host "[1/5] Skipping publish (reusing existing output)..." -ForegroundColor DarkGray
+    Write-Host "[1/4] Skipping publish (reusing existing output)..." -ForegroundColor DarkGray
 }
 
 # Validate publish output
@@ -74,13 +71,13 @@ if (-not $exeFile) {
 
 # Rename exe to friendly name (AssemblyName must stay TeleprompterApp for WPF XAML compatibility)
 $originalExe = Join-Path $publishDir "TeleprompterApp.exe"
-$friendlyExe = Join-Path $publishDir "R-Speaker Teleprompter.exe"
+$friendlyExe = Join-Path $publishDir "Live Speaker Teleprompter.exe"
 if (Test-Path $originalExe) {
     Move-Item $originalExe $friendlyExe -Force
-    Write-Host "  Renamed: TeleprompterApp.exe -> R-Speaker Teleprompter.exe" -ForegroundColor DarkGray
+    Write-Host "  Renamed: TeleprompterApp.exe -> Live Speaker Teleprompter.exe" -ForegroundColor DarkGray
 }
 $originalPdb = Join-Path $publishDir "TeleprompterApp.pdb"
-$friendlyPdb = Join-Path $publishDir "R-Speaker Teleprompter.pdb"
+$friendlyPdb = Join-Path $publishDir "Live Speaker Teleprompter.pdb"
 if (Test-Path $originalPdb) {
     Move-Item $originalPdb $friendlyPdb -Force
 }
@@ -90,41 +87,33 @@ $totalSize = ($publishFiles | Measure-Object -Property Length -Sum).Sum
 Write-Host "  Published: $($publishFiles.Count) files, $([math]::Round($totalSize/1MB, 1)) MB" -ForegroundColor Green
 
 # -- Step 2: Ensure output directory -------------------------------------
-Write-Host "[2/5] Preparing output directory..." -ForegroundColor Yellow
+Write-Host "[2/4] Preparing output directory..." -ForegroundColor Yellow
 if (-not (Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }
 
 # Remove old outputs
-$portableExeTarget = Join-Path $OutputDir "R-Speaker-Teleprompter-Portable.exe"
-Remove-Item $zipTarget       -Force -ErrorAction SilentlyContinue
+$portableExeTarget = Join-Path $OutputDir "Live-Speaker-Teleprompter-Portable.exe"
 Remove-Item $exeTarget      -Force -ErrorAction SilentlyContinue
 Remove-Item $portableExeTarget -Force -ErrorAction SilentlyContinue
 
 # -- Step 3: Portable — solo EXE (nessun pdb, nessun altro file) ---------
-Write-Host "[3/5] Creating portable EXE (single file only)..." -ForegroundColor Yellow
+Write-Host "[3/4] Creating portable EXE (single file only)..." -ForegroundColor Yellow
 Copy-Item $friendlyExe $portableExeTarget -Force
 $portableInfo = Get-Item $portableExeTarget
-Write-Host "  Portable EXE: R-Speaker-Teleprompter-Portable.exe ($([math]::Round($portableInfo.Length/1MB, 1)) MB)" -ForegroundColor Green
+Write-Host "  Portable EXE: Live-Speaker-Teleprompter-Portable.exe ($([math]::Round($portableInfo.Length/1MB, 1)) MB)" -ForegroundColor Green
 
-# -- Step 4: Portable ZIP (solo exe dentro) -------------------------------
-Write-Host "[4/5] Creating portable ZIP (exe only)..." -ForegroundColor Yellow
-Compress-Archive -Path $portableExeTarget -DestinationPath $zipTarget -CompressionLevel Optimal -Force
-
-$zipInfo = Get-Item $zipTarget
-Write-Host "  ZIP: $ZipName ($([math]::Round($zipInfo.Length/1MB, 1)) MB)" -ForegroundColor Green
-
-# -- Step 5: Create self-extracting installer -----------------------------
-Write-Host "[5/5] Creating self-extracting installer..." -ForegroundColor Yellow
+# -- Step 4: Create self-extracting installer -----------------------------
+Write-Host "[4/4] Creating self-extracting installer..." -ForegroundColor Yellow
 
 if (-not (Test-Path $templatePath)) {
     Write-Warning "Installer template not found at $templatePath -- skipping installer."
 } else {
-    $tempDir = Join-Path $env:TEMP ("r-speaker-build-" + [guid]::NewGuid().ToString('N').Substring(0,8))
+    $tempDir = Join-Path $env:TEMP ("live-speaker-build-" + [guid]::NewGuid().ToString('N').Substring(0,8))
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
     try {
-        # Installer ZIP: stesso exe ma con nome "R-Speaker Teleprompter.exe" per installazione pulita
+        # Installer ZIP: stesso exe ma con nome "Live Speaker Teleprompter.exe" per installazione pulita
         $installerZipPath = Join-Path $tempDir "installer-payload.zip"
         Compress-Archive -Path $friendlyExe -DestinationPath $installerZipPath -CompressionLevel Optimal -Force
 
@@ -168,7 +157,7 @@ if (-not (Test-Path $templatePath)) {
         $sedContent += "DisplayLicense=`r`n"
         $sedContent += "FinishMessage=`r`n"
         $sedContent += "TargetName=$exeTarget`r`n"
-        $sedContent += "FriendlyName=R-Speaker Teleprompter Installer`r`n"
+        $sedContent += "FriendlyName=Live Speaker Teleprompter Installer`r`n"
         $sedContent += "AppLaunched=cmd /c powershell.exe -NoProfile -ExecutionPolicy Bypass -File " + '"installer.ps1"' + "`r`n"
         $sedContent += "PostInstallCmd=<None>`r`n"
         $sedContent += "AdminQuietInstCmd=`r`n"
@@ -211,10 +200,7 @@ Write-Host "========================================================" -Foregroun
 Write-Host ""
 Write-Host "  Outputs in: $OutputDir" -ForegroundColor Cyan
 if (Test-Path $portableExeTarget) {
-    Write-Host "  [OK] Portable EXE:  R-Speaker-Teleprompter-Portable.exe" -ForegroundColor White
-}
-if (Test-Path $zipTarget) {
-    Write-Host "  [OK] Portable ZIP:  $ZipName" -ForegroundColor White
+    Write-Host "  [OK] Portable EXE:  Live-Speaker-Teleprompter-Portable.exe" -ForegroundColor White
 }
 if (Test-Path $exeTarget) {
     Write-Host "  [OK] Installer EXE: $InstallerName" -ForegroundColor White

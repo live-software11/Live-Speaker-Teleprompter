@@ -1,12 +1,12 @@
-# R-Speaker Teleprompter Installer
+# Live Speaker Teleprompter Installer
 # Self-extracting, self-destructing
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 $ErrorActionPreference = "Stop"
-$appName = "R-Speaker Teleprompter"
-$publisherName = "R-Speaker"
+$appName = "Live Speaker Teleprompter"
+$publisherName = "Live Speaker"
 
 # ── UI ──
 $form = New-Object System.Windows.Forms.Form

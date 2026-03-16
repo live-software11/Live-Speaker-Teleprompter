@@ -12,10 +12,10 @@
 
     <!-- App metadata: AssemblyName must stay TeleprompterApp for WPF XAML pack URIs -->
     <AssemblyName>TeleprompterApp</AssemblyName>
-    <Product>R-Speaker Teleprompter</Product>
-    <Company>R-Speaker</Company>
+    <Product>Live Speaker Teleprompter</Product>
+    <Company>Live Speaker</Company>
     <Description>Professional teleprompter for multi-screen presentations with NDI, OSC, and Companion support</Description>
-    <Copyright>© 2026 R-Speaker. All rights reserved.</Copyright>
+    <Copyright>© 2026 Live Speaker. All rights reserved.</Copyright>
     <Version>2.3.3</Version>
     <FileVersion>2.3.3.0</FileVersion>
     <AssemblyVersion>2.3.3.0</AssemblyVersion>

@@ -1,6 +1,6 @@
-# R-Speaker Teleprompter — Companion Module Setup Guide
+# Live Speaker Teleprompter — Companion Module Setup Guide
 
-Guida completa per l'integrazione di **R-Speaker Teleprompter** con **Bitfocus Companion**.
+Guida completa per l'integrazione di **Live Speaker Teleprompter** con **Bitfocus Companion**.
 
 Questa guida copre l'installazione del modulo, la configurazione della connessione OSC, la lista completa di azioni/feedback/variabili/preset e scenari d'uso in produzione.
 
@@ -25,13 +25,13 @@ Questa guida copre l'installazione del modulo, la configurazione della connessio
 
 ## Panoramica
 
-Il modulo **R-Speaker Teleprompter** per Bitfocus Companion permette di controllare il teleprompter interamente da Stream Deck, Touch Portal o qualsiasi superficie supportata.
+Il modulo **Live Speaker Teleprompter** per Bitfocus Companion permette di controllare il teleprompter interamente da Stream Deck, Touch Portal o qualsiasi superficie supportata.
 
 Il protocollo di comunicazione è **OSC over UDP**:
 
 ```
-Companion  ──OSC──▶  R-Speaker (porta 8000)
-                      ◀──OSC──  R-Speaker (porta 8001 = feedback)
+Companion  ──OSC──▶  Live Speaker Teleprompter (porta 8000)
+                      ◀──OSC──  Live Speaker Teleprompter (porta 8001 = feedback)
 ```
 
 La connessione è bidirezionale: Companion invia comandi all'app e riceve lo stato in tempo reale (playing, speed, mirror, NDI).
@@ -43,7 +43,7 @@ La connessione è bidirezionale: Companion invia comandi all'app e riceve lo sta
 | Componente | Versione | Note |
 |-----------|---------|------|
 | Bitfocus Companion | 3.0+ | Testato con 3.x |
-| R-Speaker Teleprompter | 2.0.0+ | Deve essere in esecuzione sulla stessa macchina o rete |
+| Live Speaker Teleprompter | 2.0.0+ | Deve essere in esecuzione sulla stessa macchina o rete |
 | Node.js | 18+ | Fornito con Companion |
 | NDI Tools | Opzionale | Solo se si usano le azioni NDI |
 
@@ -58,7 +58,7 @@ La connessione è bidirezionale: Companion invia comandi all'app e riceve lo sta
    - **macOS**: `~/Library/Application Support/companion-module-dev/`
    - **Linux**: `~/.config/companion-module-dev/`
 
-2. Copia l'intera cartella `companion-module/` dal pacchetto R-Speaker nella cartella dei moduli custom:
+2. Copia l'intera cartella `companion-module/` dal pacchetto Live Speaker Teleprompter nella cartella dei moduli custom:
 
    ```
    companion-module/
@@ -85,7 +85,7 @@ La connessione è bidirezionale: Companion invia comandi all'app e riceve lo sta
 
 ### Verifica installazione
 
-Dopo il riavvio, cerca **"R-Speaker Teleprompter"** nella lista delle connessioni disponibili. Se non compare, verifica:
+Dopo il riavvio, cerca **"Live Speaker Teleprompter"** nella lista delle connessioni disponibili. Se non compare, verifica:
 - Che `package.json` e `index.js` siano nella cartella corretta
 - Che `npm install` sia stato eseguito con successo
 - I log di Companion per eventuali errori di caricamento
@@ -98,21 +98,21 @@ Dopo aver aggiunto la connessione, configura i seguenti parametri:
 
 | Parametro | Default | Descrizione |
 |-----------|---------|-------------|
-| **Target IP** | `127.0.0.1` | Indirizzo IP del PC dove gira R-Speaker |
-| **OSC Port** | `8000` | Porta su cui R-Speaker ascolta i comandi |
+| **Target IP** | `127.0.0.1` | Indirizzo IP del PC dove gira Live Speaker Teleprompter |
+| **OSC Port** | `8000` | Porta su cui Live Speaker Teleprompter ascolta i comandi |
 | **Feedback Port** | `8001` | Porta locale su cui Companion riceve i feedback |
 
 ### Configurazione sulla stessa macchina
 
-Se Companion e R-Speaker girano sullo stesso PC, usa i valori di default:
+Se Companion e Live Speaker Teleprompter girano sullo stesso PC, usa i valori di default:
 - Target IP: `127.0.0.1`
 - OSC Port: `8000`
 - Feedback Port: `8001`
 
 ### Configurazione in rete
 
-Se Companion gira su un PC diverso da R-Speaker:
-- **Target IP**: inserisci l'indirizzo IP del PC dove gira R-Speaker (es. `192.168.1.100`)
+Se Companion gira su un PC diverso da Live Speaker Teleprompter:
+- **Target IP**: inserisci l'indirizzo IP del PC dove gira Live Speaker Teleprompter (es. `192.168.1.100`)
 - **OSC Port**: `8000` (invariato)
 - **Feedback Port**: `8001` (invariato, Companion ascolterà su questa porta)
 - Assicurati che le porte UDP 8000 e 8001 siano aperte sul firewall Windows
@@ -285,7 +285,7 @@ Il modulo include **10 preset** pronti per il drag & drop sulle pagine di Stream
 
 ## Protocollo OSC — Riferimento completo
 
-### Comandi inviati da Companion → R-Speaker (porta 8000)
+### Comandi inviati da Companion → Live Speaker Teleprompter (porta 8000)
 
 | # | Indirizzo OSC | Tipo argomenti | Descrizione |
 |---|---------------|---------------|-------------|
@@ -318,7 +318,7 @@ Il modulo include **10 preset** pronti per il drag & drop sulle pagine di Stream
 
 > \* Le azioni script (#15-17) sono predisposte. L'app attualmente non le gestisce.
 
-### Feedback ricevuti da R-Speaker → Companion (porta 8001)
+### Feedback ricevuti da Live Speaker Teleprompter → Companion (porta 8001)
 
 | # | Indirizzo OSC | Tipo | Valori | Descrizione |
 |---|---------------|------|--------|-------------|
@@ -331,7 +331,7 @@ Il modulo include **10 preset** pronti per il drag & drop sulle pagine di Stream
 | 7 | `/ndi/available` | string | `"yes"` / `"no"` | Runtime NDI disponibile |
 | 8 | `/ndi/resolution/current` | string | `"1920x1080"` | Risoluzione NDI |
 | 9 | `/ndi/framerate/current` | string | `"30.00"` | Framerate NDI |
-| 10 | `/ndi/sourcename/current` | string | `"R-Speaker NDI"` | Nome sorgente NDI |
+| 10 | `/ndi/sourcename/current` | string | `"Live Speaker NDI"` | Nome sorgente NDI |
 
 ---
 
@@ -344,7 +344,7 @@ Il modulo implementa un meccanismo di auto-reconnect:
 3. **In caso di errore**: passa allo stato `Connection Failure` e riprova la connessione ogni **5 secondi** automaticamente.
 4. **Cleanup**: alla chiusura del modulo, tutti i timer e la porta UDP vengono rilasciati correttamente.
 
-> L'ordine di avvio non importa: puoi avviare prima Companion o prima R-Speaker. Il modulo si sincronizzerà automaticamente appena entrambi sono online.
+> L'ordine di avvio non importa: puoi avviare prima Companion o prima Live Speaker Teleprompter. Il modulo si sincronizzerà automaticamente appena entrambi sono online.
 
 ---
 
@@ -362,7 +362,7 @@ Il modulo implementa un meccanismo di auto-reconnect:
 
 ### Scenario 2 — Controllo remoto in rete
 
-1. R-Speaker gira sul PC del presenter (es. `192.168.1.50`).
+1. Live Speaker Teleprompter gira sul PC del presenter (es. `192.168.1.50`).
 2. Companion gira sul PC della regia (es. `192.168.1.100`).
 3. Nella configurazione del modulo, imposta Target IP = `192.168.1.50`.
 4. Apri le porte 8000 e 8001 UDP sul firewall del PC presenter.
@@ -370,7 +370,7 @@ Il modulo implementa un meccanismo di auto-reconnect:
 
 ### Scenario 3 — NDI verso OBS Studio
 
-1. Sul PC con OBS, aggiungi una sorgente **NDI Source** che punta a "R-Speaker NDI".
+1. Sul PC con OBS, aggiungi una sorgente **NDI Source** che punta a "Live Speaker NDI".
 2. Da Stream Deck, premi `NDI` per avviare lo streaming.
 3. Usa i preset risoluzione/framerate per regolare la qualità in base alla banda disponibile.
 
@@ -387,20 +387,20 @@ Il modulo implementa un meccanismo di auto-reconnect:
 
 ### Stato "Connection Failure" permanente
 
-- R-Speaker è in esecuzione? Deve essere aperto e funzionante.
+- Live Speaker Teleprompter è in esecuzione? Deve essere aperto e funzionante.
 - La porta 8001 è già in uso? Verifica con `netstat -an | findstr 8001`.
-- Il firewall blocca le connessioni UDP? Aggiungi eccezione per Companion e R-Speaker.
+- Il firewall blocca le connessioni UDP? Aggiungi eccezione per Companion e Live Speaker Teleprompter.
 
 ### I feedback non si aggiornano
 
-- R-Speaker invia feedback solo sulla porta 8001 a `127.0.0.1`. Se Companion è su un'altra macchina, il feedback potrebbe non arrivare. In questo caso, verifica che la porta Feedback sia quella su cui Companion ascolta.
+- Live Speaker Teleprompter invia feedback solo sulla porta 8001 a `127.0.0.1`. Se Companion è su un'altra macchina, il feedback potrebbe non arrivare. In questo caso, verifica che la porta Feedback sia quella su cui Companion ascolta.
 - Prova a premere un bottone: l'azione dovrebbe funzionare anche senza feedback.
 
 ### La velocità non cambia
 
-- Verifica che R-Speaker sia in **modalità presentazione** (non in modalità modifica). In modalità modifica la velocità viene ignorata dal playback.
+- Verifica che Live Speaker Teleprompter sia in **modalità presentazione** (non in modalità modifica). In modalità modifica la velocità viene ignorata dal playback.
 
 ### NDI non disponibile
 
-- Il runtime NDI deve essere installato sul PC dove gira R-Speaker ([download](https://www.ndi.tv/tools/)).
+- Il runtime NDI deve essere installato sul PC dove gira Live Speaker Teleprompter ([download](https://www.ndi.tv/tools/)).
 - Se il feedback `ndiAvailable` è `false`, la DLL NDI non è stata trovata.

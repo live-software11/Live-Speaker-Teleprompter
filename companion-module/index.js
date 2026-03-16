@@ -18,7 +18,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
   async init(config) {
     this.config = config;
     this.updateStatus(InstanceStatus.Connecting);
-    
+
     await this.configureOsc();
     this.initActions();
     this.initFeedbacks();
@@ -56,7 +56,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
     }
 
     if (this.oscPort) {
-      try { this.oscPort.close(); } catch(e) {}
+      try { this.oscPort.close(); } catch (e) { }
       this.oscPort = null;
     }
 
@@ -71,7 +71,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
 
       this.oscPort.on('ready', () => {
         this.updateStatus(InstanceStatus.Ok);
-        this.log('info', `Connected to R-Speaker Teleprompter at ${this.config.host}:${this.config.port}`);
+        this.log('info', `Connected to Live Speaker Teleprompter at ${this.config.host}:${this.config.port}`);
         // Request current status on connect
         this.sendOsc('/teleprompter/status/request');
         this.sendOsc('/ndi/status/request');
@@ -103,8 +103,8 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
 
   processFeedback(oscMsg) {
     const { address, args } = oscMsg;
-    
-    switch(address) {
+
+    switch (address) {
       case '/teleprompter/status':
         if (args[0]) {
           this.feedbackValues.isPlaying = args[0].value === 'playing';
@@ -112,7 +112,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
           this.setVariableValues({ playing: this.feedbackValues.isPlaying ? 'Playing' : 'Stopped' });
         }
         break;
-      
+
       case '/teleprompter/speed/current':
         if (args[0]) {
           const speed = parseFloat(args[0].value);
@@ -121,7 +121,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
           this.setVariableValues({ speed: this.feedbackValues.currentSpeed.toFixed(2) });
         }
         break;
-      
+
       case '/teleprompter/mirror/status':
         if (args[0]) {
           this.feedbackValues.isMirrored = args[0].value === 'true';
@@ -129,7 +129,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
           this.setVariableValues({ mirrored: this.feedbackValues.isMirrored ? 'On' : 'Off' });
         }
         break;
-        
+
       case '/ndi/status':
         if (args[0]) {
           this.feedbackValues.ndiActive = args[0].value === 'active';
@@ -137,7 +137,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
           this.setVariableValues({ ndi_active: this.feedbackValues.ndiActive ? 'Active' : 'Inactive' });
         }
         break;
-      
+
       case '/ndi/available':
         if (args[0]) {
           this.feedbackValues.ndiAvailable = args[0].value === 'yes';
@@ -494,7 +494,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
 
   initPresets() {
     const presets = [];
-    
+
     // Playback presets
     presets.push({
       type: 'button',
@@ -509,7 +509,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
       steps: [{ down: [{ actionId: 'play' }] }],
       feedbacks: [{ feedbackId: 'isPlaying' }]
     });
-    
+
     presets.push({
       type: 'button',
       category: 'Playback',
@@ -522,7 +522,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
       },
       steps: [{ down: [{ actionId: 'stop' }] }]
     });
-    
+
     presets.push({
       type: 'button',
       category: 'Playback',
@@ -549,7 +549,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
       steps: [{ down: [{ actionId: 'toggle' }] }],
       feedbacks: [{ feedbackId: 'isPlaying' }]
     });
-    
+
     // Speed presets
     presets.push({
       type: 'button',
@@ -563,7 +563,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
       },
       steps: [{ down: [{ actionId: 'speedUp' }] }]
     });
-    
+
     presets.push({
       type: 'button',
       category: 'Speed',
@@ -576,7 +576,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
       },
       steps: [{ down: [{ actionId: 'speedDown' }] }]
     });
-    
+
     // NDI presets
     presets.push({
       type: 'button',
@@ -590,13 +590,13 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
       },
       steps: [{ down: [{ actionId: 'ndiToggle' }] }],
       feedbacks: [
-        { 
+        {
           feedbackId: 'ndiActive',
           style: { bgcolor: this.rgb(0, 255, 0) }
         }
       ]
     });
-    
+
     presets.push({
       type: 'button',
       category: 'NDI Output',
@@ -607,14 +607,14 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
         color: this.rgb(255, 255, 255),
         bgcolor: this.rgb(100, 100, 100)
       },
-      steps: [{ 
-        down: [{ 
+      steps: [{
+        down: [{
           actionId: 'outputMode',
           options: { mode: 'display' }
-        }] 
+        }]
       }]
     });
-    
+
     presets.push({
       type: 'button',
       category: 'NDI Output',
@@ -625,14 +625,14 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
         color: this.rgb(255, 255, 255),
         bgcolor: this.rgb(255, 0, 0)
       },
-      steps: [{ 
-        down: [{ 
+      steps: [{
+        down: [{
           actionId: 'outputMode',
           options: { mode: 'ndi' }
-        }] 
+        }]
       }]
     });
-    
+
     presets.push({
       type: 'button',
       category: 'NDI Output',
@@ -643,14 +643,14 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
         color: this.rgb(255, 255, 255),
         bgcolor: this.rgb(0, 150, 0)
       },
-      steps: [{ 
-        down: [{ 
+      steps: [{
+        down: [{
           actionId: 'outputMode',
           options: { mode: 'both' }
-        }] 
+        }]
       }]
     });
-    
+
     this.setPresetDefinitions(presets);
   }
 
@@ -660,7 +660,7 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
       this.reconnectTimer = null;
     }
     if (this.oscPort) {
-      try { this.oscPort.close(); } catch(e) {}
+      try { this.oscPort.close(); } catch (e) { }
       this.oscPort = null;
     }
   }

@@ -1,4 +1,4 @@
-# R-Speaker Teleprompter — Developer Notes
+# Live Speaker Teleprompter — Developer Notes
 
 Technical reference for contributors working on the WPF application source.
 

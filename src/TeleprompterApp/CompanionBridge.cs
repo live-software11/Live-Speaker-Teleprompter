@@ -287,17 +287,29 @@ internal sealed class CompanionBridge : IDisposable
 
     private string BuildResponse(string message = "OK", string? error = null)
     {
-        var snapshot = _owner.Dispatcher.Invoke(() => new
+        try
         {
-            status = error == null ? "ok" : "error",
-            message = error ?? message,
-            isPlaying = _owner.IsPlaying,
-            speed = Math.Round(_owner.CurrentScrollSpeed, 3),
-            editMode = _owner.IsEditMode,
-            endpoint = Endpoint
-        });
+            if (_owner.Dispatcher.HasShutdownStarted || _owner.Dispatcher.HasShutdownFinished)
+            {
+                return JsonSerializer.Serialize(new { status = "shutdown", message = "Application closing" }, JsonOptions);
+            }
 
-        return JsonSerializer.Serialize(snapshot, JsonOptions);
+            var snapshot = _owner.Dispatcher.Invoke(() => new
+            {
+                status = error == null ? "ok" : "error",
+                message = error ?? message,
+                isPlaying = _owner.IsPlaying,
+                speed = Math.Round(_owner.CurrentScrollSpeed, 3),
+                editMode = _owner.IsEditMode,
+                endpoint = Endpoint
+            });
+
+            return JsonSerializer.Serialize(snapshot, JsonOptions);
+        }
+        catch (TaskCanceledException)
+        {
+            return JsonSerializer.Serialize(new { status = "shutdown", message = "Application closing" }, JsonOptions);
+        }
     }
 
     public void Dispose()

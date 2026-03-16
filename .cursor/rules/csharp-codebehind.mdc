@@ -4,7 +4,7 @@ globs: "**/*.cs"
 alwaysApply: false
 ---
 
-# Standard C# - R-Speaker Teleprompter
+# Standard C# - Live Speaker Teleprompter
 
 ## Pattern code-behind
 - Il costruttore chiama `LoadView()` → `ResolveNamedElements()` → `AttachRuntimeHandlers()`.

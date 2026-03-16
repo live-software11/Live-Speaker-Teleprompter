@@ -73,10 +73,16 @@ namespace TeleprompterApp
 
         public void SetDocument(FlowDocument document)
         {
-            if (_content != null)
+            if (_content == null) return;
+
+            try
             {
                 _content.Document = document;
                 SetFontFromDocument(document);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"PresenterWindow.SetDocument error: {ex.Message}");
             }
         }
 
@@ -147,10 +153,22 @@ namespace TeleprompterApp
         {
             if (_scrollViewer == null) return;
 
-            var current = _scrollViewer.VerticalOffset;
-            if (Math.Abs(current - offset) < 0.1) return;
+            _pendingVerticalOffset = offset;
 
-            _scrollViewer.ScrollToVerticalOffset(offset);
+            if (_isScrollUpdateScheduled) return;
+            _isScrollUpdateScheduled = true;
+
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, () =>
+            {
+                _isScrollUpdateScheduled = false;
+                var target = _pendingVerticalOffset;
+                if (double.IsNaN(target)) return;
+
+                var current = _scrollViewer!.VerticalOffset;
+                if (Math.Abs(current - target) < 0.1) return;
+
+                _scrollViewer.ScrollToVerticalOffset(target);
+            });
         }
 
         public void SetScrollRatio(double ratio)
@@ -160,20 +178,22 @@ namespace TeleprompterApp
             var maxScroll = _scrollViewer.ScrollableHeight;
             if (double.IsNaN(maxScroll) || maxScroll <= 0)
             {
-                _scrollViewer.UpdateLayout();
-                maxScroll = _scrollViewer.ScrollableHeight;
-                if (double.IsNaN(maxScroll) || maxScroll <= 0)
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
                 {
-                    _scrollViewer.ScrollToVerticalOffset(0);
-                    return;
-                }
+                    if (_scrollViewer == null) return;
+                    var max = _scrollViewer.ScrollableHeight;
+                    if (double.IsNaN(max) || max <= 0)
+                    {
+                        _scrollViewer.ScrollToVerticalOffset(0);
+                        return;
+                    }
+                    _scrollViewer.ScrollToVerticalOffset(max * Math.Clamp(ratio, 0, 1));
+                });
+                return;
             }
 
             var targetOffset = maxScroll * Math.Clamp(ratio, 0, 1);
-            var current = _scrollViewer.VerticalOffset;
-            if (Math.Abs(current - targetOffset) < 0.5) return;
-
-            _scrollViewer.ScrollToVerticalOffset(targetOffset);
+            SetVerticalOffset(targetOffset);
         }
 
         public void SetBackgroundColor(MediaColor color)
@@ -199,6 +219,8 @@ namespace TeleprompterApp
 
         private double _arrowAbsoluteY;
         private double _arrowNormalizedX = 0;
+        private double _pendingVerticalOffset = double.NaN;
+        private bool _isScrollUpdateScheduled;
 
         /// <summary>
         /// Posiziona la freccia alla stessa Y assoluta (pixel dal top) della preview.

@@ -1,7 +1,7 @@
 {
-  "name": "companion-module-r-speaker-teleprompter",
+  "name": "companion-module-live-speaker-teleprompter",
   "version": "1.0.0",
-  "description": "Companion module for R-Speaker Teleprompter",
+  "description": "Companion module for Live Speaker Teleprompter",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,7 +11,7 @@
     "teleprompter",
     "osc"
   ],
-  "author": "R-Speaker",
+  "author": "Live Speaker",
   "license": "MIT",
   "dependencies": {
     "@companion-module/base": "^1.12.0",
@@ -19,10 +19,12 @@
   },
   "companion": {
     "module_api": "1.0.0",
-    "products": ["R-Speaker Teleprompter"],
-    "manufacturer": "R-Speaker",
-    "name": "R-Speaker Teleprompter",
-    "shortname": "rspeaker",
-    "description": "Control R-Speaker Teleprompter via OSC"
+    "products": [
+      "Live Speaker Teleprompter"
+    ],
+    "manufacturer": "Live Speaker",
+    "name": "Live Speaker Teleprompter",
+    "shortname": "liveteleprompter",
+    "description": "Control Live Speaker Teleprompter via OSC"
   }
 }

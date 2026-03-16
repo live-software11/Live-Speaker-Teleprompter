@@ -22,10 +22,30 @@ internal static class PreferencesService
             if (File.Exists(PreferencesPath))
             {
                 var json = File.ReadAllText(PreferencesPath);
-                var preferences = JsonSerializer.Deserialize<UserPreferences>(json, SerializerOptions);
-                if (preferences != null)
+                if (!string.IsNullOrWhiteSpace(json))
                 {
-                    return preferences;
+                    var preferences = JsonSerializer.Deserialize<UserPreferences>(json, SerializerOptions);
+                    if (preferences != null)
+                    {
+                        return preferences;
+                    }
+                }
+            }
+
+            // If main file is missing/empty, try recovering from temp file
+            var tempPath = PreferencesPath + ".tmp";
+            if (File.Exists(tempPath))
+            {
+                var json = File.ReadAllText(tempPath);
+                if (!string.IsNullOrWhiteSpace(json))
+                {
+                    var preferences = JsonSerializer.Deserialize<UserPreferences>(json, SerializerOptions);
+                    if (preferences != null)
+                    {
+                        // Recover: promote temp to main
+                        try { File.Move(tempPath, PreferencesPath, overwrite: true); } catch { }
+                        return preferences;
+                    }
                 }
             }
         }
@@ -44,7 +64,12 @@ internal static class PreferencesService
             Directory.CreateDirectory(AppFolder);
             preferences.LastUpdatedUtc = DateTime.UtcNow;
             var json = JsonSerializer.Serialize(preferences, SerializerOptions);
-            File.WriteAllText(PreferencesPath, json);
+
+            // Atomic write: write to temp file, then rename to avoid corruption
+            var tempPath = PreferencesPath + ".tmp";
+            File.WriteAllText(tempPath, json);
+            // File.Move with overwrite is atomic on NTFS
+            File.Move(tempPath, PreferencesPath, overwrite: true);
         }
         catch
         {

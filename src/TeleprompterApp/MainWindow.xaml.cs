@@ -105,7 +105,7 @@ namespace TeleprompterApp
     private CompanionBridge? _companionBridge;
     private NDITransmitter? _ndiTransmitter;
     private OscBridge? _oscBridge;
-    private string _ndiSourceName = "R-Speaker NDI";
+    private string _ndiSourceName = "Live Speaker NDI";
     private int? _ndiTargetWidth;
     private int? _ndiTargetHeight;
     private double _ndiFrameRate = 30.0;
@@ -115,6 +115,10 @@ namespace TeleprompterApp
 
     private readonly Stopwatch _onAirTimer = new();
     private DispatcherTimer? _onAirTimerDisplay;
+
+    // Throttle for scroll-related updates to avoid flooding during auto-scroll
+    private readonly Stopwatch _lastScrollNotify = new();
+    private const double ScrollNotifyMinIntervalMs = 50;
 
     // ── Public API for CompanionBridge / OscBridge ──
     public bool IsPlaying => _playPauseToggle?.IsChecked == true;
@@ -141,6 +145,11 @@ namespace TeleprompterApp
     private WpfPolygon _arrowShape = null!;
     private WpfTextBlock _statusText = null!;
     private WpfStackPanel _monitorTogglePanel = null!;
+
+    // Cached elements resolved lazily (avoid repeated FindName calls in hot paths)
+    private WpfTextBlock? _scrollProgressText;
+    private Border? _scrollProgressBar;
+    private bool _scrollProgressResolved;
 
     public MainWindow()
     {
@@ -745,7 +754,6 @@ namespace TeleprompterApp
         }
 
         var extension = Path.GetExtension(filePath).ToLowerInvariant();
-        var range = new TextRange(_contentEditor.Document.ContentStart, _contentEditor.Document.ContentEnd);
 
         if (extension == ".docx" || extension == ".doc")
         {
@@ -763,28 +771,59 @@ namespace TeleprompterApp
                         _preferences.LastScriptPath = path;
                     ApplyArrowSafePadding();
                     SavePreferences();
+                    SyncPresenterDocument();
                     SetStatus($"Importato: {Path.GetFileName(path)}");
                 });
             });
             return;
         }
+
+        // Read file into memory first to avoid holding a lock on the file
+        byte[] fileData;
+        try
+        {
+            fileData = File.ReadAllBytes(filePath);
+        }
+        catch (IOException ex)
+        {
+            throw new IOException($"Impossibile leggere il file: {ex.Message}", ex);
+        }
+
+        using var memoryStream = new MemoryStream(fileData);
+        var range = new TextRange(_contentEditor.Document.ContentStart, _contentEditor.Document.ContentEnd);
+
+        if (extension == ".rtf")
+        {
+            range.Load(memoryStream, MediaDataFormats.Rtf);
+        }
+        else if (extension == ".xaml" || extension == ".xamlpackage" || extension == ".rstp")
+        {
+            try
+            {
+                range.Load(memoryStream, MediaDataFormats.XamlPackage);
+            }
+            catch
+            {
+                // Fallback: try as XAML (not package)
+                memoryStream.Position = 0;
+                try
+                {
+                    range.Load(memoryStream, MediaDataFormats.Xaml);
+                }
+                catch
+                {
+                    // Last resort: load as plain text
+                    memoryStream.Position = 0;
+                    using var reader = new StreamReader(memoryStream);
+                    SetPlainTextDocument(reader.ReadToEnd());
+                }
+            }
+        }
         else
         {
-            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            if (extension == ".rtf")
-            {
-                range.Load(fileStream, MediaDataFormats.Rtf);
-            }
-            else if (extension == ".xaml" || extension == ".xamlpackage" || extension == ".rstp")
-            {
-                range.Load(fileStream, MediaDataFormats.XamlPackage);
-            }
-            else
-            {
-                using var reader = new StreamReader(fileStream);
-                var text = reader.ReadToEnd();
-                SetPlainTextDocument(text);
-            }
+            using var reader = new StreamReader(memoryStream);
+            var text = reader.ReadToEnd();
+            SetPlainTextDocument(text);
         }
 
         _contentEditor.CaretPosition = _contentEditor.Document.ContentStart;
@@ -795,6 +834,7 @@ namespace TeleprompterApp
         }
         ApplyArrowSafePadding();
         SavePreferences();
+        SyncPresenterDocument();
     }
 
     private void SaveDocumentButton_Click(object sender, RoutedEventArgs e)
@@ -870,31 +910,38 @@ namespace TeleprompterApp
                 }
             }
 
-            using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
-            var range = new TextRange(_contentEditor.Document.ContentStart, _contentEditor.Document.ContentEnd);
-
-            switch (extension)
+            // Atomic save: write to temp file first, then rename to prevent data loss
+            var tempPath = filePath + ".tmp";
+            using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
             {
-                case ".rstp":
-                case ".xamlpackage":
-                    range.Save(fileStream, MediaDataFormats.XamlPackage);
-                    break;
-                case ".xaml":
-                    range.Save(fileStream, MediaDataFormats.Xaml);
-                    break;
-                case ".rtf":
-                    range.Save(fileStream, MediaDataFormats.Rtf);
-                    break;
-                default:
-                    var text = ExtractPlainText(range);
-                    using (var writer = new StreamWriter(fileStream, Encoding.UTF8, leaveOpen: false))
-                    {
-                        writer.Write(text);
-                    }
-                    preserveFormatting = false;
-                    break;
+                var range = new TextRange(_contentEditor.Document.ContentStart, _contentEditor.Document.ContentEnd);
+
+                switch (extension)
+                {
+                    case ".rstp":
+                    case ".xamlpackage":
+                        range.Save(fileStream, MediaDataFormats.XamlPackage);
+                        break;
+                    case ".xaml":
+                        range.Save(fileStream, MediaDataFormats.Xaml);
+                        break;
+                    case ".rtf":
+                        range.Save(fileStream, MediaDataFormats.Rtf);
+                        break;
+                    default:
+                        var text = ExtractPlainText(range);
+                        using (var writer = new StreamWriter(fileStream, Encoding.UTF8, leaveOpen: false))
+                        {
+                            writer.Write(text);
+                        }
+                        preserveFormatting = false;
+                        break;
+                }
+
+                fileStream.Flush(flushToDisk: true);
             }
 
+            File.Move(tempPath, filePath, overwrite: true);
             _currentDocumentPath = filePath;
             if (_preferences != null)
             {
@@ -1510,9 +1557,18 @@ namespace TeleprompterApp
 
     private void ContentScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        SyncPresenterScroll();
-        UpdateScrollProgressDisplay();
-        NotifyOscPosition();
+        // During auto-scroll, OnScrollRendering already syncs the presenter directly
+        if (!_isAutoScrolling)
+        {
+            SyncPresenterScroll();
+        }
+
+        if (!_lastScrollNotify.IsRunning || _lastScrollNotify.Elapsed.TotalMilliseconds >= ScrollNotifyMinIntervalMs)
+        {
+            _lastScrollNotify.Restart();
+            UpdateScrollProgressDisplay();
+            NotifyOscPosition();
+        }
     }
 
     private void SyncPresenterScroll()
@@ -1526,12 +1582,18 @@ namespace TeleprompterApp
 
     private void UpdateScrollProgressDisplay()
     {
-        if (FindName("ScrollProgressText") is WpfTextBlock progressText && FindName("ScrollProgressBar") is Border progressBar)
+        if (!_scrollProgressResolved)
+        {
+            _scrollProgressText = FindName("ScrollProgressText") as WpfTextBlock;
+            _scrollProgressBar = FindName("ScrollProgressBar") as Border;
+            _scrollProgressResolved = true;
+        }
+
+        if (_scrollProgressText != null && _scrollProgressBar != null)
         {
             var ratio = GetScrollRatio();
-            progressText.Text = $"{(int)(ratio * 100)}%";
-            var maxWidth = 80.0;
-            progressBar.Width = maxWidth * ratio;
+            _scrollProgressText.Text = $"{(int)(ratio * 100)}%";
+            _scrollProgressBar.Width = 80.0 * ratio;
         }
     }
 
@@ -1605,6 +1667,7 @@ namespace TeleprompterApp
     }
 
     private const double ScrollDeadZonePx = 0.05;
+    private bool _isAutoScrolling;
 
     private void OnScrollRendering(object? sender, EventArgs e)
     {
@@ -1645,12 +1708,17 @@ namespace TeleprompterApp
                 _isScrollRenderingSubscribed = false;
             }
             _scrollStopwatch.Stop();
+            _isAutoScrolling = false;
             _playPauseToggle.IsChecked = false;
             SetStatus(_scrollSpeed > 0 ? "Fine del testo" : "Inizio del testo");
             return;
         }
 
+        _isAutoScrolling = true;
         _contentScrollViewer.ScrollToVerticalOffset(target);
+        // Directly sync presenter during auto-scroll to avoid ScrollChanged overhead
+        _presenterWindow?.SetVerticalOffset(target);
+        _isAutoScrolling = false;
     }
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -1905,23 +1973,40 @@ namespace TeleprompterApp
 
     private void Window_Closing(object sender, CancelEventArgs e)
     {
-        if (_isScrollRenderingSubscribed)
+        try
         {
-            CompositionTarget.Rendering -= OnScrollRendering;
-            _isScrollRenderingSubscribed = false;
+            if (_isScrollRenderingSubscribed)
+            {
+                CompositionTarget.Rendering -= OnScrollRendering;
+                _isScrollRenderingSubscribed = false;
+            }
         }
-        _displayManager?.Dispose();
-        _presenterSync?.Dispose();
-        _companionBridge?.Dispose();
-        _ndiTransmitter?.Dispose();
-        _oscBridge?.Stop();
+        catch { }
 
-        CapturePreferences();
+        try { _ndiTransmitter?.Dispose(); } catch { }
+        try { _companionBridge?.Dispose(); } catch { }
+        try { _oscBridge?.Dispose(); } catch { }
+        try { _displayManager?.Dispose(); } catch { }
+        try { _presenterSync?.Dispose(); } catch { }
 
-        // Cancel any pending debounced save and save the freshly captured preferences directly.
-        // Flush() would save stale _pending data, not the just-captured _preferences.
-        _debouncedPrefs?.Dispose();
-        PreferencesService.Save(_preferences);
+        try
+        {
+            CapturePreferences();
+        }
+        catch { }
+
+        try
+        {
+            _debouncedPrefs?.Dispose();
+            PreferencesService.Save(_preferences);
+        }
+        catch { }
+
+        try
+        {
+            _presenterWindow?.Close();
+        }
+        catch { }
     }
 
     private void Window_DragOver(object sender, DragEventArgs e)

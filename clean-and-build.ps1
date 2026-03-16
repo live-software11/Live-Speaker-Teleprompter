@@ -1,4 +1,4 @@
-# R-Speaker Teleprompter - Clean & Build
+# Live Speaker Teleprompter - Clean & Build
 # Pulisce tutto l'obsoleto e crea build aggiornate per setup e portable.
 # Lancia dalla root del progetto: .\clean-and-build.ps1
 
@@ -7,7 +7,7 @@ $root = $PSScriptRoot
 
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host "  R-Speaker Teleprompter - Clean & Build" -ForegroundColor Cyan
+Write-Host "  Live Speaker Teleprompter - Clean & Build" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -33,9 +33,9 @@ if (-not (Test-Path $portableDir)) {
     New-Item -ItemType Directory -Path $portableDir -Force | Out-Null
 }
 $portableFiles = @(
-    "R-Speaker-Teleprompter-Portable.exe",
-    "R-Speaker-Teleprompter-Portable.zip",
-    "R-Speaker-Teleprompter-Installer.exe",
+    "Live-Speaker-Teleprompter-Portable.exe",
+    "Live-Speaker-Teleprompter-Portable.zip",
+    "Live-Speaker-Teleprompter-Installer.exe",
     "*.msi"
 )
 foreach ($pattern in $portableFiles) {

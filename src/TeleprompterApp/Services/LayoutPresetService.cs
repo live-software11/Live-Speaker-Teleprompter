@@ -50,7 +50,9 @@ internal static class LayoutPresetService
                 all[i] ??= new LayoutPreset();
             all[slot - 1] = preset;
             var outJson = JsonSerializer.Serialize(all, Options);
-            File.WriteAllText(PresetsPath, outJson);
+            var tempPath = PresetsPath + ".tmp";
+            File.WriteAllText(tempPath, outJson);
+            File.Move(tempPath, PresetsPath, overwrite: true);
         }
         catch { /* ignore */ }
     }

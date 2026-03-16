@@ -1,14 +1,20 @@
 {
-  "name": "R-Speaker Teleprompter",
+  "name": "Live Speaker Teleprompter",
   "id": "r-speaker-teleprompter",
-  "shortname": "rspeaker",
-  "description": "Control R-Speaker Teleprompter via OSC",
+  "shortname": "liveteleprompter",
+  "description": "Control Live Speaker Teleprompter via OSC",
   "version": "1.0.0",
-  "author": "R-Speaker",
+  "author": "Live Speaker",
   "category": "Presentation",
-  "keywords": ["teleprompter", "presentation", "speech"],
-  "manufacturer": "R-Speaker",
-  "products": ["R-Speaker Teleprompter"],
+  "keywords": [
+    "teleprompter",
+    "presentation",
+    "speech"
+  ],
+  "manufacturer": "Live Speaker",
+  "products": [
+    "Live Speaker Teleprompter"
+  ],
   "main_file": "index.js",
   "config": [
     {
@@ -201,7 +207,11 @@
         "color": "16777215",
         "bgcolor": "65280"
       },
-      "actions": [{"action": "play"}]
+      "actions": [
+        {
+          "action": "play"
+        }
+      ]
     },
     {
       "category": "Playback",
@@ -213,7 +223,11 @@
         "color": "16777215",
         "bgcolor": "16711680"
       },
-      "actions": [{"action": "stop"}]
+      "actions": [
+        {
+          "action": "stop"
+        }
+      ]
     },
     {
       "category": "Playback",
@@ -225,7 +239,11 @@
         "color": "16777215",
         "bgcolor": "255"
       },
-      "actions": [{"action": "reset"}]
+      "actions": [
+        {
+          "action": "reset"
+        }
+      ]
     },
     {
       "category": "Speed",
@@ -237,7 +255,11 @@
         "color": "16777215",
         "bgcolor": "16744448"
       },
-      "actions": [{"action": "speedUp"}]
+      "actions": [
+        {
+          "action": "speedUp"
+        }
+      ]
     },
     {
       "category": "Speed",
@@ -249,7 +271,11 @@
         "color": "16777215",
         "bgcolor": "16744448"
       },
-      "actions": [{"action": "speedDown"}]
+      "actions": [
+        {
+          "action": "speedDown"
+        }
+      ]
     }
   ]
 }

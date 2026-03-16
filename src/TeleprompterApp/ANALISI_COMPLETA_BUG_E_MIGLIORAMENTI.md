@@ -1,4 +1,4 @@
-# R-Speaker Teleprompter - Analisi Completa Bug e Miglioramenti
+# Live Speaker Teleprompter - Analisi Completa Bug e Miglioramenti
 
 ## Stato: v2.3.5 — Freccia allineata al testo, scroll fluido
 
@@ -195,4 +195,4 @@ UI change → SavePreferences() → CapturePreferences() → DebouncedPreference
 
 ---
 
-*Documento aggiornato il 2026-02-20 — R-Speaker Teleprompter v2.3.5*
+*Documento aggiornato il 2026-02-20 — Live Speaker Teleprompter v2.3.5*

@@ -33,7 +33,7 @@ internal static class AppPaths
 
             if (isInstalled)
             {
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "R-Speaker Teleprompter");
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Live Speaker Teleprompter");
             }
 
             // Portable: use exe directory (USB, desktop, etc.) — no traces on host PC
@@ -41,7 +41,7 @@ internal static class AppPaths
         }
         catch
         {
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "R-Speaker Teleprompter");
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Live Speaker Teleprompter");
         }
     }
 }

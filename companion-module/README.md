@@ -1,6 +1,6 @@
-# R-Speaker Teleprompter — Companion Module
+# Live Speaker Teleprompter — Companion Module
 
-Modulo per [Bitfocus Companion](https://bitfocus.io/companion) che permette il controllo completo di R-Speaker Teleprompter via **OSC over UDP**.
+Modulo per [Bitfocus Companion](https://bitfocus.io/companion) che permette il controllo completo di Live Speaker Teleprompter via **OSC over UDP**.
 
 ## Funzionalità
 
@@ -14,7 +14,7 @@ Modulo per [Bitfocus Companion](https://bitfocus.io/companion) che permette il c
 ## Requisiti
 
 - Bitfocus Companion 3.0+
-- R-Speaker Teleprompter 2.0.0+
+- Live Speaker Teleprompter 2.0.0+
 
 ## Installazione
 
@@ -26,13 +26,13 @@ Modulo per [Bitfocus Companion](https://bitfocus.io/companion) che permette il c
    ```
 
 3. Riavvia Companion.
-4. Aggiungi la connessione **"R-Speaker Teleprompter"**.
+4. Aggiungi la connessione **"Live Speaker Teleprompter"**.
 
 ## Configurazione
 
 | Parametro | Default | Descrizione |
 |-----------|---------|-------------|
-| Target IP | `127.0.0.1` | IP del PC con R-Speaker |
+| Target IP | `127.0.0.1` | IP del PC con Live Speaker Teleprompter |
 | OSC Port | `8000` | Porta comandi |
 | Feedback Port | `8001` | Porta feedback (locale) |
 

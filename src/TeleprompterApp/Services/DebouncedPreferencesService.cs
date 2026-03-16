@@ -55,12 +55,20 @@ internal sealed class DebouncedPreferencesService : IDisposable
     /// </summary>
     public void Flush()
     {
-        _debounceTimer?.Stop();
+        try { _debounceTimer?.Stop(); } catch { }
 
-        if (_pending != null)
+        var snapshot = _pending;
+        _pending = null;
+        if (snapshot != null)
         {
-            PreferencesService.Save(_pending);
-            _pending = null;
+            try
+            {
+                PreferencesService.Save(snapshot);
+            }
+            catch
+            {
+                // Non-fatal on shutdown
+            }
         }
     }
 
