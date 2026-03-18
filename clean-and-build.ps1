@@ -7,7 +7,7 @@ $root = $PSScriptRoot
 
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host "  Live Speaker Teleprompter - Clean & Build" -ForegroundColor Cyan
+Write-Host "  Live Speaker Teleprompter - Clean and Build" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -26,27 +26,38 @@ foreach ($d in $dirsToClean) {
 }
 Write-Host "  Pulizia bin/obj completata." -ForegroundColor Green
 
-# -- 2. Pulizia output portable ------------------------------------------
-Write-Host "[2/5] Pulizia output portable obsoleti..." -ForegroundColor Yellow
-$portableDir = Join-Path $root "portable"
-if (-not (Test-Path $portableDir)) {
-    New-Item -ItemType Directory -Path $portableDir -Force | Out-Null
+# -- 2. Pulizia output release e rimozione cartella portable obsoleta ----
+Write-Host "[2/5] Pulizia output release..." -ForegroundColor Yellow
+$releaseDir = Join-Path $root "release"
+if (-not (Test-Path $releaseDir)) {
+    New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
 }
-$portableFiles = @(
-    "Live-Speaker-Teleprompter-Portable.exe",
-    "Live-Speaker-Teleprompter-Portable.zip",
-    "Live-Speaker-Teleprompter-Portable-ITA.exe",
-    "Live-Speaker-Teleprompter-Portable-ENG.exe",
-    "Live-Speaker-Teleprompter-Installer.exe",
+$releaseFiles = @(
+    "Live_Speaker_Teleprompter_Portable.exe",
+    "Live_Speaker_Teleprompter_Portable_ITA.exe",
+    "Live_Speaker_Teleprompter_Portable_ENG.exe",
+    "Live_Speaker_Teleprompter_Portable.zip",
+    "Live_Speaker_Teleprompter_Setup.exe",
+    "Live-Speaker-Teleprompter-*",
     "*.msi"
 )
-foreach ($pattern in $portableFiles) {
-    Get-ChildItem $portableDir -Filter $pattern -ErrorAction SilentlyContinue | ForEach-Object {
+foreach ($pattern in $releaseFiles) {
+    Get-ChildItem $releaseDir -Filter $pattern -ErrorAction SilentlyContinue | ForEach-Object {
         Remove-Item $_.FullName -Force
         Write-Host "  Rimosso: $($_.Name)" -ForegroundColor DarkGray
     }
 }
-Write-Host "  Pulizia portable completata." -ForegroundColor Green
+# Rimuovi cartella portable obsoleta (migrazione a release)
+$obsoletePortable = Join-Path $root "portable"
+if (Test-Path $obsoletePortable) {
+    $prefsPath = Join-Path $obsoletePortable "preferences.json"
+    if (Test-Path $prefsPath) {
+        Copy-Item $prefsPath (Join-Path $releaseDir "preferences.json") -Force -ErrorAction SilentlyContinue
+    }
+    Remove-Item $obsoletePortable -Recurse -Force
+    Write-Host "  Rimossa cartella obsoleta: portable\" -ForegroundColor DarkGray
+}
+Write-Host "  Pulizia release completata." -ForegroundColor Green
 
 # -- 3. Genera icona da logo (se PNG presente) ---------------------------
 Write-Host "[3/5] Generazione icona da logo..." -ForegroundColor Yellow
@@ -85,7 +96,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Green
-Write-Host "  Clean & Build completato!" -ForegroundColor Green
-Write-Host "  Output in: $portableDir" -ForegroundColor Cyan
+Write-Host "  Clean and Build completato!" -ForegroundColor Green
+Write-Host "  Output in: $releaseDir (2 file: Portable.exe + Setup.exe)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host ""

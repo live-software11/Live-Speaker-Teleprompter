@@ -1,4 +1,5 @@
 {
+  "type": "connection",
   "name": "Live Speaker Teleprompter",
   "id": "r-speaker-teleprompter",
   "shortname": "liveteleprompter",

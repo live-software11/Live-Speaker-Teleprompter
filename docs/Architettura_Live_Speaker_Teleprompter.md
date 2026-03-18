@@ -1,6 +1,6 @@
 # Live Speaker Teleprompter — Architettura Software
 
-> **Versione documento:** 2.3.3  
+> **Versione documento:** 2.3.4  
 > **Aggiornato:** Marzo 2026  
 > **Mantenuto da:** CTO / AI Agent — aggiornare ad ogni modifica strutturale al codice
 
@@ -84,13 +84,11 @@ Live Speaker Teleprompter/
 ├── installer/
 │   ├── build-installer.ps1                  ← Pipeline: publish + portable EXE + installer EXE
 │   ├── installer-template.ps1               ← Template installer self-extracting (PowerShell)
-│   └── portable-extractor-template.ps1      ← Template extractor portable ITA/ENG
+│   └── portable-extractor-template.ps1      ← (legacy, non usato)
 │
-├── portable/                                ← Output build (gitignored)
-│   ├── Live-Speaker-Teleprompter-Portable.exe
-│   ├── Live-Speaker-Teleprompter-Portable-ITA.exe
-│   ├── Live-Speaker-Teleprompter-Portable-ENG.exe
-│   └── Live-Speaker-Teleprompter-Installer.exe
+├── release/                                 ← Output build (gitignored) — 2 file
+│   ├── Live_Speaker_Teleprompter_Portable.exe  ← IT+EN, selezione in-app
+│   └── Live_Speaker_Teleprompter_Setup.exe
 │
 ├── icons/
 │   ├── Logo Teleprompter.png                ← Sorgente logo (PNG)
@@ -101,8 +99,8 @@ Live Speaker Teleprompter/
 │   └── PngToIco/                            ← Tool .NET per conversione PNG/WebP → ICO
 │
 ├── docs/
-│   ├── ARCHITECTURE.md                      ← Questo documento
-│   └── COMPANION_SETUP_GUIDE.md             ← Guida setup Bitfocus Companion
+│   ├── Architettura_Live_Speaker_Teleprompter.md   ← Questo documento
+│   └── Setup_Companion_Live_Speaker_Teleprompter.md ← Guida setup Bitfocus Companion
 │
 └── companion-module/                        ← Modulo Bitfocus Companion (Node.js)
     ├── index.js
@@ -124,17 +122,12 @@ App.OnStartup()
   ├─ 1. RenderOptions.ProcessRenderMode = Default (GPU rendering)
   │
   ├─ 2. Localizzazione
-  │     ├─ Cerca install-language.txt accanto all'exe
-  │     │   (scritto dall'installer o dall'extractor portable ITA/ENG)
-  │     ├─ Se trovato: legge "it"/"en", elimina il file
-  │     └─ Localization.Initialize(cultureFromInstaller, prefs.CultureName)
-  │         → imposta Thread.CurrentThread.CurrentUICulture
+  │     └─ Localization.Initialize(null, prefs.CultureName)
+  │         → lingua da preferenze, nessun install-language.txt
   │
   ├─ 3. PreferencesService.Load() → carica UserPreferences da JSON
   │
-  ├─ 4. Se lingua da installer: salva in prefs.CultureName e persiste
-  │
-  └─ 5. CleanupOldLogs() → mantiene solo gli ultimi 10 file di log
+  └─ 4. CleanupOldLogs() → mantiene solo gli ultimi 10 file di log
 ```
 
 ### Gestione errori non gestiti
@@ -404,12 +397,11 @@ static class Localization
 ```
 App.OnStartup()
   │
-  ├─ install-language.txt presente? → usa quella lingua (installer / portable ITA/ENG)
-  │   └─ elimina il file dopo la lettura
-  │
-  ├─ No → UserPreferences.CultureName presente? → usa quella
-  │
-  └─ No → default "it" (italiano)
+  └─ Localization.Initialize(null, prefs.CultureName)
+      ├─ UserPreferences.CultureName presente? → usa quella
+      └─ No → default "it" (italiano)
+
+Cambio lingua in-app: ComboBox IT/EN in toolbar → Localization.SwitchLanguage() → ApplyLocalization()
 ```
 
 ### Dove viene applicata
@@ -767,7 +759,7 @@ Determina la directory base per preferenze e log in base alla modalità di esecu
 ### Script principale
 
 `clean-and-build.ps1` (root):
-1. Pulisce `bin/`, `obj/`, `portable/`
+1. Pulisce `bin/`, `obj/`, `release/` (e rimuove cartella `portable/` obsoleta se presente)
 2. Genera icona: `scripts\convert-logo.ps1` (`icons\Logo Teleprompter.png` → `icons\app-icon.ico`)
 3. `dotnet restore`
 4. Chiama `installer\build-installer.ps1`
@@ -784,53 +776,32 @@ dotnet publish -c Release
 **Step 2 — Portable base:**
 ```
 Copia "Live Speaker Teleprompter.exe"
-→ portable\Live-Speaker-Teleprompter-Portable.exe
+→ release\Live_Speaker_Teleprompter_Portable.exe
 ```
 
-**Step 3 — Portable ITA / ENG (self-extracting):**
-
-Funzione `Build-PortableLangExe -Lang "ITA"/"ENG" -Culture "it"/"en"`:
-```
-1. Crea temp dir
-2. Copia "Live Speaker Teleprompter.exe" + crea install-language.txt ("it"/"en")
-3. Compress-Archive → payload.zip
-4. Base64(payload.zip) → sostituisce ##EMBEDDED_ZIP## in portable-extractor-template.ps1
-5. iexpress.exe + .sed → Live-Speaker-Teleprompter-Portable-ITA/ENG.exe
-```
-
-**Step 4 — Installer:**
+**Step 3 — Installer:**
 
 Funzione analoga con `installer-template.ps1`:
 ```
 1. Base64(publish dir zip) → ##EMBEDDED_ZIP## nell'installer template
-2. iexpress.exe → Live-Speaker-Teleprompter-Installer.exe
+2. iexpress.exe → Live_Speaker_Teleprompter_Setup.exe
 ```
 
-### Output finale (`portable/`)
+### Output finale (`release/`) — 2 file
 
 | File | Dimensione | Descrizione |
 |---|---|---|
-| `Live-Speaker-Teleprompter-Portable.exe` | ~73 MB | Portable standalone (lingua da preferenze) |
-| `Live-Speaker-Teleprompter-Portable-ITA.exe` | ~73 MB | Portable self-extracting, lingua italiana |
-| `Live-Speaker-Teleprompter-Portable-ENG.exe` | ~73 MB | Portable self-extracting, lingua inglese |
-| `Live-Speaker-Teleprompter-Installer.exe` | ~73 MB | Installer con UI scelta lingua + cartella |
+| `Live_Speaker_Teleprompter_Portable.exe` | ~73 MB | Portable standalone IT+EN, selezione lingua in-app |
+| `Live_Speaker_Teleprompter_Setup.exe` | ~73 MB | Installer con UI cartella + shortcuts |
 
 ### Installer (`installer-template.ps1`)
 
-1. **Selezione lingua** — form WinForms con radio button IT/EN
+1. **Lingua UI installer** — usa lingua di sistema (Get-UICulture), nessuna scelta utente
 2. **Selezione cartella** — default `%LocalAppData%\Live Speaker\Live Speaker Teleprompter`
 3. **Estrazione** — `payload.zip` (base64 embedded) → cartella scelta
 4. **Shortcuts** — Start menu e/o Desktop (opzionali)
 5. **Uninstaller** — `Uninstall.ps1` nella cartella di installazione
 6. **Registro Windows** — chiave `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\LiveSpeakerTeleprompter` per "Aggiungi/Rimuovi programmi"
-7. **Lingua** — scrive `install-language.txt` nella cartella di installazione
-
-### Portable extractor (`portable-extractor-template.ps1`)
-
-Eseguito da IExpress al lancio del portable ITA/ENG:
-1. Decodifica base64 → `payload.zip` in `%TEMP%`
-2. Estrae `"Live Speaker Teleprompter.exe"` + `install-language.txt` nella directory corrente
-3. `Start-Process` → lancia l'exe
 
 ---
 

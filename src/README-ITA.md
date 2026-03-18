@@ -57,7 +57,7 @@ Integrazione completa con **Bitfocus Companion**, **NDI** e **OSC** per il contr
 
 ### Portable
 - **Eseguibile singolo self-contained** (~73 MB). Nessun runtime .NET richiesto.
-- **Versioni per lingua** — `Live-Speaker-Teleprompter-Portable-ITA.exe` e `Live-Speaker-Teleprompter-Portable-ENG.exe` con lingua predefinita nel nome.
+- **Lingua in-app** — ComboBox IT/EN nella toolbar, un solo Portable.exe con entrambe le lingue.
 - **Preferenze e log** accanto all'exe quando esegui da USB/desktop (nessuna traccia sul PC host).
 - **Installer** con scelta lingua (Italiano/English) per chi preferisce collegamenti Start/Desktop.
 - **ReadyToRun** pre-compilato per startup ~40% più rapido.
@@ -70,7 +70,7 @@ L'app supporta **Italiano** e **English**. L'interfaccia è completamente tradot
 
 ### Come si imposta la lingua
 - **Installer**: alla prima schermata scegli Italiano o English. La lingua viene salvata e usata al primo avvio.
-- **Portable ITA/ENG**: usa `Live-Speaker-Teleprompter-Portable-ITA.exe` o `Live-Speaker-Teleprompter-Portable-ENG.exe` — la lingua è predefinita.
+- **Portable**: usa `Live_Speaker_Teleprompter_Portable.exe` — IT+EN, selezione lingua in-app.
 - **Portable generico**: usa le preferenze salvate (default: Italiano) o la lingua dell'ultima installazione.
 
 ---
@@ -92,16 +92,15 @@ L'app supporta **Italiano** e **English**. L'interfaccia è completamente tradot
 
 ### Versione portable (consigliata)
 
-1. Scarica dalla cartella `portable/`:
-   - `Live-Speaker-Teleprompter-Portable.exe` — lingua da preferenze
-   - `Live-Speaker-Teleprompter-Portable-ITA.exe` — italiano predefinito
-   - `Live-Speaker-Teleprompter-Portable-ENG.exe` — inglese predefinito
+1. Scarica dalla cartella `release/`:
+   - `Live_Speaker_Teleprompter_Portable.exe` — lingua da preferenze
+   - `Live_Speaker_Teleprompter_Portable.exe` — IT+EN, selezione in-app
 2. Esegui l'exe — estrazione automatica in temp e avvio (per ITA/ENG) oppure avvio diretto (portable generico).
 3. Preferenze e log restano accanto all'exe (chiavetta USB = nessuna traccia sul PC host).
 
 ### Versione installer
 
-1. Esegui `Live-Speaker-Teleprompter-Installer.exe`.
+1. Esegui `Live_Speaker_Teleprompter_Setup.exe`.
 2. Scegli la lingua di installazione (Italiano / English).
 3. Scegli la cartella di installazione (default: `%LOCALAPPDATA%\Live Speaker\Live Speaker Teleprompter`).
 4. L'installer crea collegamenti sul desktop e nel menu Start. L'app appare in Impostazioni > App.
@@ -224,7 +223,7 @@ L'app riceve comandi OSC su UDP porta **8000** e invia feedback su porta **8001*
 
 ## Integrazione Bitfocus Companion
 
-Vedi la guida completa: [docs/COMPANION_SETUP_GUIDE.md](../docs/COMPANION_SETUP_GUIDE.md)
+Vedi la guida completa: [docs/Setup_Companion_Live_Speaker_Teleprompter.md](../docs/Setup_Companion_Live_Speaker_Teleprompter.md)
 
 Il modulo si trova nella cartella `companion-module/` e offre:
 - **23 azioni** (playback, velocità, font, navigazione, mirror, NDI)
@@ -307,10 +306,9 @@ cd installer
 
 | File | Descrizione |
 |------|-------------|
-| `Live-Speaker-Teleprompter-Portable.exe` | Eseguibile portable generico |
-| `Live-Speaker-Teleprompter-Portable-ITA.exe` | Portable italiano (self-extracting) |
-| `Live-Speaker-Teleprompter-Portable-ENG.exe` | Portable inglese (self-extracting) |
-| `Live-Speaker-Teleprompter-Installer.exe` | Installer con scelta lingua |
+| `Live_Speaker_Teleprompter_Portable.exe` | Eseguibile portable generico |
+| `Live_Speaker_Teleprompter_Portable.exe` | Portable IT+EN (selezione lingua in-app) |
+| `Live_Speaker_Teleprompter_Setup.exe` | Installer con scelta lingua |
 
 ---
 
@@ -333,7 +331,7 @@ installer/
   installer-template.ps1          — Installer con scelta lingua
   portable-extractor-template.ps1 — Template portable ITA/ENG
 
-portable/                       ← Output build
+release/                        ← Output build
 ```
 
 ---

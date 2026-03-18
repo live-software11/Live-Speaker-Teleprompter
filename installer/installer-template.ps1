@@ -8,49 +8,8 @@ $ErrorActionPreference = "Stop"
 $appName = "Live Speaker Teleprompter"
 $publisherName = "Live Speaker"
 
-# ── Step 1: Language selection ──
-$langForm = New-Object System.Windows.Forms.Form
-$langForm.Text = "$appName - Language / Lingua"
-$langForm.Size = New-Object System.Drawing.Size(380, 200)
-$langForm.StartPosition = "CenterScreen"
-$langForm.FormBorderStyle = "FixedDialog"
-$langForm.MaximizeBox = $false
-$langForm.MinimizeBox = $false
-$langForm.BackColor = [System.Drawing.Color]::FromArgb(15, 23, 42)
-
-$langLabel = New-Object System.Windows.Forms.Label
-$langLabel.Location = New-Object System.Drawing.Point(20, 20)
-$langLabel.Size = New-Object System.Drawing.Size(320, 25)
-$langLabel.Text = "Select installation language / Seleziona lingua di installazione"
-$langLabel.Font = New-Object System.Drawing.Font("Segoe UI", 10)
-$langLabel.ForeColor = [System.Drawing.Color]::White
-$langForm.Controls.Add($langLabel)
-
-$rbIt = New-Object System.Windows.Forms.RadioButton
-$rbIt.Location = New-Object System.Drawing.Point(40, 55)
-$rbIt.Size = New-Object System.Drawing.Size(200, 25)
-$rbIt.Text = "Italiano"
-$rbIt.ForeColor = [System.Drawing.Color]::FromArgb(203, 213, 225)
-$rbIt.Checked = $true
-$langForm.Controls.Add($rbIt)
-
-$rbEn = New-Object System.Windows.Forms.RadioButton
-$rbEn.Location = New-Object System.Drawing.Point(40, 85)
-$rbEn.Size = New-Object System.Drawing.Size(200, 25)
-$rbEn.Text = "English"
-$rbEn.ForeColor = [System.Drawing.Color]::FromArgb(203, 213, 225)
-$langForm.Controls.Add($rbEn)
-
-$langOkBtn = New-Object System.Windows.Forms.Button
-$langOkBtn.Location = New-Object System.Drawing.Point(120, 125)
-$langOkBtn.Size = New-Object System.Drawing.Size(100, 32)
-$langOkBtn.Text = "OK"
-$langOkBtn.DialogResult = "OK"
-$langForm.AcceptButton = $langOkBtn
-$langForm.Controls.Add($langOkBtn)
-
-if ($langForm.ShowDialog() -ne "OK") { exit 0 }
-$installLang = if ($rbEn.Checked) { "en" } else { "it" }
+# Installer UI language: use system locale (no language selection during install)
+$installLang = if ((Get-UICulture).Name.StartsWith("en")) { "en" } else { "it" }
 
 # Strings based on language
 $L = @{
@@ -223,7 +182,7 @@ try {
     $mainExe = Get-ChildItem $installPath -Filter "*.exe" | Select-Object -First 1
     if (-not $mainExe) { throw "Executable not found after extraction." }
 
-    # Start Menu shortcut
+    # Start Menu shortcut (app)
     if ($createStartMenu) {
         $smDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\$publisherName"
         if (-not (Test-Path $smDir)) { New-Item -ItemType Directory -Path $smDir -Force | Out-Null }
@@ -252,13 +211,26 @@ try {
 # Live Speaker Teleprompter - Uninstaller
 `$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LiveSpeakerTeleprompter"
 if (Test-Path `$regPath) { Remove-Item `$regPath -Recurse -Force -ErrorAction SilentlyContinue }
-Remove-Item "$installPath" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\$publisherName" -Recurse -Force -ErrorAction SilentlyContinue
 `$desktopLnk = Join-Path ([Environment]::GetFolderPath('Desktop')) "$appName.lnk"
 Remove-Item `$desktopLnk -Force -ErrorAction SilentlyContinue
+Remove-Item "$installPath" -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host "$($s.Uninstalled)" -ForegroundColor Green
 "@
     $uninstallContent | Out-File -FilePath $uninstallPs1Path -Encoding UTF8
+
+    # Shortcut "Disinstalla" nel menu Start (se creato)
+    if ($createStartMenu) {
+        $smDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\$publisherName"
+        $uninstallLabel = if ($installLang -eq "it") { "Disinstalla $appName" } else { "Uninstall $appName" }
+        $ws = New-Object -ComObject WScript.Shell
+        $sc = $ws.CreateShortcut("$smDir\$uninstallLabel.lnk")
+        $sc.TargetPath = "powershell.exe"
+        $sc.Arguments = "-ExecutionPolicy Bypass -WindowStyle Normal -File `"$uninstallPs1Path`""
+        $sc.WorkingDirectory = $installPath
+        $sc.Description = $uninstallLabel
+        $sc.Save()
+    }
 
     # Register in Windows Add/Remove Programs (Apps & Features)
     $regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LiveSpeakerTeleprompter"
@@ -268,12 +240,9 @@ Write-Host "$($s.Uninstalled)" -ForegroundColor Green
     Set-ItemProperty -Path $regPath -Name "Publisher" -Value $publisherName
     Set-ItemProperty -Path $regPath -Name "InstallLocation" -Value $installPath
     Set-ItemProperty -Path $regPath -Name "UninstallString" -Value "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$uninstallPs1Path`""
+    Set-ItemProperty -Path $regPath -Name "DisplayIcon" -Value "$($mainExe.FullName)"
     Set-ItemProperty -Path $regPath -Name "NoModify" -Value 1 -Type DWord
     Set-ItemProperty -Path $regPath -Name "NoRepair" -Value 1 -Type DWord
-
-    # Write install language for app to pick up on first run
-    $installLangPath = Join-Path $installPath "install-language.txt"
-    $installLang | Out-File -FilePath $installLangPath -Encoding UTF8 -NoNewline
 
     [System.Windows.Forms.MessageBox]::Show(
         "$($s.Done)`n`n$($s.Path): $installPath",

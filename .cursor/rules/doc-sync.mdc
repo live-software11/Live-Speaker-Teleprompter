@@ -1,0 +1,43 @@
+---
+description: Regola SACRA — sincronizzazione documentazione a ogni modifica
+alwaysApply: true
+---
+
+# Sincronizzazione Documentazione (SACRA)
+
+**Ogni modifica significativa al codice o all'architettura richiede l'aggiornamento di:**
+
+1. **`docs/ARCHITETTURA_DEFINITIVA_Live_Speaker_Teleprompter.md`**
+   - Nuovi file/servizi → sezione Struttura repository e Mappa file
+   - Cambi data model (UserPreferences, LayoutPreset) → sezione Modelli dati
+   - Nuovi endpoint OSC/HTTP → sezioni Integrazione OSC, CompanionBridge
+   - Modifiche scroll engine, sync presenter → sezioni pertinenti
+   - Nuovi vincoli → sezione Principi architetturali
+   - **Cambi stack/versioni** (.NET, Companion module) → Stack tecnologico e Changelog
+
+2. **`.cursor/rules/`** (Cursor rules)
+   - `project-architecture.mdc` — se cambia stack, struttura, workflow
+   - `performance-stability.mdc` — se cambiano regole scroll/NDI/preferenze
+   - `build-and-release.mdc` — se cambia pipeline build
+
+3. **`docs/System_Prompt_Claude_Live_Speaker_Teleprompter.md`**
+   - Se cambia data model, vincoli sacri, struttura file, flusso OSC/Companion
+   - Claude (architetto) deve avere sempre la versione aggiornata per produrre task corretti
+
+4. **`docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md`**
+   - Se cambiano ambiti di analisi o fonti obbligatorie per Claude Desktop
+
+5. **`docs/Guida_Refactoring_MainWindow.md`**
+   - Se cambiano le fasi safe/rischiose o i passi di estrazione
+
+**Quando applicare:**
+- Nuove feature, refactor strutturali, modifiche al data model
+- Cambi a servizi (DisplayManager, PresenterSync, OscBridge, CompanionBridge, NDITransmitter)
+- Nuovi vincoli o regole di business
+- **Modifiche stringhe UI:** sempre aggiornare entrambi i dizionari `It` e `En` in `Localization.cs` (i18n IT/EN)
+
+**Checklist pre-commit (modifiche significative):**
+- [ ] ARCHITETTURA_DEFINITIVA aggiornato
+- [ ] Cursor rules allineate
+- [ ] System_Prompt_Claude aggiornato (se tocca contesto/task format)
+- [ ] **i18n:** Se modifica stringhe UI: entrambi i dizionari in Localization.cs aggiornati

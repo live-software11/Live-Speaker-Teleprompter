@@ -24,27 +24,9 @@ public partial class App : System.Windows.Application
 		// Force hardware GPU rendering for best performance on external screens
 		RenderOptions.ProcessRenderMode = RenderMode.Default;
 
-		// Localization: installer writes install-language.txt; otherwise use preferences
-		var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-		var installLangPath = Path.Combine(baseDir, "install-language.txt");
-		string? cultureFromInstaller = null;
-		if (File.Exists(installLangPath))
-		{
-			try
-			{
-				cultureFromInstaller = File.ReadAllText(installLangPath).Trim();
-				File.Delete(installLangPath);
-			}
-			catch { /* ignore */ }
-		}
-
+		// Localization: use preferences only; user switches via toolbar selector
 		var prefs = PreferencesService.Load();
-		Localization.Initialize(cultureFromInstaller, prefs.CultureName);
-		if (!string.IsNullOrEmpty(cultureFromInstaller))
-		{
-			prefs.CultureName = cultureFromInstaller;
-			PreferencesService.Save(prefs);
-		}
+		Localization.Initialize(null, prefs.CultureName);
 
 		// Clean up old log files (keep last 10)
 		CleanupOldLogs();

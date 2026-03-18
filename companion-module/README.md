@@ -86,7 +86,7 @@ Modulo per [Bitfocus Companion](https://bitfocus.io/companion) che permette il c
 
 Comandi: porta **8000** (UDP). Feedback: porta **8001** (UDP).
 
-Riferimento completo: vedi [COMPANION_SETUP_GUIDE.md](../docs/COMPANION_SETUP_GUIDE.md#protocollo-osc--riferimento-completo)
+Riferimento completo: vedi [Setup_Companion_Live_Speaker_Teleprompter.md](../docs/Setup_Companion_Live_Speaker_Teleprompter.md#protocollo-osc--riferimento-completo)
 
 ## Dipendenze
 

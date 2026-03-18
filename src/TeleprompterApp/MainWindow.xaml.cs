@@ -79,6 +79,7 @@ namespace TeleprompterApp
     private bool _isSyncingMonitorToggle;
     private bool _isUpdatingSpeedSlider;
     private bool _isUpdatingFontSizeSelection;
+    private bool _isUpdatingLanguageComboBox;
     private string? _currentDocumentPath;
     private bool _isDraggingArrow;
     private bool _isUpdatingArrowSize;
@@ -286,6 +287,13 @@ namespace TeleprompterApp
         OnAirToggle.ToolTip = Localization.Get("Tooltip_OnAir");
         MirrorToggle.ToolTip = Localization.Get("Tooltip_Mirror");
         TopMostToggle.ToolTip = Localization.Get("Tooltip_TopMost");
+        if (FindName("LanguageComboBox") is System.Windows.Controls.ComboBox langCb)
+        {
+            langCb.ToolTip = Localization.Get("Tooltip_Language");
+            _isUpdatingLanguageComboBox = true;
+            langCb.SelectedValue = Localization.CurrentCulture;
+            _isUpdatingLanguageComboBox = false;
+        }
         if (FindName("MarginsLabel") is System.Windows.Controls.TextBlock ml) { ml.Text = Localization.Get("Label_Margins"); }
         if (FindName("LeftLabel") is System.Windows.Controls.TextBlock ll) { ll.Text = Localization.Get("Label_Left"); ll.ToolTip = Localization.Get("Tooltip_LeftShort"); }
         if (FindName("RightLabel") is System.Windows.Controls.TextBlock rl) { rl.Text = Localization.Get("Label_Right"); rl.ToolTip = Localization.Get("Tooltip_RightShort"); }
@@ -313,6 +321,12 @@ namespace TeleprompterApp
         }
         if (FindName("ArrowPopupTitle") is System.Windows.Controls.TextBlock arrowTb)
             arrowTb.Text = Localization.Get("Popup_ArrowTitle");
+        if (FindName("TimerResetButtonText") is System.Windows.Controls.TextBlock resetTb)
+            resetTb.Text = Localization.Get("Btn_Reset");
+        if (FindName("SaveShortcutText") is System.Windows.Controls.TextBlock shortcutTb)
+            shortcutTb.Text = Localization.Get("Label_SaveShortcut");
+        if (_presenterWindow != null)
+            _presenterWindow.Title = Localization.Get("Title_Presenter");
         UpdatePlayPauseLabel();
         UpdateOnAirLabel();
         if (_statusText != null) _statusText.Text = Localization.Get("Status_Ready");
@@ -785,8 +799,8 @@ namespace TeleprompterApp
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "Apri copione",
-            Filter = "Documento Teleprompter (*.rstp)|*.rstp|Microsoft Word (*.docx;*.doc)|*.docx;*.doc|Formati ricchi (*.rtf;*.xaml;*.xamlpackage)|*.rtf;*.xaml;*.xamlpackage|Testo e sottotitoli|*.txt;*.md;*.srt;*.vtt;*.log;*.csv;*.json;*.xml;*.html;*.htm;*.yaml;*.yml;*.ini;*.cfg;*.bat;*.ps1|Tutti i file|*.*",
+            Title = Localization.Get("Title_OpenDialog"),
+            Filter = Localization.Get("Filter_Open"),
             DefaultExt = ".rstp",
             AddExtension = true
         };
@@ -846,7 +860,7 @@ namespace TeleprompterApp
         }
         catch (IOException ex)
         {
-            throw new IOException($"Impossibile leggere il file: {ex.Message}", ex);
+            throw new IOException(Localization.Get("Error_ReadFile", ex.Message), ex);
         }
 
         using var memoryStream = new MemoryStream(fileData);
@@ -907,11 +921,11 @@ namespace TeleprompterApp
         var initialDirectory = !string.IsNullOrEmpty(_currentDocumentPath) ? Path.GetDirectoryName(_currentDocumentPath) : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "Salva copione",
-            Filter = "Documento Teleprompter (*.rstp)|*.rstp|Rich Text Format (*.rtf)|*.rtf|FlowDocument XAML (*.xaml)|*.xaml|Testo semplice (*.txt)|*.txt|Tutti i file|*.*",
+            Title = Localization.Get("Title_SaveDialog"),
+            Filter = Localization.Get("Filter_Save"),
             DefaultExt = ".rstp",
             AddExtension = true,
-            FileName = !string.IsNullOrEmpty(_currentDocumentPath) ? Path.GetFileName(_currentDocumentPath) : "Copione.rstp",
+            FileName = !string.IsNullOrEmpty(_currentDocumentPath) ? Path.GetFileName(_currentDocumentPath) : Localization.Get("DefaultScriptName"),
             InitialDirectory = initialDirectory
         };
 
@@ -1395,6 +1409,7 @@ namespace TeleprompterApp
         {
             Owner = this
         };
+        _presenterWindow.Title = Localization.Get("Title_Presenter");
 
         _presenterWindow.Hide();
         UpdatePresenterMirror();
@@ -2036,6 +2051,17 @@ namespace TeleprompterApp
             SavePreferences();
             SyncPresenterDocument();
         }
+    }
+
+    private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isUpdatingLanguageComboBox) return;
+        if (FindName("LanguageComboBox") is not System.Windows.Controls.ComboBox cb || cb.SelectedValue is not string culture) return;
+        var lang = culture.Equals("en", StringComparison.OrdinalIgnoreCase) ? "en" : "it";
+        _preferences.CultureName = lang;
+        Localization.SwitchLanguage(lang);
+        PreferencesService.Save(_preferences);
+        ApplyLocalization();
     }
 
     private void Window_Closing(object sender, CancelEventArgs e)

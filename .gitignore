@@ -6,10 +6,11 @@
 # Node.js (companion-module)
 node_modules/
 
-# Portable builds & installers (binary artifacts)
-portable/*.exe
-portable/*.zip
-portable/*.msi
+# Release builds & installers (binary artifacts)
+release/*.exe
+release/*.zip
+release/*.msi
+release/~*
 
 # Environment
 .env

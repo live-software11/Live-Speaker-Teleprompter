@@ -14,11 +14,13 @@
   "author": "Live Speaker",
   "license": "MIT",
   "dependencies": {
-    "@companion-module/base": "^1.12.0",
+    "@companion-module/base": "^2.0.3",
     "osc": "^2.4.5"
   },
   "companion": {
-    "module_api": "1.0.0",
+    "type": "connection",
+    "module_api": "2.0.0",
+    "runtime": "node22",
     "products": [
       "Live Speaker Teleprompter"
     ],

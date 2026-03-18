@@ -8,7 +8,7 @@ namespace TeleprompterApp;
 
 /// <summary>
 /// Localization service. Supports Italian (it) and English (en).
-/// Language is set at startup from install-language.txt (installer) or UserPreferences.
+/// Language is set from UserPreferences; user can switch via toolbar selector.
 /// </summary>
 internal static class Localization
 {
@@ -98,6 +98,7 @@ internal static class Localization
         ["Tooltip_OnAir"] = "On-Air ON: testo bloccato, schermo esterno=preview. Off: modifica script, relatore vede modifiche in diretta",
         ["Tooltip_Mirror"] = "Specchio",
         ["Tooltip_TopMost"] = "Sempre in primo piano",
+        ["Tooltip_Language"] = "Lingua / Language",
         ["Tooltip_LeftMargin"] = "Margine sinistro (testo dopo freccia)",
         ["Tooltip_LeftShort"] = "Sinistra (dopo freccia)",
         ["Tooltip_RightMargin"] = "Destro",
@@ -134,6 +135,14 @@ internal static class Localization
         ["Label_Preset"] = "Preset:",
         ["Display_Primary"] = " • Principale",
         ["Display_Screen"] = "Schermo {0}x{1}",
+        ["Title_Presenter"] = "Presenter",
+        ["Title_OpenDialog"] = "Apri copione",
+        ["Title_SaveDialog"] = "Salva copione",
+        ["Filter_Open"] = "Documento Teleprompter (*.rstp)|*.rstp|Microsoft Word (*.docx;*.doc)|*.docx;*.doc|Formati ricchi (*.rtf;*.xaml;*.xamlpackage)|*.rtf;*.xaml;*.xamlpackage|Testo e sottotitoli|*.txt;*.md;*.srt;*.vtt;*.log;*.csv;*.json;*.xml;*.html;*.htm;*.yaml;*.yml;*.ini;*.cfg;*.bat;*.ps1|Tutti i file|*.*",
+        ["Filter_Save"] = "Documento Teleprompter (*.rstp)|*.rstp|Rich Text Format (*.rtf)|*.rtf|FlowDocument XAML (*.xaml)|*.xaml|Testo semplice (*.txt)|*.txt|Tutti i file|*.*",
+        ["DefaultScriptName"] = "Copione.rstp",
+        ["Error_ReadFile"] = "Impossibile leggere il file: {0}",
+        ["Label_SaveShortcut"] = "Ctrl+S",
     };
 
     private static readonly Dictionary<string, string> En = new(StringComparer.OrdinalIgnoreCase)
@@ -219,6 +228,7 @@ internal static class Localization
         ["Tooltip_OnAir"] = "On-Air ON: text locked, external screen=preview. Off: edit script, presenter sees changes live",
         ["Tooltip_Mirror"] = "Mirror",
         ["Tooltip_TopMost"] = "Always on top",
+        ["Tooltip_Language"] = "Language / Lingua",
         ["Tooltip_LeftMargin"] = "Left margin (text after arrow)",
         ["Tooltip_LeftShort"] = "Left (after arrow)",
         ["Tooltip_RightMargin"] = "Right",
@@ -255,6 +265,14 @@ internal static class Localization
         ["Label_Preset"] = "Preset:",
         ["Display_Primary"] = " • Primary",
         ["Display_Screen"] = "Screen {0}x{1}",
+        ["Title_Presenter"] = "Presenter",
+        ["Title_OpenDialog"] = "Open script",
+        ["Title_SaveDialog"] = "Save script",
+        ["Filter_Open"] = "Teleprompter Document (*.rstp)|*.rstp|Microsoft Word (*.docx;*.doc)|*.docx;*.doc|Rich formats (*.rtf;*.xaml;*.xamlpackage)|*.rtf;*.xaml;*.xamlpackage|Text and subtitles|*.txt;*.md;*.srt;*.vtt;*.log;*.csv;*.json;*.xml;*.html;*.htm;*.yaml;*.yml;*.ini;*.cfg;*.bat;*.ps1|All files|*.*",
+        ["Filter_Save"] = "Teleprompter Document (*.rstp)|*.rstp|Rich Text Format (*.rtf)|*.rtf|FlowDocument XAML (*.xaml)|*.xaml|Plain text (*.txt)|*.txt|All files|*.*",
+        ["DefaultScriptName"] = "Script.rstp",
+        ["Error_ReadFile"] = "Cannot read file: {0}",
+        ["Label_SaveShortcut"] = "Ctrl+S",
     };
 
     public static string CurrentCulture => _currentCulture;
@@ -267,6 +285,13 @@ internal static class Localization
         else
             _currentCulture = "it";
 
+        Thread.CurrentThread.CurrentUICulture = new CultureInfo(_currentCulture);
+    }
+
+    /// <summary>Switch language at runtime (IT/EN). Call ApplyLocalization after.</summary>
+    public static void SwitchLanguage(string culture)
+    {
+        _currentCulture = culture.Equals("en", StringComparison.OrdinalIgnoreCase) ? "en" : "it";
         Thread.CurrentThread.CurrentUICulture = new CultureInfo(_currentCulture);
     }
 

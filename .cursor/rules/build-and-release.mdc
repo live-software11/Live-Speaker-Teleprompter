@@ -11,11 +11,11 @@ alwaysApply: false
 - **Account:** live-software11
 
 ## Script principale (root)
-- **clean-and-build.ps1** / **clean-and-build.bat** — pulisce bin/obj/portable e crea build completa
+- **clean-and-build.ps1** / **clean-and-build.bat** — pulisce bin/obj/release e crea build completa
 - Lanciare dalla root: `.\clean-and-build.ps1` o doppio clic su `clean-and-build.bat`
 
 ## Pipeline (clean-and-build.ps1)
-1. Pulizia bin/obj/portable
+1. Pulizia bin/obj/release
 2. Genera icona: `scripts\convert-logo.ps1` (da `icons\Logo Teleprompter.png` → `icons\app-icon.ico`)
 3. dotnet restore
 4. build-installer.ps1: publish + portable EXE + installer EXE (no ZIP)
@@ -24,10 +24,10 @@ alwaysApply: false
 - `icons\Logo Teleprompter.png` → `scripts\convert-logo.ps1` → `icons\app-icon.ico`
 - L'icona è generata automaticamente da clean-and-build prima del publish.
 
-## Output (portable/)
-- `Live-Speaker-Teleprompter-Portable.exe` — eseguibile standalone, nessuna dipendenza
-- `Live-Speaker-Teleprompter-Installer.exe` — installer con collegamenti Start/Desktop
+## Output (release/) — 2 file
+- `Live_Speaker_Teleprompter_Portable.exe` — eseguibile standalone IT+EN, selezione lingua in-app
+- `Live_Speaker_Teleprompter_Setup.exe` — installer con collegamenti Start/Desktop
 
 ## Pulizia
 - bin/, obj/, publish/ — ignorati da git
-- portable/*.exe, *.zip, *.msi — ignorati da git (artefatti build)
+- release/*.exe, *.zip, *.msi — ignorati da git (artefatti build)

@@ -1,4 +1,4 @@
-const { InstanceBase, InstanceStatus, runEntrypoint } = require('@companion-module/base');
+const { InstanceBase, InstanceStatus } = require('@companion-module/base');
 const osc = require('osc');
 
 class RSpeakerTeleprompterInstance extends InstanceBase {
@@ -24,7 +24,6 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
     this.initFeedbacks();
     this.initPresets();
     this.initVariables();
-    this.subscribeFeedbacks();
 
     // Request initial status after connection
     setTimeout(() => {
@@ -34,12 +33,12 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
   }
 
   initVariables() {
-    this.setVariableDefinitions([
-      { variableId: 'speed', name: 'Current Speed' },
-      { variableId: 'playing', name: 'Playing Status' },
-      { variableId: 'mirrored', name: 'Mirror Status' },
-      { variableId: 'ndi_active', name: 'NDI Active' }
-    ]);
+    this.setVariableDefinitions({
+      speed: { name: 'Current Speed' },
+      playing: { name: 'Playing Status' },
+      mirrored: { name: 'Mirror Status' },
+      ndi_active: { name: 'NDI Active' },
+    });
 
     this.setVariableValues({
       speed: this.feedbackValues.currentSpeed,
@@ -493,165 +492,154 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
   }
 
   initPresets() {
-    const presets = [];
-
-    // Playback presets
-    presets.push({
-      type: 'button',
-      category: 'Playback',
-      name: 'Play',
-      style: {
-        text: 'PLAY',
-        size: '18',
-        color: this.rgb(255, 255, 255),
-        bgcolor: this.rgb(0, 255, 0)
+    const presets = {
+      play: {
+        type: 'simple',
+        name: 'Play',
+        style: {
+          text: 'PLAY',
+          size: '18',
+          color: this.rgb(255, 255, 255),
+          bgcolor: this.rgb(0, 255, 0),
+        },
+        steps: [{ down: [{ actionId: 'play' }] }],
+        feedbacks: [{ feedbackId: 'isPlaying' }],
       },
-      steps: [{ down: [{ actionId: 'play' }] }],
-      feedbacks: [{ feedbackId: 'isPlaying' }]
-    });
-
-    presets.push({
-      type: 'button',
-      category: 'Playback',
-      name: 'Stop',
-      style: {
-        text: 'STOP',
-        size: '18',
-        color: this.rgb(255, 255, 255),
-        bgcolor: this.rgb(255, 0, 0)
+      stop: {
+        type: 'simple',
+        name: 'Stop',
+        style: {
+          text: 'STOP',
+          size: '18',
+          color: this.rgb(255, 255, 255),
+          bgcolor: this.rgb(255, 0, 0),
+        },
+        steps: [{ down: [{ actionId: 'stop' }] }],
+        feedbacks: [],
       },
-      steps: [{ down: [{ actionId: 'stop' }] }]
-    });
-
-    presets.push({
-      type: 'button',
-      category: 'Playback',
-      name: 'Reset',
-      style: {
-        text: 'RESET',
-        size: '18',
-        color: this.rgb(255, 255, 255),
-        bgcolor: this.rgb(0, 0, 255)
+      reset: {
+        type: 'simple',
+        name: 'Reset',
+        style: {
+          text: 'RESET',
+          size: '18',
+          color: this.rgb(255, 255, 255),
+          bgcolor: this.rgb(0, 0, 255),
+        },
+        steps: [{ down: [{ actionId: 'reset' }] }],
+        feedbacks: [],
       },
-      steps: [{ down: [{ actionId: 'reset' }] }]
-    });
-
-    presets.push({
-      type: 'button',
-      category: 'Playback',
-      name: 'Toggle',
-      style: {
-        text: 'TOGGLE',
-        size: '18',
-        color: this.rgb(255, 255, 255),
-        bgcolor: this.rgb(100, 100, 100)
+      toggle: {
+        type: 'simple',
+        name: 'Toggle',
+        style: {
+          text: 'TOGGLE',
+          size: '18',
+          color: this.rgb(255, 255, 255),
+          bgcolor: this.rgb(100, 100, 100),
+        },
+        steps: [{ down: [{ actionId: 'toggle' }] }],
+        feedbacks: [{ feedbackId: 'isPlaying' }],
       },
-      steps: [{ down: [{ actionId: 'toggle' }] }],
-      feedbacks: [{ feedbackId: 'isPlaying' }]
-    });
-
-    // Speed presets
-    presets.push({
-      type: 'button',
-      category: 'Speed',
-      name: 'Speed Up',
-      style: {
-        text: 'SPEED+',
-        size: '14',
-        color: this.rgb(255, 255, 255),
-        bgcolor: this.rgb(255, 165, 0)
+      speedUp: {
+        type: 'simple',
+        name: 'Speed Up',
+        style: {
+          text: 'SPEED+',
+          size: '14',
+          color: this.rgb(255, 255, 255),
+          bgcolor: this.rgb(255, 165, 0),
+        },
+        steps: [{ down: [{ actionId: 'speedUp' }] }],
+        feedbacks: [],
       },
-      steps: [{ down: [{ actionId: 'speedUp' }] }]
-    });
-
-    presets.push({
-      type: 'button',
-      category: 'Speed',
-      name: 'Speed Down',
-      style: {
-        text: 'SPEED-',
-        size: '14',
-        color: this.rgb(255, 255, 255),
-        bgcolor: this.rgb(255, 165, 0)
+      speedDown: {
+        type: 'simple',
+        name: 'Speed Down',
+        style: {
+          text: 'SPEED-',
+          size: '14',
+          color: this.rgb(255, 255, 255),
+          bgcolor: this.rgb(255, 165, 0),
+        },
+        steps: [{ down: [{ actionId: 'speedDown' }] }],
+        feedbacks: [],
       },
-      steps: [{ down: [{ actionId: 'speedDown' }] }]
-    });
-
-    // NDI presets
-    presets.push({
-      type: 'button',
-      category: 'NDI Output',
-      name: 'NDI Toggle',
-      style: {
-        text: 'NDI',
-        size: '18',
-        color: this.rgb(255, 255, 255),
-        bgcolor: this.rgb(255, 0, 0)
+      ndiToggle: {
+        type: 'simple',
+        name: 'NDI Toggle',
+        style: {
+          text: 'NDI',
+          size: '18',
+          color: this.rgb(255, 255, 255),
+          bgcolor: this.rgb(255, 0, 0),
+        },
+        steps: [{ down: [{ actionId: 'ndiToggle' }] }],
+        feedbacks: [{ feedbackId: 'ndiActive', style: { bgcolor: this.rgb(0, 255, 0) } }],
       },
-      steps: [{ down: [{ actionId: 'ndiToggle' }] }],
-      feedbacks: [
-        {
-          feedbackId: 'ndiActive',
-          style: { bgcolor: this.rgb(0, 255, 0) }
-        }
-      ]
-    });
-
-    presets.push({
-      type: 'button',
-      category: 'NDI Output',
-      name: 'Output: Display',
-      style: {
-        text: 'DISPLAY',
-        size: '14',
-        color: this.rgb(255, 255, 255),
-        bgcolor: this.rgb(100, 100, 100)
+      outputDisplay: {
+        type: 'simple',
+        name: 'Output: Display',
+        style: {
+          text: 'DISPLAY',
+          size: '14',
+          color: this.rgb(255, 255, 255),
+          bgcolor: this.rgb(100, 100, 100),
+        },
+        steps: [{ down: [{ actionId: 'outputMode', options: { mode: 'display' } }] }],
+        feedbacks: [],
       },
-      steps: [{
-        down: [{
-          actionId: 'outputMode',
-          options: { mode: 'display' }
-        }]
-      }]
-    });
-
-    presets.push({
-      type: 'button',
-      category: 'NDI Output',
-      name: 'Output: NDI',
-      style: {
-        text: 'NDI ONLY',
-        size: '14',
-        color: this.rgb(255, 255, 255),
-        bgcolor: this.rgb(255, 0, 0)
+      outputNdi: {
+        type: 'simple',
+        name: 'Output: NDI',
+        style: {
+          text: 'NDI ONLY',
+          size: '14',
+          color: this.rgb(255, 255, 255),
+          bgcolor: this.rgb(255, 0, 0),
+        },
+        steps: [{ down: [{ actionId: 'outputMode', options: { mode: 'ndi' } }] }],
+        feedbacks: [],
       },
-      steps: [{
-        down: [{
-          actionId: 'outputMode',
-          options: { mode: 'ndi' }
-        }]
-      }]
-    });
-
-    presets.push({
-      type: 'button',
-      category: 'NDI Output',
-      name: 'Output: Both',
-      style: {
-        text: 'BOTH',
-        size: '14',
-        color: this.rgb(255, 255, 255),
-        bgcolor: this.rgb(0, 150, 0)
+      outputBoth: {
+        type: 'simple',
+        name: 'Output: Both',
+        style: {
+          text: 'BOTH',
+          size: '14',
+          color: this.rgb(255, 255, 255),
+          bgcolor: this.rgb(0, 150, 0),
+        },
+        steps: [{ down: [{ actionId: 'outputMode', options: { mode: 'both' } }] }],
+        feedbacks: [],
       },
-      steps: [{
-        down: [{
-          actionId: 'outputMode',
-          options: { mode: 'both' }
-        }]
-      }]
-    });
+    };
 
-    this.setPresetDefinitions(presets);
+    const structure = [
+      {
+        id: 'playback',
+        name: 'Playback',
+        definitions: [
+          { id: 'playback-controls', type: 'simple', name: 'Playback Controls', presets: ['play', 'stop', 'reset', 'toggle'] },
+        ],
+      },
+      {
+        id: 'speed',
+        name: 'Speed',
+        definitions: [
+          { id: 'speed-controls', type: 'simple', name: 'Speed Controls', presets: ['speedUp', 'speedDown'] },
+        ],
+      },
+      {
+        id: 'ndi',
+        name: 'NDI Output',
+        definitions: [
+          { id: 'ndi-controls', type: 'simple', name: 'NDI Controls', presets: ['ndiToggle', 'outputDisplay', 'outputNdi', 'outputBoth'] },
+        ],
+      },
+    ];
+
+    this.setPresetDefinitions(structure, presets);
   }
 
   async destroy() {
@@ -701,4 +689,4 @@ class RSpeakerTeleprompterInstance extends InstanceBase {
   }
 }
 
-runEntrypoint(RSpeakerTeleprompterInstance, []);
+module.exports = RSpeakerTeleprompterInstance;
