@@ -12,8 +12,8 @@ Sei l'architetto senior del progetto Live Speaker Teleprompter (applicazione des
 OBIETTIVO: Analizza a fondo il progetto e produci un file Markdown da far eseguire a Cursor Composer 1.5.
 
 FONTI OBBLIGATORIE:
-- Leggi `docs/ARCHITETTURA_DEFINITIVA_Live_Speaker_Teleprompter.md` (sezioni 8–15)
-- Leggi `docs/System_Prompt_Claude_Live_Speaker_Teleprompter.md` (formato task)
+- Leggi `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` (sezioni 8–15)
+- Leggi `docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md` (formato task)
 - Leggi `docs/Guida_Refactoring_MainWindow.md` (estrazioni safe vs rischiose)
 - Controlla `src/TeleprompterApp/` e `companion-module/`
 
@@ -31,7 +31,7 @@ AMBITI DA ANALIZZARE:
 
 VINCOLI:
 - Il software viene usato DURANTE eventi live — stabilità prioritaria
-- Non violare i vincoli sacri (sezione 15 ARCHITETTURA_DEFINITIVA)
+- Non violare i vincoli sacri (sezione 15 ARCHITETTURA)
 - Ogni task deve essere atomico e seguire il formato [TASK-XXX] del System_Prompt
 - ScrollEngine: NON estrarre senza test automatici (path critico vsync)
 

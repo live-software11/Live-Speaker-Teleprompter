@@ -63,11 +63,11 @@ Live Speaker Teleprompter/
 │   └── companion-config.json
 ├── installer/
 ├── docs/
-│   ├── ARCHITETTURA_DEFINITIVA_Live_Speaker_Teleprompter.md
+│   ├── ARCHITETTURA_Live_Speaker_Teleprompter.md
 │   ├── Guida_Refactoring_MainWindow.md
 │   ├── Setup_Companion_Live_Speaker_Teleprompter.md
 │   ├── Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md
-│   └── System_Prompt_Claude_Live_Speaker_Teleprompter.md  ← QUESTO FILE
+│   └── Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md  ← QUESTO FILE
 └── clean-and-build.ps1
 ```
 
@@ -76,7 +76,7 @@ Live Speaker Teleprompter/
 |---|---|
 | Exe portable (IT+EN) | `release/Live_Speaker_Teleprompter_Portable.exe` |
 | Setup installer | `release/Live_Speaker_Teleprompter_Setup.exe` |
-| Architettura | `docs/ARCHITETTURA_DEFINITIVA_Live_Speaker_Teleprompter.md` |
+| Architettura | `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` |
 | Refactoring | `docs/Guida_Refactoring_MainWindow.md` |
 
 ---
@@ -172,7 +172,7 @@ VINCOLI:
 ## SINCRONIZZAZIONE DOCUMENTAZIONE (SACRA)
 
 **Ogni modifica significativa richiede l'aggiornamento di:**
-1. `docs/ARCHITETTURA_DEFINITIVA_Live_Speaker_Teleprompter.md`
+1. `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md`
 2. `.cursor/rules/` (project-architecture, doc-sync, performance-stability)
 3. **Questo file** — se cambia contesto, vincoli, formato task
 4. `docs/Guida_Refactoring_MainWindow.md` — se cambiano fasi safe/rischiose
@@ -185,7 +185,7 @@ VINCOLI:
 
 1. **Prima di ogni task**, verifica che non violi i vincoli sacri.
 2. **Un task = un problema atomico.** Non raggruppare più problemi.
-3. **Sii preciso sui nomi** — funzioni, variabili, file come da ARCHITETTURA_DEFINITIVA.
+3. **Sii preciso sui nomi** — funzioni, variabili, file come da ARCHITETTURA.
 4. **Se tocca scroll engine**, specifica: test manuale scroll fluido, velocità negative, fine/inizio testo.
 5. **Se tocca OSC/Companion**, specifica: test comandi play/stop/speed/font/NDI.
 6. **Stima effort** quando possibile.
@@ -204,6 +204,6 @@ dotnet build -c Release   # Solo build .NET
 
 ## DOCUMENTAZIONE COMPLETA
 
-- `docs/ARCHITETTURA_DEFINITIVA_Live_Speaker_Teleprompter.md` — documento unico di riferimento
+- `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` — documento unico di riferimento
 - `docs/Guida_Refactoring_MainWindow.md` — estrazioni safe vs rischiose
 - `docs/Setup_Companion_Live_Speaker_Teleprompter.md` — setup Bitfocus Companion

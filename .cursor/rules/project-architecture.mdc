@@ -6,8 +6,8 @@ alwaysApply: true
 # Live Speaker Teleprompter - Architettura
 
 ## ⚠️ REGOLA OBBLIGATORIA — Documento di architettura
-Il file **`docs/ARCHITETTURA_DEFINITIVA_Live_Speaker_Teleprompter.md`** è la fonte di verità tecnica del progetto.
-**Ad ogni modifica strutturale al codice** (nuovi file, nuovi servizi, nuove funzioni pubbliche, cambi di architettura, nuove dipendenze, nuovi endpoint OSC/HTTP, cambi al build system) l'agente DEVE aggiornare `docs/ARCHITETTURA_DEFINITIVA_Live_Speaker_Teleprompter.md` nella sezione pertinente prima di chiudere il task.
+Il file **`docs/ARCHITETTURA_Live_Speaker_Teleprompter.md`** è la fonte di verità tecnica del progetto.
+**Ad ogni modifica strutturale al codice** (nuovi file, nuovi servizi, nuove funzioni pubbliche, cambi di architettura, nuove dipendenze, nuovi endpoint OSC/HTTP, cambi al build system) l'agente DEVE aggiornare `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` nella sezione pertinente prima di chiudere il task.
 Non è necessario aggiornarlo per bugfix o refactoring interni che non cambiano l'interfaccia pubblica dei componenti.
 
 ## Repository e account
@@ -74,4 +74,4 @@ src/TeleprompterApp/
 - Durante auto-scroll: `OnScrollRendering` chiama `SetVerticalOffset` direttamente; `ScrollChanged` ignora sync se `_isAutoScrolling`
 
 ## Documentazione tecnica dettagliata
-Vedi **`docs/ARCHITETTURA_DEFINITIVA_Live_Speaker_Teleprompter.md`** per la documentazione completa di ogni componente, funzione, modello dati, flusso di avvio, scroll engine, localizzazione, build pipeline e checklist pre-release.
+Vedi **`docs/ARCHITETTURA_Live_Speaker_Teleprompter.md`** per la documentazione completa di ogni componente, funzione, modello dati, flusso di avvio, scroll engine, localizzazione, build pipeline e checklist pre-release.

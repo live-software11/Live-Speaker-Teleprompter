@@ -1,43 +1,46 @@
 ---
-description: Regola SACRA — sincronizzazione documentazione a ogni modifica
+description: Regola SACRA — documentazione sempre aggiornata alla fine di ogni operazione
 alwaysApply: true
 ---
 
 # Sincronizzazione Documentazione (SACRA)
 
-**Ogni modifica significativa al codice o all'architettura richiede l'aggiornamento di:**
+**Alla fine di ogni operazione significativa**, i seguenti documenti devono essere **aggiornati in modo dettagliato e professionale**. Non è opzionale: la documentazione è parte del codice.
 
-1. **`docs/ARCHITETTURA_DEFINITIVA_Live_Speaker_Teleprompter.md`**
-   - Nuovi file/servizi → sezione Struttura repository e Mappa file
-   - Cambi data model (UserPreferences, LayoutPreset) → sezione Modelli dati
-   - Nuovi endpoint OSC/HTTP → sezioni Integrazione OSC, CompanionBridge
-   - Modifiche scroll engine, sync presenter → sezioni pertinenti
-   - Nuovi vincoli → sezione Principi architetturali
-   - **Cambi stack/versioni** (.NET, Companion module) → Stack tecnologico e Changelog
+---
 
-2. **`.cursor/rules/`** (Cursor rules)
-   - `project-architecture.mdc` — se cambia stack, struttura, workflow
-   - `performance-stability.mdc` — se cambiano regole scroll/NDI/preferenze
-   - `build-and-release.mdc` — se cambia pipeline build
+## Documenti obbligatori da aggiornare
 
-3. **`docs/System_Prompt_Claude_Live_Speaker_Teleprompter.md`**
-   - Se cambia data model, vincoli sacri, struttura file, flusso OSC/Companion
-   - Claude (architetto) deve avere sempre la versione aggiornata per produrre task corretti
+| Documento | Contenuto | Quando aggiornare |
+|-----------|-----------|-------------------|
+| `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` | Architettura, data model, OSC, Companion | Nuovi file/servizi, cambi data model, nuovi endpoint OSC/HTTP |
+| `docs/README.md` | Indice documentazione, documento vendita IT/EN | Nuove funzionalità, nuovi documenti, cambi descrizione prodotto |
+| `docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md` | Prompt avvio chat Claude Desktop | Cambi ambiti analisi, fonti obbligatorie |
+| `docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md` | Istruzioni progetto per Claude (architetto) | Cambi data model, vincoli sacri, struttura file, flusso OSC/Companion |
+| `docs/Guida_Aggiornamenti_Live_Speaker_Teleprompter.md` | Procedure safe .NET/Companion, versioni stack | Cambi versioni .NET, Companion API, procedure aggiornamento |
 
-4. **`docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md`**
-   - Se cambiano ambiti di analisi o fonti obbligatorie per Claude Desktop
+---
 
-5. **`docs/Guida_Refactoring_MainWindow.md`**
-   - Se cambiano le fasi safe/rischiose o i passi di estrazione
+## Linee guida aggiornamento
 
-**Quando applicare:**
-- Nuove feature, refactor strutturali, modifiche al data model
-- Cambi a servizi (DisplayManager, PresenterSync, OscBridge, CompanionBridge, NDITransmitter)
-- Nuovi vincoli o regole di business
-- **Modifiche stringhe UI:** sempre aggiornare entrambi i dizionari `It` e `En` in `Localization.cs` (i18n IT/EN)
+- **Dettagliato:** Ogni modifica al codice deve riflettersi nella documentazione corrispondente
+- **Professionale:** Stile chiaro, tabelle per confronti, blocchi di codice per pattern
+- **Tempestivo:** Aggiornare **alla fine** di ogni operazione, non come afterthought
 
-**Checklist pre-commit (modifiche significative):**
-- [ ] ARCHITETTURA_DEFINITIVA aggiornato
-- [ ] Cursor rules allineate
-- [ ] System_Prompt_Claude aggiornato (se tocca contesto/task format)
-- [ ] **i18n:** Se modifica stringhe UI: entrambi i dizionari in Localization.cs aggiornati
+---
+
+## Checklist obbligatoria (fine operazione)
+
+- [ ] `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` — Struttura, data model, OSC/Companion allineati
+- [ ] `docs/README.md` — Indice documenti e descrizione prodotto aggiornati
+- [ ] `docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md` — Fonti e ambiti verificati
+- [ ] `docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md` — Contesto e task format aggiornati
+- [ ] `docs/Guida_Aggiornamenti_Live_Speaker_Teleprompter.md` — Versioni stack e procedure corrette
+
+---
+
+## Documenti correlati (aggiornare se pertinente)
+
+- `docs/Guida_Refactoring_MainWindow.md` — Se cambiano fasi safe/rischiose o passi estrazione
+- `.cursor/rules/` — Se cambia stack, workflow, vincoli
+- **i18n:** Se modifica stringhe UI: entrambi i dizionari in Localization.cs aggiornati
