@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Sincronizzazione Documentazione (SACRA)
 
-**Alla fine di ogni operazione significativa**, i seguenti documenti devono essere **aggiornati in modo dettagliato e professionale**. Non è opzionale: la documentazione è parte del codice.
+**Alla fine di ogni operazione significativa**, i seguenti documenti devono essere **aggiornati in modo dettagliato e professionale**. Non è opzionale: la documentazione è parte del codice. Prodotto destinato alla vendita professionale.
 
 ---
 
@@ -14,7 +14,7 @@ alwaysApply: true
 | Documento | Contenuto | Quando aggiornare |
 |-----------|-----------|-------------------|
 | `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` | Architettura, data model, OSC, Companion | Nuovi file/servizi, cambi data model, nuovi endpoint OSC/HTTP |
-| `docs/README.md` | Indice documentazione, documento vendita IT/EN | Nuove funzionalità, nuovi documenti, cambi descrizione prodotto |
+| `docs/README.md` | Documento vendita IT/EN | Nuove funzionalità, nuovi documenti, cambi descrizione prodotto |
 | `docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md` | Prompt avvio chat Claude Desktop | Cambi ambiti analisi, fonti obbligatorie |
 | `docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md` | Istruzioni progetto per Claude (architetto) | Cambi data model, vincoli sacri, struttura file, flusso OSC/Companion |
 | `docs/Guida_Aggiornamenti_Live_Speaker_Teleprompter.md` | Procedure safe .NET/Companion, versioni stack | Cambi versioni .NET, Companion API, procedure aggiornamento |
@@ -26,16 +26,25 @@ alwaysApply: true
 - **Dettagliato:** Ogni modifica al codice deve riflettersi nella documentazione corrispondente
 - **Professionale:** Stile chiaro, tabelle per confronti, blocchi di codice per pattern
 - **Tempestivo:** Aggiornare **alla fine** di ogni operazione, non come afterthought
+- **Bilingue:** Ogni aggiunta in italiano ha versione EN professionale (settore eventi live/AV)
 
 ---
 
 ## Checklist obbligatoria (fine operazione)
 
 - [ ] `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` — Struttura, data model, OSC/Companion allineati
-- [ ] `docs/README.md` — Indice documenti e descrizione prodotto aggiornati
+- [ ] `docs/README.md` — Descrizione prodotto IT/EN aggiornata
 - [ ] `docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md` — Fonti e ambiti verificati
 - [ ] `docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md` — Contesto e task format aggiornati
 - [ ] `docs/Guida_Aggiornamenti_Live_Speaker_Teleprompter.md` — Versioni stack e procedure corrette
+
+### Checklist i18n (se modificate stringhe UI)
+
+- [ ] `src/TeleprompterApp/Localization.cs` — Chiave aggiunta in dizionario `It` **e** `En`
+- [ ] Traduzione EN professionale (terminologia teleprompter/broadcast)
+- [ ] `ApplyLocalization()` aggiornato se il nuovo controllo WPF usa la chiave
+- [ ] Nessuna stringa hardcoded nel codice C#/XAML (incluso `Services/DisplayManager.cs`)
+- [ ] `docs/Istruzioni_Traduzione_i18n_Live_Speaker_Teleprompter.md` — Aggiornato se cambiano file/tecnologia i18n
 
 ---
 
@@ -43,4 +52,5 @@ alwaysApply: true
 
 - `docs/Guida_Refactoring_MainWindow.md` — Se cambiano fasi safe/rischiose o passi estrazione
 - `.cursor/rules/` — Se cambia stack, workflow, vincoli
-- **i18n:** Se modifica stringhe UI: entrambi i dizionari in Localization.cs aggiornati
+- **i18n:** Vedi `.cursor/rules/i18n-installer.mdc` e `docs/Istruzioni_Traduzione_i18n_Live_Speaker_Teleprompter.md`
+- **i18n workflow completato:** `docs/audit-i18n-LiveSpeaker-Prompter.md`, `docs/revisione-i18n-LiveSpeaker-Prompter.md` (19/03/2026)

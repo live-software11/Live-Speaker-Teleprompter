@@ -339,7 +339,7 @@ Snapshot layout per preset S1–S4 / L1–L4. Sottoinsieme di UserPreferences (n
 5. **Scroll vsync-aligned** — CompositionTarget.Rendering, mai UpdateLayout nel tick
 6. **Dispose esplicito** — tutti i servizi IDisposable, Window_Closing fa dispose di tutto
 7. **Scrittura atomica** — `.tmp` + File.Move(overwrite: true)
-8. **Localizzazione** — Localization.Get(key), aggiungere sempre in It e En
+8. **Localizzazione** — `Localization.Get(key)`, aggiungere sempre in `It` e `En`. Terminologia EN professionale teleprompter/broadcast. Primo avvio in inglese (`DefaultCulture = "en"`). Lingua salvata in `preferences.json` alla chiusura. Installer in inglese. Vedi `docs/Istruzioni_Traduzione_i18n_Live_Speaker_Teleprompter.md`.
 9. **NDI opzionale** — mai crash se SDK assente
 10. **Freeze Brush** — SolidColorBrush creati dinamicamente → .Freeze()
 

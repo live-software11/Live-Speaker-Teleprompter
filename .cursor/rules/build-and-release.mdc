@@ -23,6 +23,7 @@ alwaysApply: false
 ## Icona
 - `icons\Logo Teleprompter.png` → `scripts\convert-logo.ps1` → `icons\app-icon.ico`
 - L'icona è generata automaticamente da clean-and-build prima del publish.
+- `build-installer.ps1` include `app-icon.ico` nel pacchetto IExpress per la title bar dell'installer (vedi installer-modern.mdc).
 
 ## Output (release/) — 2 file
 - `Live_Speaker_Teleprompter_Portable.exe` — eseguibile standalone IT+EN, selezione lingua in-app

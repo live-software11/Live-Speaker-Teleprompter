@@ -1,0 +1,26 @@
+---
+description: Installer PowerShell — stile moderno broadcast, dark theme
+globs: installer/installer-template.ps1, installer/build-installer.ps1
+alwaysApply: false
+---
+
+# Installer — Stile Moderno Broadcast
+
+## Principio
+
+L'installer WinForms deve trasmettere **modernità e tecnologia** coerente con il target (spettacoli live, teleprompter, broadcast). Stile visivo: dark, professionale.
+
+## UI attuale
+
+- **Sfondo**: `#0f172a` (slate-900)
+- **Pulsanti**: flat, Browse blu (#3B82F6), Install verde (#22C55E), Cancel grigio
+- **Font**: Segoe UI
+- **Icona finestra**: `app-icon.ico` (da `icons/`) inclusa nel pacchetto IExpress
+
+## Build
+
+`build-installer.ps1` include automaticamente `icons/app-icon.ico` nel pacchetto IExpress per la title bar della finestra installer.
+
+## Coerenza
+
+Lo stile dell'installer deve essere coerente con `MainWindow.xaml` (gradienti, palette, AccentBrush).

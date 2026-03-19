@@ -12,7 +12,7 @@ namespace TeleprompterApp;
 /// </summary>
 internal static class Localization
 {
-    private const string DefaultCulture = "it";
+    private const string DefaultCulture = "en";
     private static string _currentCulture = DefaultCulture;
 
     private static readonly Dictionary<string, string> It = new(StringComparer.OrdinalIgnoreCase)
@@ -134,6 +134,7 @@ internal static class Localization
         ["Label_Arrow"] = "Freccia:",
         ["Label_Preset"] = "Preset:",
         ["Display_Primary"] = " • Principale",
+        ["Display_Number"] = "Schermo {0}",
         ["Display_Screen"] = "Schermo {0}x{1}",
         ["Title_Presenter"] = "Presenter",
         ["Title_OpenDialog"] = "Apri copione",
@@ -264,6 +265,7 @@ internal static class Localization
         ["Label_Arrow"] = "Arrow:",
         ["Label_Preset"] = "Preset:",
         ["Display_Primary"] = " • Primary",
+        ["Display_Number"] = "Display {0}",
         ["Display_Screen"] = "Screen {0}x{1}",
         ["Title_Presenter"] = "Presenter",
         ["Title_OpenDialog"] = "Open script",

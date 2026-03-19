@@ -127,6 +127,12 @@ if (-not (Test-Path $templatePath)) {
         [System.IO.File]::WriteAllText($installerScriptPath, $finalContent, [System.Text.Encoding]::UTF8)
         Remove-Variable finalContent
 
+        # Copy app icon for form title bar (broadcast-style installer)
+        $iconSrc = Join-Path (Split-Path $PSScriptRoot -Parent) "icons\app-icon.ico"
+        if (Test-Path $iconSrc) {
+            Copy-Item $iconSrc (Join-Path $tempDir "app-icon.ico") -Force
+        }
+
         # Build IExpress SED directive file
         $sedPath = Join-Path $tempDir "installer.sed"
         $sedContent  = "[Version]`r`n"
@@ -163,12 +169,18 @@ if (-not (Test-Path $templatePath)) {
         $sedContent += "AdminQuietInstCmd=`r`n"
         $sedContent += "UserQuietInstCmd=`r`n"
         $sedContent += 'FILE0="installer.ps1"' + "`r`n"
+        if (Test-Path (Join-Path $tempDir "app-icon.ico")) {
+            $sedContent += 'FILE1="app-icon.ico"' + "`r`n"
+        }
         $sedContent += "`r`n"
         $sedContent += "[SourceFiles]`r`n"
         $sedContent += "SourceFiles0=$tempDir\`r`n"
         $sedContent += "`r`n"
         $sedContent += "[SourceFiles0]`r`n"
         $sedContent += "%FILE0%=`r`n"
+        if (Test-Path (Join-Path $tempDir "app-icon.ico")) {
+            $sedContent += "%FILE1%=`r`n"
+        }
 
         [System.IO.File]::WriteAllText($sedPath, $sedContent, [System.Text.Encoding]::ASCII)
 

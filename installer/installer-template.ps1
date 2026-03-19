@@ -8,8 +8,8 @@ $ErrorActionPreference = "Stop"
 $appName = "Live Speaker Teleprompter"
 $publisherName = "Live Speaker"
 
-# Installer UI language: use system locale (no language selection during install)
-$installLang = if ((Get-UICulture).Name.StartsWith("en")) { "en" } else { "it" }
+# Installer UI language: English (i18n-installer.mdc - lingua ufficiale installer)
+$installLang = "en"
 
 # Strings based on language
 $L = @{
@@ -53,6 +53,12 @@ $s = $L[$installLang]
 # ── UI ──
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "$appName - $($s.Title)"
+# Icona finestra (broadcast-style, coerente con branding)
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$iconPath = Join-Path $scriptDir "app-icon.ico"
+if (Test-Path $iconPath) {
+    try { $form.Icon = [System.Drawing.Icon]::new($iconPath) } catch { }
+}
 $form.Size = New-Object System.Drawing.Size(520, 340)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"

@@ -1,7 +1,7 @@
 # System Prompt — Architetto Senior (Claude Desktop)
 
 > Copia questo testo intero nelle **Project Instructions** del progetto Claude Desktop dedicato a **Live Speaker Teleprompter**.
-> **Ultimo aggiornamento:** 18 Marzo 2026 (v1.1 — Lingua in-app IT/EN, release 2 file)
+> **Ultimo aggiornamento:** 19 Marzo 2026 (v1.2 — i18n workflow completato)
 
 ---
 
@@ -67,6 +67,9 @@ Live Speaker Teleprompter/
 │   ├── Guida_Refactoring_MainWindow.md
 │   ├── Setup_Companion_Live_Speaker_Teleprompter.md
 │   ├── Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md
+│   ├── Istruzioni_Traduzione_i18n_Live_Speaker_Teleprompter.md
+│   ├── audit-i18n-LiveSpeaker-Prompter.md
+│   ├── revisione-i18n-LiveSpeaker-Prompter.md
 │   └── Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md  ← QUESTO FILE
 └── clean-and-build.ps1
 ```
@@ -91,7 +94,7 @@ Live Speaker Teleprompter/
 6. **Scrittura atomica** — `.tmp` + File.Move(overwrite: true)
 7. **Freeze Brush** — SolidColorBrush creati dinamicamente → .Freeze()
 8. **NDI opzionale** — mai crash se ProcessNDI4.dll assente
-9. **i18n** — ogni modifica IT → anche EN (Localization.cs)
+9. **i18n** — ogni modifica IT → anche EN (Localization.cs). Workflow audit/revisione completato 19/03/2026; vedi `docs/Istruzioni_Traduzione_i18n_Live_Speaker_Teleprompter.md`
 10. **ScrollEngine** — NON estrarre/refactorare senza test automatici (path critico 60 Hz)
 
 ---
@@ -173,11 +176,13 @@ VINCOLI:
 
 **Ogni modifica significativa richiede l'aggiornamento di:**
 1. `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md`
-2. `.cursor/rules/` (project-architecture, doc-sync, performance-stability)
+2. `.cursor/rules/` (project-architecture, doc-sync, performance-stability, installer-modern, build-and-release)
 3. **Questo file** — se cambia contesto, vincoli, formato task
 4. `docs/Guida_Refactoring_MainWindow.md` — se cambiano fasi safe/rischiose
 
-**Regola i18n:** Ogni modifica alle stringhe in italiano (Localization.cs It) deve essere applicata anche in inglese (En).
+**Regola i18n UI:** Ogni modifica alle stringhe in italiano (`Localization.cs` It) deve essere applicata anche in inglese (En). Terminologia EN professionale teleprompter/broadcast. Vedi `docs/Istruzioni_Traduzione_i18n_Live_Speaker_Teleprompter.md`.
+
+**Regola i18n Installer:** Primo avvio in inglese (DefaultCulture = "en"). Lingua salvata in preferences.json alla chiusura. Vedi `.cursor/rules/i18n-installer.mdc`. Grafiche installer: `.cursor/rules/installer-modern.mdc`.
 
 ---
 

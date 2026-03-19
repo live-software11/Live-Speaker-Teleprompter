@@ -1,0 +1,56 @@
+---
+description: Internazionalizzazione UI IT/EN e lingua default per software installabili
+alwaysApply: true
+---
+
+# Internazionalizzazione e Lingua Default
+
+## Principio
+
+- **Lingua di programmazione:** Italiano (stringhe sorgente, commenti, nomi variabili in italiano dove appropriato).
+- **UI e documentazione:** Ogni aggiunta in italiano deve avere traduzione professionale in inglese, specifica per eventi live e spettacolo.
+
+---
+
+## UI — Requisiti obbligatori
+
+1. **Nuove stringhe UI:** Aggiungere sempre in `Localization.cs` (dizionari It e En).
+2. **Terminologia EN:** Professionale, settore eventi live, AV, broadcast (es. "transmit", "display", "preset", "on-air").
+3. **Nessuna stringa hardcoded:** Usare sempre `Localization.Get()`.
+
+---
+
+## Documentazione
+
+- **ARCHITETTURA_*.md, Istruzioni_Progetto_Claude_*.md, README.md, RIEPILOGO_*.md:** Se si aggiunge contenuto in italiano, fornire la versione inglese (sezione parallela o documento bilingue).
+- Stile: chiaro, professionale, coerente con il dominio live/AV.
+
+---
+
+## Software installabili (Ledwall Render, Speaker Timer, Speaker Teleprompter, Video Composer)
+
+**Esclusi:** Live Plan, Live Crew (Web SaaS).
+
+### Installer e disinstallazione
+
+- **Lingua ufficiale:** Inglese.
+- **PowerShell (IExpress):** Testi in inglese in `installer/installer-template.ps1` ($installLang = "en").
+
+### Primo avvio
+
+- **Lingua default:** Inglese.
+- L'app si apre in inglese al primo avvio.
+
+### Persistenza lingua
+
+- Alla chiusura: salvare in modo invisibile la lingua scelta (preferences.json in AppData).
+- Alla riapertura: usare l'ultima lingua scelta.
+
+### Versione portable
+
+- **Se possibile:** Preferenze invisibili (es. %LOCALAPPDATA%, senza file nella cartella dell'exe). Stesso comportamento: EN al primo avvio, salvataggio scelta.
+- **Se non possibile:** La versione portable si apre sempre in italiano.
+
+### Grafiche installer
+
+Vedi `.cursor/rules/installer-modern.mdc` per UI dark e icona finestra.

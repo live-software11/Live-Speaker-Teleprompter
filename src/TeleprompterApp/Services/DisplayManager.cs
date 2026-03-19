@@ -178,6 +178,6 @@ internal sealed record ScreenInfo(WF.Screen Screen, int DisplayNumber)
     public bool IsPrimary => Screen.Primary;
 
     public string DisplayLabel => DisplayNumber > 0
-        ? $"Display {DisplayNumber}{(IsPrimary ? Localization.Get("Display_Primary") : string.Empty)}"
+        ? $"{Localization.Get("Display_Number", DisplayNumber)}{(IsPrimary ? Localization.Get("Display_Primary") : string.Empty)}"
         : Localization.Get("Display_Screen", Screen.Bounds.Width, Screen.Bounds.Height);
 }
