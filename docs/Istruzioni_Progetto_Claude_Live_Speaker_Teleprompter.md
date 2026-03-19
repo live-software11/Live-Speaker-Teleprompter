@@ -64,12 +64,11 @@ Live Speaker Teleprompter/
 ├── installer/
 ├── docs/
 │   ├── ARCHITETTURA_Live_Speaker_Teleprompter.md
-│   ├── Guida_Refactoring_MainWindow.md
+│   ├── BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md
 │   ├── Setup_Companion_Live_Speaker_Teleprompter.md
 │   ├── Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md
-│   ├── Istruzioni_Traduzione_i18n_Live_Speaker_Teleprompter.md
-│   ├── audit-i18n-LiveSpeaker-Prompter.md
-│   ├── revisione-i18n-LiveSpeaker-Prompter.md
+│   ├── README_ITA_Live_Speaker_Teleprompter.md
+│   ├── README_ENG_Live_Speaker_Teleprompter.md
 │   └── Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md  ← QUESTO FILE
 └── clean-and-build.ps1
 ```
@@ -80,7 +79,7 @@ Live Speaker Teleprompter/
 | Exe portable (IT+EN) | `release/Live_Speaker_Teleprompter_Portable.exe` |
 | Setup installer | `release/Live_Speaker_Teleprompter_Setup.exe` |
 | Architettura | `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` |
-| Refactoring | `docs/Guida_Refactoring_MainWindow.md` |
+| BugFix/Refactoring | `docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md` |
 
 ---
 
@@ -94,14 +93,14 @@ Live Speaker Teleprompter/
 6. **Scrittura atomica** — `.tmp` + File.Move(overwrite: true)
 7. **Freeze Brush** — SolidColorBrush creati dinamicamente → .Freeze()
 8. **NDI opzionale** — mai crash se ProcessNDI4.dll assente
-9. **i18n** — ogni modifica IT → anche EN (Localization.cs). Workflow audit/revisione completato 19/03/2026; vedi `docs/Istruzioni_Traduzione_i18n_Live_Speaker_Teleprompter.md`
+9. **i18n** — ogni modifica IT → anche EN (Localization.cs). Workflow audit/revisione completato 19/03/2026; il sistema i18n usa `Localization.cs` con dizionari `It`/`En`
 10. **ScrollEngine** — NON estrarre/refactorare senza test automatici (path critico 60 Hz)
 
 ---
 
 ## REFACTORING MAINWINDOW
 
-Vedi **`docs/Guida_Refactoring_MainWindow.md`** per estrazioni:
+Vedi **`docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md`** per estrazioni:
 - **Safe:** OscCommandHandler, DocumentFileService, OscTypeParser
 - **Medie:** FormatController, ArrowController
 - **NON fare:** ScrollEngine (rischio micro-stutter live)
@@ -178,9 +177,9 @@ VINCOLI:
 1. `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md`
 2. `.cursor/rules/` (project-architecture, doc-sync, performance-stability, installer-modern, build-and-release)
 3. **Questo file** — se cambia contesto, vincoli, formato task
-4. `docs/Guida_Refactoring_MainWindow.md` — se cambiano fasi safe/rischiose
+4. `docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md` — se cambiano bugfix/refactoring/changelog
 
-**Regola i18n UI:** Ogni modifica alle stringhe in italiano (`Localization.cs` It) deve essere applicata anche in inglese (En). Terminologia EN professionale teleprompter/broadcast. Vedi `docs/Istruzioni_Traduzione_i18n_Live_Speaker_Teleprompter.md`.
+**Regola i18n UI:** Ogni modifica alle stringhe in italiano (`Localization.cs` It) deve essere applicata anche in inglese (En). Terminologia EN professionale teleprompter/broadcast. Vedi `src/TeleprompterApp/Localization.cs` (dizionari `It`/`En`).
 
 **Regola i18n Installer:** Primo avvio in inglese (DefaultCulture = "en"). Lingua salvata in preferences.json alla chiusura. Vedi `.cursor/rules/i18n-installer.mdc`. Grafiche installer: `.cursor/rules/installer-modern.mdc`.
 
@@ -210,5 +209,5 @@ dotnet build -c Release   # Solo build .NET
 ## DOCUMENTAZIONE COMPLETA
 
 - `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` — documento unico di riferimento
-- `docs/Guida_Refactoring_MainWindow.md` — estrazioni safe vs rischiose
+- `docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md` — bugfix, changelog, piano refactoring
 - `docs/Setup_Companion_Live_Speaker_Teleprompter.md` — setup Bitfocus Companion

@@ -27,7 +27,7 @@ AMBITI DA ANALIZZARE:
 7. **DisplayManager** — hot-plug monitor, fingerprint, fallback su screen rimosso
 8. **PresenterSync** — debounce 300ms, XamlPackage vs XamlWriter fallback, mai clone nel tick
 9. **NDI** — buffer cached, frame-rate limiter, ProcessNDI4.dll assente
-10. **Build** — clean-and-build.ps1, output portable/installer, icone
+10. **Build** — clean-and-build.ps1, output release/ (Setup + Portable + README), icone
 
 VINCOLI:
 - Il software viene usato DURANTE eventi live — stabilità prioritaria
@@ -39,7 +39,7 @@ OUTPUT: Un file `.md` con:
 - Titolo e data
 - Elenco task ordinati per priorità (ALTA → MEDIA)
 - Ogni task in formato REFACTOR / BUG FIX / FEATURE come da System_Prompt
-- Riferimento a Guida_Refactoring per estrazioni MainWindow
+- Riferimento a BugFix_Refactor_Implementazioni per estrazioni MainWindow
 - Checklist pre-esecuzione: dotnet build -c Release, test manuale scroll/OSC/NDI/Companion
 
 Il file deve essere copiabile in Cursor Composer 1.5 e eseguibile senza ambiguità.

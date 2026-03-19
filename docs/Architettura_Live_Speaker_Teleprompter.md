@@ -78,8 +78,7 @@ Live Speaker Teleprompter/
 │   │       ├── PresenterSyncService.cs      ← Sync documento editor→presenter (debounce 300ms)
 │   │       ├── DebouncedPreferencesService.cs ← Salvataggio preferenze (debounce 500ms)
 │   │       └── LayoutPresetService.cs       ← Save/Load preset layout (layout-presets.json)
-│   ├── README-ITA.md                        ← Documentazione utente italiana completa
-│   └── README-ENG.md                        ← Documentazione utente inglese completa
+│   └── TeleprompterApp/                     ← Progetto WPF (vedi sopra)
 │
 ├── installer/
 │   ├── build-installer.ps1                  ← Pipeline: publish + portable EXE + installer EXE
