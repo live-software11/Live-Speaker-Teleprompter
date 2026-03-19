@@ -6,10 +6,11 @@
 # Node.js (companion-module)
 node_modules/
 
-# Release builds & installers (binary artifacts)
+# Release builds & installers (binary artifacts, copied by build script)
 release/*.exe
 release/*.zip
 release/*.msi
+release/*.md
 release/~*
 
 # Environment

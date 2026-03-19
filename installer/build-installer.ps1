@@ -204,6 +204,13 @@ if (-not (Test-Path $templatePath)) {
     }
 }
 
+# -- Step 5: Copy README ITA/ENG to release --------------------------------
+$docsDir = Join-Path (Split-Path $PSScriptRoot -Parent) "docs"
+$readmeIta = Join-Path $docsDir "README_ITA_Live_Speaker_Teleprompter.md"
+$readmeEng = Join-Path $docsDir "README_ENG_Live_Speaker_Teleprompter.md"
+if (Test-Path $readmeIta) { Copy-Item $readmeIta $OutputDir -Force }
+if (Test-Path $readmeEng) { Copy-Item $readmeEng $OutputDir -Force }
+
 # -- Summary -------------------------------------------------------------
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Green
@@ -212,12 +219,15 @@ Write-Host "========================================================" -Foregroun
 Write-Host ""
 Write-Host "  Outputs in: $OutputDir" -ForegroundColor Cyan
 if (Test-Path $portableExeTarget) {
-    Write-Host "  [OK] Portable EXE:  Live_Speaker_Teleprompter_Portable.exe (IT+EN)" -ForegroundColor White
+    Write-Host "  [OK] Portable:  Live_Speaker_Teleprompter_Portable.exe" -ForegroundColor White
 }
 if (Test-Path $exeTarget) {
-    Write-Host "  [OK] Setup EXE: $InstallerName" -ForegroundColor White
+    Write-Host "  [OK] Setup:     $InstallerName" -ForegroundColor White
 }
-Write-Host ""
-Write-Host "  Portable: un solo exe con IT+EN, selezione lingua in-app." -ForegroundColor DarkGray
-Write-Host "  Installer: stesso eseguibile, installazione opzionale." -ForegroundColor DarkGray
+if (Test-Path (Join-Path $OutputDir "README_ITA_Live_Speaker_Teleprompter.md")) {
+    Write-Host "  [OK] README ITA" -ForegroundColor White
+}
+if (Test-Path (Join-Path $OutputDir "README_ENG_Live_Speaker_Teleprompter.md")) {
+    Write-Host "  [OK] README ENG" -ForegroundColor White
+}
 Write-Host ""

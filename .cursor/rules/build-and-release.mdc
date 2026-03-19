@@ -25,10 +25,12 @@ alwaysApply: false
 - L'icona è generata automaticamente da clean-and-build prima del publish.
 - `build-installer.ps1` include `app-icon.ico` nel pacchetto IExpress per la title bar dell'installer (vedi installer-modern.mdc).
 
-## Output (release/) — 2 file
-- `Live_Speaker_Teleprompter_Portable.exe` — eseguibile standalone IT+EN, selezione lingua in-app
-- `Live_Speaker_Teleprompter_Setup.exe` — installer con collegamenti Start/Desktop
+## Output (release/) — 4 file
+- `Live_Speaker_Teleprompter_Setup.exe` — installer con scelta lingua e cartella
+- `Live_Speaker_Teleprompter_Portable.exe` — eseguibile standalone IT+EN, switch lingua in-app
+- `README_ITA_Live_Speaker_Teleprompter.md` — documentazione utente italiana (copia da docs/)
+- `README_ENG_Live_Speaker_Teleprompter.md` — documentazione utente inglese (copia da docs/)
 
 ## Pulizia
 - bin/, obj/, publish/ — ignorati da git
-- release/*.exe, *.zip, *.msi — ignorati da git (artefatti build)
+- release/*.exe, *.zip, *.msi, *.md — ignorati da git (artefatti build)

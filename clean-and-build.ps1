@@ -97,6 +97,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host "  Clean and Build completato!" -ForegroundColor Green
-Write-Host "  Output in: $releaseDir (2 file: Portable.exe + Setup.exe)" -ForegroundColor Cyan
+Write-Host "  Output in: $releaseDir" -ForegroundColor Cyan
+Write-Host "  (Setup.exe + Portable.exe + README_ITA + README_ENG)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host ""

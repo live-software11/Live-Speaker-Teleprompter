@@ -14,7 +14,7 @@ OBIETTIVO: Analizza a fondo il progetto e produci un file Markdown da far esegui
 FONTI OBBLIGATORIE:
 - Leggi `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` (sezioni 8–15)
 - Leggi `docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md` (formato task)
-- Leggi `docs/Guida_Refactoring_MainWindow.md` (estrazioni safe vs rischiose)
+- Leggi `docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md` (piano refactoring, estrazioni safe vs rischiose)
 - Controlla `src/TeleprompterApp/` e `companion-module/`
 
 AMBITI DA ANALIZZARE:

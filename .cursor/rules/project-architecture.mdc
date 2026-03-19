@@ -73,5 +73,10 @@ src/TeleprompterApp/
 - `SyncPresenterAppearance()` → sync completo sfondo, freccia (colore, scala, posizione) al presenter
 - Durante auto-scroll: `OnScrollRendering` chiama `SetVerticalOffset` direttamente; `ScrollChanged` ignora sync se `_isAutoScrolling`
 
-## Documentazione tecnica dettagliata
-Vedi **`docs/ARCHITETTURA_Live_Speaker_Teleprompter.md`** per la documentazione completa di ogni componente, funzione, modello dati, flusso di avvio, scroll engine, localizzazione, build pipeline e checklist pre-release.
+## Documentazione
+- **`docs/ARCHITETTURA_Live_Speaker_Teleprompter.md`** — architettura completa, componenti, flussi, build pipeline, checklist
+- **`docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md`** — changelog, bug risolti, piano refactoring (aggiornare ad ogni bugfix/feature)
+- **`docs/README_ITA_Live_Speaker_Teleprompter.md`** / **`README_ENG_*`** — documentazione utente (commerciale, copiata in release/ dal build)
+- **`docs/Setup_Companion_Live_Speaker_Teleprompter.md`** — guida setup Bitfocus Companion
+- **`docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md`** — system prompt Claude Desktop
+- **`docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md`** — primo prompt chat Claude

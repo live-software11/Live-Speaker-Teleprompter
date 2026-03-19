@@ -1,34 +1,40 @@
 # Live Speaker Teleprompter
 
-Applicazione desktop portable per teleprompter professionale: editor script, output full-screen su monitor esterno, streaming NDI, controllo OSC e integrazione Bitfocus Companion.
+Teleprompter professionale per presentazioni multi-schermo con integrazione NDI, OSC e Bitfocus Companion.
+
+> **Versione 2.3.5** — .NET 8 WPF — Windows 10/11 x64 — Italiano/English
 
 ---
 
-## Avvio
+## Release
 
-- **Versione portable:** Esegui `Live_Speaker_Teleprompter_Portable.exe` — nessuna installazione.
-- **Versione con installer:** Installa tramite `Live_Speaker_Teleprompter_Setup.exe` e avvia dal menu Start.
+Dopo `.\clean-and-build.ps1`, la cartella `release/` contiene:
 
-**Output:** Nella cartella `release/` trovi i file Portable.exe (IT+EN, selezione lingua in-app) e Setup.exe.
+| File | Descrizione |
+|---|---|
+| `Live_Speaker_Teleprompter_Setup.exe` | Installer con scelta lingua e cartella |
+| `Live_Speaker_Teleprompter_Portable.exe` | Eseguibile portable (switch lingua in-app) |
+| `README_ITA_Live_Speaker_Teleprompter.md` | Documentazione utente italiana |
+| `README_ENG_Live_Speaker_Teleprompter.md` | Documentazione utente inglese |
 
----
+## Documentazione
 
-## Funzionalità principali
+| Documento | Percorso |
+|---|---|
+| Architettura software | [docs/ARCHITETTURA_Live_Speaker_Teleprompter.md](docs/ARCHITETTURA_Live_Speaker_Teleprompter.md) |
+| BugFix, Refactor, Changelog | [docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md](docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md) |
+| Setup Companion | [docs/Setup_Companion_Live_Speaker_Teleprompter.md](docs/Setup_Companion_Live_Speaker_Teleprompter.md) |
+| Claude Desktop — Istruzioni progetto | [docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md](docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md) |
+| Claude Desktop — Primo prompt | [docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md](docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md) |
 
-- **Editor script** — Scrittura e modifica del testo da proiettare
-- **Output full-screen** — Proiezione su monitor esterno dedicato
-- **Streaming NDI** — Trasmissione via NDI per OBS, vMix e software di streaming
-- **Controllo OSC** — Controllo remoto tramite protocollo OSC
-- **Integrazione Bitfocus Companion** — Controllo da Stream Deck e Companion
+## Build da sorgente
 
----
+```powershell
+.\clean-and-build.ps1
+```
 
-## Lingua
+Richiede [.NET 8 SDK](https://dotnet.microsoft.com/download). Output in `release/`.
 
-L'app supporta Italiano e Inglese. La selezione della lingua è disponibile nell'interfaccia.
+## Licenza
 
----
-
-## Supporto
-
-Per assistenza o segnalazione problemi, contatta il venditore tramite i canali indicati al momento dell'acquisto.
+MIT
