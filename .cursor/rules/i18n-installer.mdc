@@ -22,7 +22,7 @@ alwaysApply: true
 
 ## Documentazione
 
-- **ARCHITETTURA_*.md, Istruzioni_Progetto_Claude_*.md, README.md, RIEPILOGO_*.md:** Se si aggiunge contenuto in italiano, fornire la versione inglese (sezione parallela o documento bilingue).
+- **ARCHITETTURA_*.md, Istruzioni_Progetto_Claude_*.md, README_ITA/ENG_*.md:** Se si aggiunge contenuto in italiano, fornire la versione inglese (documento parallelo o sezione bilingue).
 - Stile: chiaro, professionale, coerente con il dominio live/AV.
 
 ---

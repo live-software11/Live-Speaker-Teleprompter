@@ -24,6 +24,8 @@ Dopo `.\clean-and-build.ps1`, la cartella `release/` contiene:
 | Architettura software | [docs/ARCHITETTURA_Live_Speaker_Teleprompter.md](docs/ARCHITETTURA_Live_Speaker_Teleprompter.md) |
 | BugFix, Refactor, Changelog | [docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md](docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md) |
 | Setup Companion | [docs/Setup_Companion_Live_Speaker_Teleprompter.md](docs/Setup_Companion_Live_Speaker_Teleprompter.md) |
+| Documentazione utente ITA | [docs/README_ITA_Live_Speaker_Teleprompter.md](docs/README_ITA_Live_Speaker_Teleprompter.md) |
+| Documentazione utente ENG | [docs/README_ENG_Live_Speaker_Teleprompter.md](docs/README_ENG_Live_Speaker_Teleprompter.md) |
 | Claude Desktop — Istruzioni progetto | [docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md](docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md) |
 | Claude Desktop — Primo prompt | [docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md](docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md) |
 
