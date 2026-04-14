@@ -70,10 +70,7 @@ namespace TeleprompterApp
     private DebouncedPreferencesService? _debouncedPrefs;
     private PresenterSyncService? _presenterSync;
 
-    private readonly HashSet<string> _supportedExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".txt", ".md", ".rtf", ".srt", ".vtt", ".log", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".ini", ".cfg", ".bat", ".ps1", ".xaml", ".xamlpackage", ".rstp", ".docx", ".doc"
-    };
+    // TASK-010: estensioni supportate spostate in TeleprompterApp.Services.DocumentFileService.IsSupportedExtension
     private PresenterWindow? _presenterWindow;
     private UserPreferences _preferences = new();
     private bool _isApplyingPreferences;
@@ -867,7 +864,7 @@ namespace TeleprompterApp
         byte[] fileData;
         try
         {
-            fileData = File.ReadAllBytes(filePath);
+            fileData = TeleprompterApp.Services.DocumentFileService.ReadBytes(filePath);
         }
         catch (IOException ex)
         {
@@ -2690,8 +2687,7 @@ namespace TeleprompterApp
     {
         foreach (var path in paths)
         {
-            var extension = Path.GetExtension(path);
-            if (!string.IsNullOrWhiteSpace(extension) && _supportedExtensions.Contains(extension))
+            if (TeleprompterApp.Services.DocumentFileService.IsSupportedExtension(path))
             {
                 return path;
             }
