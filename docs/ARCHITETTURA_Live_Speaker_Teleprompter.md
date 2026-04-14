@@ -78,17 +78,17 @@ Live Speaker Teleprompter/
 │   │       ├── PresenterSyncService.cs      ← Sync documento editor→presenter (debounce 300ms)
 │   │       ├── DebouncedPreferencesService.cs ← Salvataggio preferenze (debounce 500ms)
 │   │       └── LayoutPresetService.cs       ← Save/Load preset layout (layout-presets.json)
-│   ├── README-ITA.md                        ← Documentazione utente italiana completa
-│   └── README-ENG.md                        ← Documentazione utente inglese completa
 │
 ├── installer/
 │   ├── build-installer.ps1                  ← Pipeline: publish + portable EXE + installer EXE
 │   ├── installer-template.ps1               ← Template installer self-extracting (PowerShell)
 │   └── portable-extractor-template.ps1      ← (legacy, non usato)
 │
-├── release/                                 ← Output build (gitignored) — 2 file
+├── release/                                 ← Output build (gitignored) — 4 file
+│   ├── Live_Speaker_Teleprompter_Setup.exe     ← Installer con scelta lingua e cartella
 │   ├── Live_Speaker_Teleprompter_Portable.exe  ← IT+EN, selezione in-app
-│   └── Live_Speaker_Teleprompter_Setup.exe
+│   ├── README_ITA_Live_Speaker_Teleprompter.md ← Documentazione utente IT (copia da docs/)
+│   └── README_ENG_Live_Speaker_Teleprompter.md ← Documentazione utente EN (copia da docs/)
 │
 ├── icons/
 │   ├── Logo Teleprompter.png                ← Sorgente logo (PNG)
@@ -99,8 +99,13 @@ Live Speaker Teleprompter/
 │   └── PngToIco/                            ← Tool .NET per conversione PNG/WebP → ICO
 │
 ├── docs/
-│   ├── Architettura_Live_Speaker_Teleprompter.md   ← Questo documento
-│   └── Setup_Companion_Live_Speaker_Teleprompter.md ← Guida setup Bitfocus Companion
+│   ├── ARCHITETTURA_Live_Speaker_Teleprompter.md                    ← Questo documento
+│   ├── BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md ← Changelog, bug, refactoring
+│   ├── Setup_Companion_Live_Speaker_Teleprompter.md                 ← Guida setup Bitfocus Companion
+│   ├── Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md      ← System prompt Claude Desktop
+│   ├── Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md ← Primo prompt Claude
+│   ├── README_ITA_Live_Speaker_Teleprompter.md                      ← Documentazione utente IT
+│   └── README_ENG_Live_Speaker_Teleprompter.md                      ← Documentazione utente EN
 │
 └── companion-module/                        ← Modulo Bitfocus Companion (Node.js)
     ├── index.js
