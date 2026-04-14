@@ -37,9 +37,20 @@ public partial class App : System.Windows.Application
 	private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
 	{
 		LogException("Dispatcher", e.Exception);
-	System.Windows.MessageBox.Show(Localization.Get("Error_Unhandled", e.Exception.Message), Localization.Get("Error_Title"), MessageBoxButton.OK, MessageBoxImage.Error);
+		try
+		{
+			System.Windows.MessageBox.Show(
+				Localization.Get("Error_Unhandled", e.Exception.Message),
+				Localization.Get("Error_Title"),
+				MessageBoxButton.OK,
+				MessageBoxImage.Error);
+		}
+		catch { /* non-fatal */ }
+
+		// SACRED RULE #2: stabilità live. MAI Shutdown in un handler globale:
+		// durante un evento live l'app deve restare viva anche dopo un'eccezione.
+		// L'operatore chiuderà manualmente a fine show se necessario.
 		e.Handled = true;
-		Shutdown(-1);
 	}
 
 	private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
