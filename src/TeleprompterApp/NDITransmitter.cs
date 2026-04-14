@@ -42,6 +42,18 @@ internal sealed class NDITransmitter : IDisposable
     // Cached VisualBrush — reused across frames, only updated when source changes
     private VisualBrush? _cachedVisualBrush;
 
+    // TASK-007: visibilità errori in Release (Debug.WriteLine è no-op in Release).
+    private int _consecutiveErrors;
+    private long _lastErrorLogTicks;
+    private const int MaxConsecutiveErrorsBeforeStop = 30;  // ~1 secondo a 30 fps
+    private const long ErrorLogThrottleMs = 5000;            // log max ogni 5s
+
+    /// <summary>
+    /// Notificato quando il tick di rendering cattura un errore. Throttlato a ~1 evento/5s
+    /// per indirizzo per evitare flood dello status bar.
+    /// </summary>
+    public event Action<string>? FrameError;
+
     public NDITransmitter(FrameworkElement source, string ndiName)
     {
         _source = source;
@@ -145,12 +157,29 @@ internal sealed class NDITransmitter : IDisposable
         try
         {
             CaptureAndSendFrame();
+            _consecutiveErrors = 0;  // reset contatore su frame OK
         }
         catch (Exception ex)
         {
             // Swallow rendering errors to prevent crashing the WPF composition pipeline.
             // Common causes: source element disposed mid-frame, bitmap allocation failure.
-            Debug.WriteLine($"NDI frame capture error: {ex.Message}");
+            _consecutiveErrors++;
+
+            // Throttled notifica: max un evento ogni 5s per evitare flood dello status bar.
+            var now = Environment.TickCount64;
+            if (now - _lastErrorLogTicks > ErrorLogThrottleMs)
+            {
+                _lastErrorLogTicks = now;
+                Debug.WriteLine($"NDI frame capture error: {ex.Message}");
+                try { FrameError?.Invoke(ex.Message); } catch { }
+            }
+
+            // Auto-stop se troppi errori consecutivi: protegge da loop fatali.
+            if (_consecutiveErrors >= MaxConsecutiveErrorsBeforeStop)
+            {
+                Debug.WriteLine("NDI: too many consecutive errors, stopping");
+                _dispatcher.BeginInvoke(() => Stop());
+            }
         }
     }
 

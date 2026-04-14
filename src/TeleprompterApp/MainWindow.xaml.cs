@@ -398,7 +398,13 @@ namespace TeleprompterApp
             return;
         }
 
-        _ndiTransmitter ??= new NDITransmitter(_contentScrollViewer, _ndiSourceName);
+        if (_ndiTransmitter == null)
+        {
+            _ndiTransmitter = new NDITransmitter(_contentScrollViewer, _ndiSourceName);
+            // TASK-007: mostra errori di rendering NDI nello status bar (throttled a 5s)
+            _ndiTransmitter.FrameError += msg =>
+                Dispatcher.BeginInvoke(() => SetStatus(Localization.Get("Status_NdiError", msg)));
+        }
         _ndiTransmitter.SetSourceName(_ndiSourceName);
         _ndiTransmitter.SetTargetResolution(_ndiTargetWidth, _ndiTargetHeight);
         _ndiTransmitter.SetFrameRate(_ndiFrameRate);
