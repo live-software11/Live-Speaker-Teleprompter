@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -18,6 +20,10 @@ internal sealed class OscBridge : IDisposable
 
     private UdpClient? _udpClient;
     private CancellationTokenSource? _cts;
+
+    // TASK-005: throttle feedback OSC per indirizzo (20 Hz max per valori continui)
+    private readonly ConcurrentDictionary<string, long> _lastFeedbackTicks = new();
+    private const long MinFeedbackIntervalMs = 50;
 
     public OscBridge(MainWindow owner, int listenPort, string feedbackHost, int feedbackPort)
     {
@@ -107,8 +113,26 @@ internal sealed class OscBridge : IDisposable
 
     private void DispatchMessage(OscMessage message)
     {
-        var args = message.Arguments ?? Array.Empty<object>();
-        _owner.Dispatcher.InvokeAsync(() => _owner.HandleOscMessage(message.Address, args.ToList()));
+        // TASK-006: input esterno non fidato — null-safety, niente eccezioni fuori dall'handler.
+        if (string.IsNullOrWhiteSpace(message.Address))
+            return;
+
+        var args = (message.Arguments ?? Array.Empty<object>())
+            .Where(a => a != null)
+            .ToList();
+
+        _owner.Dispatcher.InvokeAsync(() =>
+        {
+            try
+            {
+                _owner.HandleOscMessage(message.Address, args);
+            }
+            catch (Exception ex)
+            {
+                // Mai crashare per un pacchetto OSC: è un entry point di rete esterna.
+                Debug.WriteLine($"OSC handler error [{message.Address}]: {ex.Message}");
+            }
+        });
     }
 
     public void SendFeedback(string address, params object[] values)
@@ -130,6 +154,29 @@ internal sealed class OscBridge : IDisposable
         {
             // Feedback errors are non-fatal; ignore
         }
+    }
+
+    /// <summary>
+    /// TASK-005: feedback throttled (max ~20 Hz per indirizzo). Usare SOLO per valori
+    /// continui (speed, position, font size, framerate). Per cambi di stato discreti
+    /// (play/pause, mirror on/off, NDI start/stop) usare <see cref="SendFeedback"/>.
+    /// </summary>
+    public void SendFeedbackThrottled(string address, params object[] values)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            return;
+        }
+
+        var now = Environment.TickCount64;
+        var last = _lastFeedbackTicks.GetOrAdd(address, 0L);
+        if (now - last < MinFeedbackIntervalMs)
+        {
+            return;
+        }
+
+        _lastFeedbackTicks[address] = now;
+        SendFeedback(address, values);
     }
 
     private static byte[]? BuildMessagePayload(string address, IReadOnlyList<object> values)

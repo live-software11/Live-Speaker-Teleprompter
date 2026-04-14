@@ -3150,17 +3150,19 @@ namespace TeleprompterApp
 
     private void NotifyOscSpeed()
     {
-        _oscBridge?.SendFeedback("/teleprompter/speed/current", _scrollSpeed.ToString("F2", CultureInfo.InvariantCulture));
+        // Valore continuo: throttled a ~20 Hz per non saturare la rete durante lo scroll.
+        _oscBridge?.SendFeedbackThrottled("/teleprompter/speed/current", _scrollSpeed.ToString("F2", CultureInfo.InvariantCulture));
     }
 
     private void NotifyOscFontSize()
     {
-        _oscBridge?.SendFeedback("/teleprompter/font/size/current", GetCurrentFontPoints().ToString("F0", CultureInfo.InvariantCulture));
+        _oscBridge?.SendFeedbackThrottled("/teleprompter/font/size/current", GetCurrentFontPoints().ToString("F0", CultureInfo.InvariantCulture));
     }
 
     private void NotifyOscPosition()
     {
-        _oscBridge?.SendFeedback("/teleprompter/position/current", GetScrollRatio().ToString("F3", CultureInfo.InvariantCulture));
+        // Chiamato ad alta frequenza durante lo scroll: throttled obbligatorio.
+        _oscBridge?.SendFeedbackThrottled("/teleprompter/position/current", GetScrollRatio().ToString("F3", CultureInfo.InvariantCulture));
     }
 
     private void NotifyOscMirror()
@@ -3188,7 +3190,7 @@ namespace TeleprompterApp
             }
         }
 
-        _oscBridge?.SendFeedback("/ndi/framerate/current", _ndiFrameRate.ToString("F2", CultureInfo.InvariantCulture));
+        _oscBridge?.SendFeedbackThrottled("/ndi/framerate/current", _ndiFrameRate.ToString("F2", CultureInfo.InvariantCulture));
         _oscBridge?.SendFeedback("/ndi/sourcename/current", _ndiSourceName);
     }
 
