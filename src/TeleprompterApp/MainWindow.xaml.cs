@@ -2948,7 +2948,12 @@ namespace TeleprompterApp
         {
             _oscCommandHandler = new OscCommandHandler(this);
         }
-        _oscCommandHandler.Handle(address, (IReadOnlyList<object>)args);
+        // Conversione difensiva: IList<object> non implementa sempre IReadOnlyList<object>
+        // a livello di type system. Il cast diretto fallirebbe a runtime per collection
+        // custom. OscBridge passa già List<object> (che implementa entrambe), ma non possiamo
+        // assumerlo come contratto per un entry point di rete esterna.
+        var readOnlyArgs = args as IReadOnlyList<object> ?? args.ToList();
+        _oscCommandHandler.Handle(address, readOnlyArgs);
     }
 
     // ─── ITeleprompterController (TASK-009) ───────────────────────────────────
