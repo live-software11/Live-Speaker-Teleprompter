@@ -245,6 +245,10 @@ namespace TeleprompterApp
                 UpdatePresenterMirror();
             });
 
+        // TASK-004: surface fallback/serialization failures to the operator
+        _presenterSync.SyncFailed += msg =>
+            Dispatcher.BeginInvoke(() => SetStatus(Localization.Get("Status_PresenterSyncFailed", msg)));
+
         ApplyPreferences();
         ApplyMirrorState();
         StartCompanionIntegration();
