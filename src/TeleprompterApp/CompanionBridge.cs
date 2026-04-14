@@ -10,8 +10,10 @@ namespace TeleprompterApp;
 
 internal sealed class CompanionBridge : IDisposable
 {
-    private const double SpeedStep = 0.25;
-    private const double MaxSpeed = 20;
+    // Allineati a MainWindow (single source of truth per il contratto di velocità).
+    // Range documentato in ARCHITETTURA §10: -80 ÷ +80, step 0.5.
+    private const double SpeedStep = 0.5;
+    private const double MaxSpeed = 80;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly MainWindow _owner;
     private readonly int _port;
@@ -178,12 +180,12 @@ internal sealed class CompanionBridge : IDisposable
 
         if (segments.Length == 0 || !segments[0].Equals("teleprompter", StringComparison.OrdinalIgnoreCase))
         {
-            throw new NotSupportedException("Endpoint non trovato.");
+            throw new NotSupportedException(Localization.Get("Companion_EndpointNotFound"));
         }
 
         if (segments.Length == 1 || segments[1].Equals("status", StringComparison.OrdinalIgnoreCase))
         {
-            return BuildResponse(message: "Stato teleprompter");
+            return BuildResponse(message: Localization.Get("Companion_StatusTitle"));
         }
 
         var command = segments[1].ToLowerInvariant();
@@ -197,7 +199,7 @@ internal sealed class CompanionBridge : IDisposable
                     _owner.SetPlayState(true);
                     _owner.SetStatus(Localization.Get("Status_CompanionPlay"));
                 });
-                responseMessage = "Riproduzione avviata";
+                responseMessage = Localization.Get("Companion_PlayStarted");
                 break;
             case "pause":
                 await _owner.Dispatcher.InvokeAsync(() =>
@@ -205,7 +207,7 @@ internal sealed class CompanionBridge : IDisposable
                     _owner.SetPlayState(false);
                     _owner.SetStatus(Localization.Get("Status_CompanionPause"));
                 });
-                responseMessage = "Riproduzione in pausa";
+                responseMessage = Localization.Get("Companion_PlayPaused");
                 break;
             case "toggle":
                 await _owner.Dispatcher.InvokeAsync(() =>
@@ -214,13 +216,13 @@ internal sealed class CompanionBridge : IDisposable
                     _owner.SetPlayState(!current);
                     _owner.SetStatus(current ? Localization.Get("Status_CompanionPause") : Localization.Get("Status_CompanionPlay"));
                 });
-                responseMessage = "Stato play/pausa invertito";
+                responseMessage = Localization.Get("Companion_PlayToggled");
                 break;
             case "speed":
                 responseMessage = await HandleSpeedCommandAsync(context, segments).ConfigureAwait(false);
                 break;
             default:
-                throw new NotSupportedException($"Comando '{command}' non supportato.");
+                throw new NotSupportedException(Localization.Get("Companion_CommandNotSupported", command));
         }
 
         return BuildResponse(responseMessage);
@@ -239,7 +241,7 @@ internal sealed class CompanionBridge : IDisposable
                     _owner.AdjustSpeed(SpeedStep);
                     _owner.SetStatus(Localization.Get("Status_CompanionSpeedUp"));
                 });
-                message = "Velocità aumentata";
+                message = Localization.Get("Companion_SpeedIncreased");
                 break;
             case "down":
                 await _owner.Dispatcher.InvokeAsync(() =>
@@ -247,7 +249,7 @@ internal sealed class CompanionBridge : IDisposable
                     _owner.AdjustSpeed(-SpeedStep);
                     _owner.SetStatus(Localization.Get("Status_CompanionSpeedDown"));
                 });
-                message = "Velocità diminuita";
+                message = Localization.Get("Companion_SpeedDecreased");
                 break;
             case "reset":
                 await _owner.Dispatcher.InvokeAsync(() =>
@@ -255,18 +257,18 @@ internal sealed class CompanionBridge : IDisposable
                     _owner.SetSpeed(0, fromSlider: false);
                     _owner.SetStatus(Localization.Get("Status_CompanionSpeedZero"));
                 });
-                message = "Velocità azzerata";
+                message = Localization.Get("Companion_SpeedReset");
                 break;
             case "set":
                 var valueText = context.Request.QueryString?["value"];
                 if (string.IsNullOrWhiteSpace(valueText))
                 {
-                    throw new ArgumentException("Parametro 'value' mancante.");
+                    throw new ArgumentException(Localization.Get("Companion_SpeedValueMissing"));
                 }
 
                 if (!double.TryParse(valueText, NumberStyles.Float, CultureInfo.InvariantCulture, out var target))
                 {
-                    throw new ArgumentException("Valore velocità non valido.");
+                    throw new ArgumentException(Localization.Get("Companion_SpeedValueInvalid"));
                 }
 
                 target = Math.Clamp(target, -MaxSpeed, MaxSpeed);
@@ -276,10 +278,10 @@ internal sealed class CompanionBridge : IDisposable
                     _owner.SetSpeed(target, fromSlider: false);
                     _owner.SetStatus(Localization.Get("Status_CompanionSpeed", target));
                 });
-                message = $"Velocità impostata a {target:F2}";
+                message = Localization.Get("Companion_SpeedSet", target);
                 break;
             default:
-                throw new NotSupportedException($"Comando velocità '{subCommand}' non supportato.");
+                throw new NotSupportedException(Localization.Get("Companion_SpeedCommandNotSupported", subCommand));
         }
 
         return message;
