@@ -39,7 +39,7 @@ internal sealed class OscBridge : IDisposable
 
         try
         {
-            _udpClient = new UdpClient(_listenPort);
+            _udpClient = new UdpClient(new IPEndPoint(IPAddress.Loopback, _listenPort));
         }
         catch (SocketException)
         {

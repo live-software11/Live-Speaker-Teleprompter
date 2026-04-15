@@ -50,16 +50,6 @@ internal sealed class CompanionBridge : IDisposable
                 // alcuni sistemi potrebbero non consentire il binding doppio: ignoriamo l'errore.
             }
 
-            // Allow connections from any network interface for remote Companion control
-            try
-            {
-                _listener.Prefixes.Add($"http://+:{_port}/teleprompter/");
-            }
-            catch
-            {
-                // Requires admin or netsh http add urlacl; ignore if not available
-            }
-
             _listener.Start();
 
             _cts = new CancellationTokenSource();
@@ -131,7 +121,7 @@ internal sealed class CompanionBridge : IDisposable
         catch (Exception ex)
         {
             statusCode = 500;
-            payload = BuildResponse(error: ex.Message);
+            payload = BuildResponse(error: "Internal server error");
             _owner.Dispatcher.Invoke(() => _owner.SetStatus(Localization.Get("Error_Companion", ex.Message)));
         }
 
@@ -140,8 +130,7 @@ internal sealed class CompanionBridge : IDisposable
             context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/json";
 
-            // CORS headers for network Companion access (e.g. Companion on another machine)
-            context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            context.Response.Headers.Add("Access-Control-Allow-Origin", "http://localhost");
             context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
             context.Response.KeepAlive = false;

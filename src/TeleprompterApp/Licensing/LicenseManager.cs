@@ -238,7 +238,7 @@ internal static class LicenseManager
         {
             return false;
         }
-        if (string.IsNullOrEmpty(data.VerifyBefore)) return true;
+        if (string.IsNullOrEmpty(data.VerifyBefore)) return false;
         if (DateTimeOffset.TryParse(data.VerifyBefore, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var vb))
         {
             var deadline = vb.ToUniversalTime().AddDays(LicenseConstants.OfflineGraceDays);

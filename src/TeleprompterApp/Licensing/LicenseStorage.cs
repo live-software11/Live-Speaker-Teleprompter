@@ -69,8 +69,16 @@ internal static class LicenseStorage
         if (!File.Exists(path)) return null;
         try
         {
-            var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<PendingActivation>(json);
+            var raw = File.ReadAllBytes(path);
+            try
+            {
+                var decrypted = DecryptRaw(raw);
+                return JsonSerializer.Deserialize<PendingActivation>(decrypted);
+            }
+            catch
+            {
+                return JsonSerializer.Deserialize<PendingActivation>(raw);
+            }
         }
         catch
         {
@@ -81,10 +89,11 @@ internal static class LicenseStorage
     public static void SavePending(string licenseKey, string fingerprint)
     {
         var pending = new PendingActivation { LicenseKey = licenseKey, Fingerprint = fingerprint };
-        var json = JsonSerializer.Serialize(pending, new JsonSerializerOptions { WriteIndented = true });
+        var plain = JsonSerializer.SerializeToUtf8Bytes(pending);
+        var encrypted = EncryptRaw(plain);
         var path = PendingPath();
         var tmp = path + ".tmp";
-        File.WriteAllText(tmp, json);
+        File.WriteAllBytes(tmp, encrypted);
         File.Move(tmp, path, overwrite: true);
     }
 
@@ -99,9 +108,8 @@ internal static class LicenseStorage
 
     // -- Cifratura AES-256-GCM (stesso schema di Ledwall) --------------------
 
-    private static byte[] Encrypt(LicenseData data)
+    private static byte[] EncryptRaw(byte[] plain)
     {
-        var plain = JsonSerializer.SerializeToUtf8Bytes(data);
         var nonce = RandomNumberGenerator.GetBytes(LicenseConstants.NonceLength);
         var cipher = new byte[plain.Length];
         var tag = new byte[16];
@@ -116,7 +124,13 @@ internal static class LicenseStorage
         return output;
     }
 
-    private static LicenseData? Decrypt(byte[] bytes)
+    private static byte[] Encrypt(LicenseData data)
+    {
+        var plain = JsonSerializer.SerializeToUtf8Bytes(data);
+        return EncryptRaw(plain);
+    }
+
+    private static byte[]? DecryptRaw(byte[] bytes)
     {
         if (bytes.Length < LicenseConstants.NonceLength + 16) return null;
         var nonce = new byte[LicenseConstants.NonceLength];
@@ -132,14 +146,21 @@ internal static class LicenseStorage
 
         var plain = new byte[cipherLen];
         using var aes = new AesGcm(LicenseConstants.LicenseAesKey, 16);
+        aes.Decrypt(nonce, cipher, tag, plain);
+        return plain;
+    }
+
+    private static LicenseData? Decrypt(byte[] bytes)
+    {
         try
         {
-            aes.Decrypt(nonce, cipher, tag, plain);
+            var plain = DecryptRaw(bytes);
+            if (plain == null) return null;
+            return JsonSerializer.Deserialize<LicenseData>(plain);
         }
         catch (CryptographicException)
         {
             return null;
         }
-        return JsonSerializer.Deserialize<LicenseData>(plain);
     }
 }

@@ -69,7 +69,7 @@ public partial class App : System.Windows.Application
 		try
 		{
 			System.Windows.MessageBox.Show(
-				Localization.Get("Error_Unhandled", e.Exception.Message),
+				Localization.Get("Error_Unhandled_Generic"),
 				Localization.Get("Error_Title"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Error);

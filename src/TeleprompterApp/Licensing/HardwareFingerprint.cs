@@ -17,9 +17,18 @@ internal readonly struct HardwareFingerprint
 
     public static HardwareFingerprint Compute()
     {
-        var mb = QueryFirst("SELECT SerialNumber FROM Win32_BaseBoard", "SerialNumber") ?? "UNKNOWN_MB";
-        var cpu = QueryFirst("SELECT ProcessorId FROM Win32_Processor", "ProcessorId") ?? "UNKNOWN_CPU";
-        var disk = QueryFirst("SELECT SerialNumber FROM Win32_DiskDrive WHERE Index=0", "SerialNumber") ?? "NO_DISK";
+        var mb = QueryFirst("SELECT SerialNumber FROM Win32_BaseBoard", "SerialNumber");
+        var cpu = QueryFirst("SELECT ProcessorId FROM Win32_Processor", "ProcessorId");
+        var disk = QueryFirst("SELECT SerialNumber FROM Win32_DiskDrive WHERE Index=0", "SerialNumber");
+
+        var missing = new System.Collections.Generic.List<string>();
+        if (mb == null) missing.Add("MB");
+        if (cpu == null) missing.Add("CPU");
+        if (disk == null) missing.Add("DISK");
+        if (missing.Count > 0)
+            throw new InvalidOperationException(
+                $"Hardware fingerprint incomplete — missing: {string.Join(", ", missing)}. " +
+                "WMI query failed; license activation requires real hardware identifiers.");
 
         var pipe = $"{mb}|{cpu}|{disk}";
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(pipe));
