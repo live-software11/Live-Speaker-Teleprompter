@@ -26,6 +26,12 @@ internal sealed class PresenterSyncService : IDisposable
     private Func<FlowDocument?>? _getSourceDocument;
     private Action<FlowDocument>? _applyToPresenter;
 
+    /// <summary>
+    /// Raised when both serialization strategies (XamlPackage + XamlWriter fallback) fail.
+    /// Consumers (typically MainWindow) should surface a non-intrusive status message.
+    /// </summary>
+    public event Action<string>? SyncFailed;
+
     public PresenterSyncService(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
@@ -100,22 +106,74 @@ internal sealed class PresenterSyncService : IDisposable
         try
         {
             // Serialize on UI thread (required by WPF), then apply
+            FlowDocument? clone = null;
+
             var serialized = SerializeDocument(source);
-            if (serialized == null)
+            if (serialized != null)
             {
-                return;
+                clone = DeserializeDocument(serialized.Value.data, serialized.Value.props);
+            }
+            else
+            {
+                // Fallback XamlWriter — più lento (~300ms) ma più robusto per documenti
+                // con elementi non serializzabili da XamlPackage (es. embedded media rotti).
+                var props = CaptureProps(source);
+                clone = TryDeserializeWithXamlWriter(source, props);
             }
 
-            var clone = DeserializeDocument(serialized.Value.data, serialized.Value.props);
-            _applyToPresenter(clone);
+            if (clone != null)
+            {
+                _applyToPresenter(clone);
+            }
+            else
+            {
+                // Entrambe le strategie fallite: notifichiamo MainWindow per mostrare uno status.
+                try { SyncFailed?.Invoke("XamlPackage+XamlWriter failed"); } catch { }
+            }
         }
-        catch
+        catch (Exception ex)
         {
             // Ignore serialization issues to avoid disrupting the operator
+            try { SyncFailed?.Invoke(ex.Message); } catch { }
         }
         finally
         {
             _isSyncing = false;
+        }
+    }
+
+    private static DocProps CaptureProps(FlowDocument source)
+    {
+        return new DocProps(
+            source.PagePadding, source.PageWidth, source.LineHeight,
+            source.TextAlignment, source.Background,
+            source.FontFamily, source.FontSize,
+            source.Foreground, source.FontWeight, source.FontStyle);
+    }
+
+    private static FlowDocument? TryDeserializeWithXamlWriter(FlowDocument source, DocProps props)
+    {
+        try
+        {
+            var xaml = XamlWriter.Save(source);
+            if (XamlReader.Parse(xaml) is not FlowDocument clone)
+                return null;
+
+            clone.PagePadding = props.PagePadding;
+            clone.PageWidth = props.PageWidth;
+            clone.LineHeight = props.LineHeight;
+            clone.TextAlignment = props.TextAlignment;
+            clone.Background = props.Background;
+            clone.FontFamily = props.FontFamily;
+            clone.FontSize = props.FontSize;
+            clone.Foreground = props.Foreground;
+            clone.FontWeight = props.FontWeight;
+            clone.FontStyle = props.FontStyle;
+            return clone;
+        }
+        catch
+        {
+            return null;
         }
     }
 

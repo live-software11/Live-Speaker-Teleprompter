@@ -1,7 +1,10 @@
 <Application x:Class="TeleprompterApp.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="MainWindow.xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+      Nessun StartupUri: MainWindow viene creato programmaticamente in App.OnStartup
+      così che (nelle build con LICENSE_ENABLED) il gate licenze possa precederlo.
+    -->
     <Application.Resources>
     </Application.Resources>
 </Application>

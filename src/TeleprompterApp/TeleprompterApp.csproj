@@ -24,7 +24,29 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <TieredCompilation>true</TieredCompilation>
     <TieredPGO>true</TieredPGO>
+
+    <!--
+      LICENSE_ENABLED: active only in the Setup build (Live WORKS license gate).
+      The Portable build is always license-free.
+      Toggle with: dotnet publish -c Release -p:LicenseEnabled=true
+    -->
+    <LicenseEnabled Condition="'$(LicenseEnabled)' == ''">false</LicenseEnabled>
+    <DefineConstants Condition="'$(LicenseEnabled)' == 'true'">$(DefineConstants);LICENSE_ENABLED</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(LicenseEnabled)' == 'true'">
+    <!-- WMI per HardwareFingerprint (SHA-256 su MB_SERIAL|CPU_ID|DISK_SERIAL). Solo build Setup. -->
+    <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <!-- Nella build Portable il codice di licensing viene escluso completamente
+       (niente binari WMI, niente classi licensing nell'eseguibile). -->
+  <ItemGroup Condition="'$(LicenseEnabled)' != 'true'">
+    <Compile Remove="Licensing\**\*.cs" />
+    <Page Remove="Licensing\**\*.xaml" />
+    <None Include="Licensing\**\*.cs" />
+    <None Include="Licensing\**\*.xaml" />
+  </ItemGroup>
 
   <!--
     Release publish profile: self-contained single-file portable executable.

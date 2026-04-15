@@ -77,10 +77,17 @@ internal sealed class DisplayManager : IDisposable
     /// </summary>
     public IReadOnlyList<ScreenInfo> GetCurrentScreens()
     {
-        return WF.Screen.AllScreens
-            .Select(s => new ScreenInfo(s, GetDisplayNumber(s)))
-            .OrderBy(s => s.DisplayNumber == 0 ? int.MaxValue : s.DisplayNumber)
-            .ToList();
+        // TASK-011: fallback all'indice 1-based se la regex non estrae un numero valido
+        // (evita collisioni a 0 su DeviceName anomali).
+        var all = WF.Screen.AllScreens;
+        var result = new List<ScreenInfo>(all.Length);
+        for (int i = 0; i < all.Length; i++)
+        {
+            var num = GetDisplayNumber(all[i]);
+            if (num == 0) num = i + 1;
+            result.Add(new ScreenInfo(all[i], num));
+        }
+        return result.OrderBy(s => s.DisplayNumber).ToList();
     }
 
     /// <summary>
@@ -146,8 +153,15 @@ internal sealed class DisplayManager : IDisposable
 
     private static int GetDisplayNumber(WF.Screen screen)
     {
-        var digits = new string(screen.DeviceName.Where(char.IsDigit).ToArray());
-        return int.TryParse(digits, out var number) ? number : 0;
+        // TASK-011: il vecchio path concatenava TUTTE le cifre del DeviceName, causando
+        // collisioni (es. \\.\DISPLAY1\Monitor0 -> "10" collide con \\.\DISPLAY10).
+        // Ora estraiamo solo il primo gruppo di cifre dopo "DISPLAY".
+        if (string.IsNullOrEmpty(screen.DeviceName))
+            return 0;
+
+        var match = System.Text.RegularExpressions.Regex.Match(
+            screen.DeviceName, @"DISPLAY(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return match.Success && int.TryParse(match.Groups[1].Value, out var n) ? n : 0;
     }
 
     public void Dispose()

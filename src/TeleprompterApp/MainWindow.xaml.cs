@@ -28,6 +28,7 @@ using MediaFontFamily = System.Windows.Media.FontFamily;
 using MediaMessageBox = System.Windows.MessageBox;
 using MediaDataFormats = System.Windows.DataFormats;
 using MediaPoint = System.Windows.Point;
+using TeleprompterApp.Osc;
 using MediaCursors = System.Windows.Input.Cursors;
 using WpfApplication = System.Windows.Application;
 using WpfRichTextBox = System.Windows.Controls.RichTextBox;
@@ -50,7 +51,7 @@ using TeleprompterApp.Services;
 
 namespace TeleprompterApp
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, ITeleprompterController
     {
     // ── Scroll ──
     private readonly Stopwatch _scrollStopwatch = new();
@@ -69,10 +70,7 @@ namespace TeleprompterApp
     private DebouncedPreferencesService? _debouncedPrefs;
     private PresenterSyncService? _presenterSync;
 
-    private readonly HashSet<string> _supportedExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".txt", ".md", ".rtf", ".srt", ".vtt", ".log", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".ini", ".cfg", ".bat", ".ps1", ".xaml", ".xamlpackage", ".rstp", ".docx", ".doc"
-    };
+    // TASK-010: estensioni supportate spostate in TeleprompterApp.Services.DocumentFileService.IsSupportedExtension
     private PresenterWindow? _presenterWindow;
     private UserPreferences _preferences = new();
     private bool _isApplyingPreferences;
@@ -245,6 +243,10 @@ namespace TeleprompterApp
                 UpdatePresenterMirror();
             });
 
+        // TASK-004: surface fallback/serialization failures to the operator
+        _presenterSync.SyncFailed += msg =>
+            Dispatcher.BeginInvoke(() => SetStatus(Localization.Get("Status_PresenterSyncFailed", msg)));
+
         ApplyPreferences();
         ApplyMirrorState();
         StartCompanionIntegration();
@@ -394,7 +396,13 @@ namespace TeleprompterApp
             return;
         }
 
-        _ndiTransmitter ??= new NDITransmitter(_contentScrollViewer, _ndiSourceName);
+        if (_ndiTransmitter == null)
+        {
+            _ndiTransmitter = new NDITransmitter(_contentScrollViewer, _ndiSourceName);
+            // TASK-007: mostra errori di rendering NDI nello status bar (throttled a 5s)
+            _ndiTransmitter.FrameError += msg =>
+                Dispatcher.BeginInvoke(() => SetStatus(Localization.Get("Status_NdiError", msg)));
+        }
         _ndiTransmitter.SetSourceName(_ndiSourceName);
         _ndiTransmitter.SetTargetResolution(_ndiTargetWidth, _ndiTargetHeight);
         _ndiTransmitter.SetFrameRate(_ndiFrameRate);
@@ -856,7 +864,7 @@ namespace TeleprompterApp
         byte[] fileData;
         try
         {
-            fileData = File.ReadAllBytes(filePath);
+            fileData = TeleprompterApp.Services.DocumentFileService.ReadBytes(filePath);
         }
         catch (IOException ex)
         {
@@ -2679,8 +2687,7 @@ namespace TeleprompterApp
     {
         foreach (var path in paths)
         {
-            var extension = Path.GetExtension(path);
-            if (!string.IsNullOrWhiteSpace(extension) && _supportedExtensions.Contains(extension))
+            if (TeleprompterApp.Services.DocumentFileService.IsSupportedExtension(path))
             {
                 return path;
             }
@@ -2931,202 +2938,144 @@ namespace TeleprompterApp
         SavePreferences();
     }
 
+    // TASK-009: lo switch gigante è stato spostato in OscCommandHandler (Osc/).
+    // Qui restano il dispatch + le implementazioni di ITeleprompterController (explicit).
+    private OscCommandHandler? _oscCommandHandler;
+
     internal void HandleOscMessage(string address, IList<object> args)
     {
-        switch (address)
+        if (_oscCommandHandler == null)
         {
-            case "/teleprompter/start":
-            case "/teleprompter/play":
-                if (_playPauseToggle != null)
-                {
-                    _playPauseToggle.IsChecked = true;
-                }
-                break;
-
-            case "/teleprompter/stop":
-            case "/teleprompter/pause":
-                if (_playPauseToggle != null)
-                {
-                    _playPauseToggle.IsChecked = false;
-                }
-                break;
-
-            case "/teleprompter/reset":
-                _contentScrollViewer?.ScrollToTop();
-                NotifyOscPosition();
-                SetStatus(Localization.Get("Status_OSCReset"));
-                break;
-
-            case "/teleprompter/speed":
-                if (args.Count > 0 && TryGetDouble(args[0], out var absoluteSpeed))
-                {
-                    SetSpeed(absoluteSpeed, fromSlider: false);
-                }
-                break;
-
-            case "/teleprompter/speed/increase":
-                AdjustSpeed(SpeedStep);
-                break;
-
-            case "/teleprompter/speed/decrease":
-                AdjustSpeed(-SpeedStep);
-                break;
-
-            case "/teleprompter/font/size":
-                if (args.Count > 0 && TryGetDouble(args[0], out var fontPoints))
-                {
-                    SetFontSizePoints(fontPoints);
-                }
-                break;
-
-            case "/teleprompter/font/increase":
-                SetFontSizePoints(GetCurrentFontPoints() + 2);
-                break;
-
-            case "/teleprompter/font/decrease":
-                SetFontSizePoints(Math.Max(20, GetCurrentFontPoints() - 2));
-                break;
-
-            case "/teleprompter/position":
-                if (args.Count > 0 && TryGetDouble(args[0], out var ratio))
-                {
-                    SetScrollRatio(ratio);
-                }
-                break;
-
-            case "/teleprompter/jump/top":
-                _contentScrollViewer?.ScrollToTop();
-                NotifyOscPosition();
-                break;
-
-            case "/teleprompter/jump/bottom":
-                _contentScrollViewer?.ScrollToBottom();
-                NotifyOscPosition();
-                break;
-
-            case "/teleprompter/mirror":
-                if (args.Count > 0 && TryGetBool(args[0], out var enabled))
-                {
-                    if (_mirrorToggle != null)
-                    {
-                        _mirrorToggle.IsChecked = enabled;
-                    }
-                }
-                break;
-
-            case "/teleprompter/mirror/toggle":
-                if (_mirrorToggle != null)
-                {
-                    _mirrorToggle.IsChecked = !(_mirrorToggle.IsChecked == true);
-                }
-                break;
-
-            case "/teleprompter/status/request":
-                SendOscStatusSnapshot();
-                break;
-
-            case "/ndi/start":
-                if (_ndiToggle != null)
-                {
-                    _ndiToggle.IsChecked = true;
-                }
-                StartNdiStreaming();
-                break;
-
-            case "/ndi/stop":
-                if (_ndiToggle != null)
-                {
-                    _ndiToggle.IsChecked = false;
-                }
-                StopNdiStreaming();
-                break;
-
-            case "/ndi/toggle":
-                if (_ndiToggle != null)
-                {
-                    _ndiToggle.IsChecked = !(_ndiToggle.IsChecked == true);
-                }
-                else if (_ndiTransmitter?.IsRunning == true)
-                {
-                    StopNdiStreaming();
-                }
-                else
-                {
-                    StartNdiStreaming();
-                }
-                break;
-
-            case "/ndi/resolution":
-                if (args.Count >= 2 && TryGetInt(args[0], out var width) && TryGetInt(args[1], out var height))
-                {
-                    _ndiTargetWidth = width > 0 ? width : null;
-                    _ndiTargetHeight = height > 0 ? height : null;
-                    if (_ndiTransmitter != null)
-                    {
-                        _ndiTransmitter.SetTargetResolution(_ndiTargetWidth, _ndiTargetHeight);
-                    }
-                    RestartNdiWithCurrentSettings();
-                    NotifyOscNdiStatus();
-                }
-                break;
-
-            case "/ndi/framerate":
-                if (args.Count > 0 && TryGetDouble(args[0], out var fps))
-                {
-                    _ndiFrameRate = Math.Clamp(fps, 5.0, 120.0);
-                    if (_ndiTransmitter != null)
-                    {
-                        _ndiTransmitter.SetFrameRate(_ndiFrameRate);
-                    }
-                    RestartNdiWithCurrentSettings();
-                    NotifyOscNdiStatus();
-                }
-                break;
-
-            case "/ndi/sourcename":
-                if (args.Count > 0 && TryGetString(args[0], out var name) && !string.IsNullOrWhiteSpace(name))
-                {
-                    _ndiSourceName = name.Trim();
-                    if (_ndiTransmitter != null)
-                    {
-                        _ndiTransmitter.SetSourceName(_ndiSourceName);
-                    }
-                    RestartNdiWithCurrentSettings();
-                    NotifyOscNdiStatus();
-                }
-                break;
-
-            case "/ndi/status/request":
-                NotifyOscNdiStatus();
-                break;
-
-            case "/output/ndi":
-                if (_ndiToggle != null)
-                {
-                    _ndiToggle.IsChecked = true;
-                }
-                StartNdiStreaming();
-                break;
-
-            case "/output/display":
-                if (_ndiToggle != null)
-                {
-                    _ndiToggle.IsChecked = false;
-                }
-                StopNdiStreaming();
-                break;
-
-            case "/output/both":
-                if (_ndiToggle != null)
-                {
-                    _ndiToggle.IsChecked = true;
-                }
-                StartNdiStreaming();
-                break;
-
-            default:
-                break;
+            _oscCommandHandler = new OscCommandHandler(this);
         }
+        // Conversione difensiva: IList<object> non implementa sempre IReadOnlyList<object>
+        // a livello di type system. Il cast diretto fallirebbe a runtime per collection
+        // custom. OscBridge passa già List<object> (che implementa entrambe), ma non possiamo
+        // assumerlo come contratto per un entry point di rete esterna.
+        var readOnlyArgs = args as IReadOnlyList<object> ?? args.ToList();
+        _oscCommandHandler.Handle(address, readOnlyArgs);
+    }
+
+    // ─── ITeleprompterController (TASK-009) ───────────────────────────────────
+
+    double ITeleprompterController.SpeedStep => SpeedStep;
+
+    void ITeleprompterController.AdjustSpeed(double delta) => AdjustSpeed(delta);
+
+    void ITeleprompterController.SetSpeed(double value, bool fromSlider) => SetSpeed(value, fromSlider);
+
+    void ITeleprompterController.AdjustFontSize(double deltaPoints)
+    {
+        // Mantiene il floor di 20pt per il decrease (equivalente al case /font/decrease pre-refactor).
+        var target = GetCurrentFontPoints() + deltaPoints;
+        if (deltaPoints < 0) target = Math.Max(20, target);
+        SetFontSizePoints(target);
+    }
+
+    void ITeleprompterController.SetFontSize(double points) => SetFontSizePoints(points);
+
+    void ITeleprompterController.SetScrollPosition(double normalized) => SetScrollRatio(normalized);
+
+    void ITeleprompterController.JumpToTop()
+    {
+        _contentScrollViewer?.ScrollToTop();
+        NotifyOscPosition();
+    }
+
+    void ITeleprompterController.JumpToBottom()
+    {
+        _contentScrollViewer?.ScrollToBottom();
+        NotifyOscPosition();
+    }
+
+    void ITeleprompterController.ResetScroll()
+    {
+        _contentScrollViewer?.ScrollToTop();
+        NotifyOscPosition();
+        SetStatus(Localization.Get("Status_OSCReset"));
+    }
+
+    void ITeleprompterController.SetMirror(bool enabled)
+    {
+        if (_mirrorToggle != null)
+            _mirrorToggle.IsChecked = enabled;
+    }
+
+    void ITeleprompterController.ToggleMirror()
+    {
+        if (_mirrorToggle != null)
+            _mirrorToggle.IsChecked = !(_mirrorToggle.IsChecked == true);
+    }
+
+    void ITeleprompterController.NdiStart()
+    {
+        if (_ndiToggle != null)
+            _ndiToggle.IsChecked = true;
+        StartNdiStreaming();
+    }
+
+    void ITeleprompterController.NdiStop()
+    {
+        if (_ndiToggle != null)
+            _ndiToggle.IsChecked = false;
+        StopNdiStreaming();
+    }
+
+    void ITeleprompterController.NdiToggle()
+    {
+        if (_ndiToggle != null)
+        {
+            _ndiToggle.IsChecked = !(_ndiToggle.IsChecked == true);
+        }
+        else if (_ndiTransmitter?.IsRunning == true)
+        {
+            StopNdiStreaming();
+        }
+        else
+        {
+            StartNdiStreaming();
+        }
+    }
+
+    void ITeleprompterController.SetNdiResolution(int width, int height)
+    {
+        _ndiTargetWidth = width > 0 ? width : null;
+        _ndiTargetHeight = height > 0 ? height : null;
+        if (_ndiTransmitter != null)
+            _ndiTransmitter.SetTargetResolution(_ndiTargetWidth, _ndiTargetHeight);
+        RestartNdiWithCurrentSettings();
+        NotifyOscNdiStatus();
+    }
+
+    void ITeleprompterController.SetNdiFrameRate(double fps)
+    {
+        _ndiFrameRate = Math.Clamp(fps, 5.0, 120.0);
+        if (_ndiTransmitter != null)
+            _ndiTransmitter.SetFrameRate(_ndiFrameRate);
+        RestartNdiWithCurrentSettings();
+        NotifyOscNdiStatus();
+    }
+
+    void ITeleprompterController.SetNdiSourceName(string name)
+    {
+        _ndiSourceName = name.Trim();
+        if (_ndiTransmitter != null)
+            _ndiTransmitter.SetSourceName(_ndiSourceName);
+        RestartNdiWithCurrentSettings();
+        NotifyOscNdiStatus();
+    }
+
+    void ITeleprompterController.SendNdiStatusSnapshot() => NotifyOscNdiStatus();
+
+    void ITeleprompterController.SendStatusSnapshot() => SendOscStatusSnapshot();
+
+    void ITeleprompterController.SetPlayState(bool playing)
+    {
+        // Toggle UI è il driver primario (declenche gli event handler che gestiscono tutto).
+        if (_playPauseToggle != null)
+            _playPauseToggle.IsChecked = playing;
+        else
+            SetPlayState(playing);
     }
 
     private void SendOscStatusSnapshot()
@@ -3146,17 +3095,19 @@ namespace TeleprompterApp
 
     private void NotifyOscSpeed()
     {
-        _oscBridge?.SendFeedback("/teleprompter/speed/current", _scrollSpeed.ToString("F2", CultureInfo.InvariantCulture));
+        // Valore continuo: throttled a ~20 Hz per non saturare la rete durante lo scroll.
+        _oscBridge?.SendFeedbackThrottled("/teleprompter/speed/current", _scrollSpeed.ToString("F2", CultureInfo.InvariantCulture));
     }
 
     private void NotifyOscFontSize()
     {
-        _oscBridge?.SendFeedback("/teleprompter/font/size/current", GetCurrentFontPoints().ToString("F0", CultureInfo.InvariantCulture));
+        _oscBridge?.SendFeedbackThrottled("/teleprompter/font/size/current", GetCurrentFontPoints().ToString("F0", CultureInfo.InvariantCulture));
     }
 
     private void NotifyOscPosition()
     {
-        _oscBridge?.SendFeedback("/teleprompter/position/current", GetScrollRatio().ToString("F3", CultureInfo.InvariantCulture));
+        // Chiamato ad alta frequenza durante lo scroll: throttled obbligatorio.
+        _oscBridge?.SendFeedbackThrottled("/teleprompter/position/current", GetScrollRatio().ToString("F3", CultureInfo.InvariantCulture));
     }
 
     private void NotifyOscMirror()
@@ -3184,7 +3135,7 @@ namespace TeleprompterApp
             }
         }
 
-        _oscBridge?.SendFeedback("/ndi/framerate/current", _ndiFrameRate.ToString("F2", CultureInfo.InvariantCulture));
+        _oscBridge?.SendFeedbackThrottled("/ndi/framerate/current", _ndiFrameRate.ToString("F2", CultureInfo.InvariantCulture));
         _oscBridge?.SendFeedback("/ndi/sourcename/current", _ndiSourceName);
     }
 
@@ -3262,96 +3213,7 @@ namespace TeleprompterApp
         NotifyOscPosition();
     }
 
-    private static bool TryGetDouble(object value, out double result)
-    {
-        switch (value)
-        {
-            case double d:
-                result = d;
-                return true;
-            case float f:
-                result = f;
-                return true;
-            case int i:
-                result = i;
-                return true;
-            case long l:
-                result = l;
-                return true;
-            case string s when double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed):
-                result = parsed;
-                return true;
-            default:
-                result = 0;
-                return false;
-        }
-    }
-
-    private static bool TryGetInt(object value, out int result)
-    {
-        switch (value)
-        {
-            case int i:
-                result = i;
-                return true;
-            case long l:
-                result = (int)l;
-                return true;
-            case double d:
-                result = (int)Math.Round(d);
-                return true;
-            case float f:
-                result = (int)Math.Round(f);
-                return true;
-            case string s when int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed):
-                result = parsed;
-                return true;
-            default:
-                result = 0;
-                return false;
-        }
-    }
-
-    private static bool TryGetBool(object value, out bool result)
-    {
-        switch (value)
-        {
-            case bool b:
-                result = b;
-                return true;
-            case int i:
-                result = i != 0;
-                return true;
-            case long l:
-                result = l != 0;
-                return true;
-            case double d:
-                result = Math.Abs(d) > 0.5;
-                return true;
-            case float f:
-                result = Math.Abs(f) > 0.5f;
-                return true;
-            case string s when bool.TryParse(s, out var parsed):
-                result = parsed;
-                return true;
-            default:
-                result = false;
-                return false;
-        }
-    }
-
-    private static bool TryGetString(object value, out string? result)
-    {
-        switch (value)
-        {
-            case string s:
-                result = s;
-                return true;
-            default:
-                result = value?.ToString();
-                return result != null;
-        }
-    }
+    // TASK-008: TryGetDouble/Int/Bool/String estratti in TeleprompterApp.Osc.OscTypeParser.
 
     private void SetArrowColor(MediaColor color, bool persist = true)
     {

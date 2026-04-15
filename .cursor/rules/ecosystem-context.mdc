@@ -1,0 +1,31 @@
+---
+description: Contesto ecosistema — relazione con Live WORKS APP (licenze) e suite
+alwaysApply: true
+---
+
+# Live Speaker Teleprompter — Contesto Ecosistema
+
+## Ruolo nell'ecosistema
+
+App desktop .NET 8 WPF (C# 12). Nessun Firebase diretto. Sistema licenze via **Live WORKS APP**.
+
+## Licenze
+
+- **Piattaforma:** Live WORKS APP (`live-works-app` su Firebase Blaze, account `live.software11@gmail.com`)
+- **Vendita:** Lemon Squeezy (lifetime) — checkout linkato dal SITO www.liveworksapp.com
+- **Integrazione client:** Modulo licenza locale — vedi `docs/GUIDA_INTEGRAZIONE_LICENZA_APP.md`
+
+## Account
+
+- **GitHub:** `live-software11` — `Live-Speaker-Teleprompter`
+- **Firebase:** nessuno per questa app (backend = .NET locale)
+
+## Progetti fratelli
+
+| Progetto               | Tipo              | Relazione                     |
+| ---------------------- | ----------------- | ----------------------------- |
+| Live WORKS APP         | Web Firebase      | Piattaforma licenze (backend) |
+| Live 3d Ledwall Render | Desktop Tauri v2  | Stesso sistema licenze        |
+| Live Speaker Timer     | Desktop Tauri v2  | Stesso sistema licenze        |
+| Live Video Composer    | Desktop Python    | Stesso sistema licenze        |
+| Live PLAN / Live CREW  | Web SaaS Firebase | Stessa suite, dominio diverso |

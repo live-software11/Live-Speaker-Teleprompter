@@ -8,7 +8,7 @@ alwaysApply: false
 
 ## Repository
 - **GitHub:** https://github.com/live-software11/Live-Speaker-Teleprompter
-- **Account:** live-software11
+- **Account:** live-software11 — prima di push: `gh auth switch --user live-software11` (`.cursor/rules/github-account-live-software11.mdc`)
 
 ## Script principale (root)
 - **clean-and-build.ps1** / **clean-and-build.bat** — pulisce bin/obj/release e crea build completa
