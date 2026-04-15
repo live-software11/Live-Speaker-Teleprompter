@@ -22,10 +22,10 @@ App desktop .NET 8 WPF (C# 12). Nessun Firebase diretto. Sistema licenze via **L
 
 ## Progetti fratelli
 
-| Progetto | Tipo | Relazione |
-|----------|------|-----------|
-| Live WORKS APP | Web Firebase | Piattaforma licenze (backend) |
-| Live 3d Ledwall Render | Desktop Tauri v2 | Stesso sistema licenze |
-| Live Speaker Timer | Desktop Tauri v1 | Stesso sistema licenze |
-| Live Video Composer | Desktop Python | Stesso sistema licenze |
-| Live PLAN / Live CREW | Web SaaS Firebase | Stessa suite, dominio diverso |
+| Progetto               | Tipo              | Relazione                     |
+| ---------------------- | ----------------- | ----------------------------- |
+| Live WORKS APP         | Web Firebase      | Piattaforma licenze (backend) |
+| Live 3d Ledwall Render | Desktop Tauri v2  | Stesso sistema licenze        |
+| Live Speaker Timer     | Desktop Tauri v2  | Stesso sistema licenze        |
+| Live Video Composer    | Desktop Python    | Stesso sistema licenze        |
+| Live PLAN / Live CREW  | Web SaaS Firebase | Stessa suite, dominio diverso |

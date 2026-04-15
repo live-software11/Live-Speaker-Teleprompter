@@ -131,10 +131,40 @@ Inviare sempre anche `hardwareDetails` leggibile, es.: `MB:…|CPU:…|DISK:…`
 
 ### 6.2 C# / .NET 8 WPF
 
-- **Fingerprint:** `HardwareFingerprint.cs`  
-- **HTTP + DPAPI:** `LicenseManager.cs`  
-- **UI:** `ActivationWindow` (guida §12.4)  
-- **Bootstrap:** `App.xaml.cs` (guida §12.5)
+Implementazione di riferimento: **Live Speaker Teleprompter** (`src/TeleprompterApp/Licensing/`).
+
+| File | Ruolo |
+|------|-------|
+| `License.cs` | DTO + costanti (`ApiBaseUrl`, `ProductId`, AES key, nonce length, grace days) |
+| `HardwareFingerprint.cs` | WMI → SHA-256(`MB_SERIAL|CPU_ID|DISK_SERIAL`) |
+| `LicenseStorage.cs` | AES-256-GCM su `%LOCALAPPDATA%\{AppDataDir}\license.enc` — layout `nonce(12) \|\| ciphertext \|\| tag(16)` (compatibile con Rust `aes-gcm` di Ledwall) |
+| `LicenseApiClient.cs` | `HttpClient` (timeout 45 s), camelCase JSON, `ActivateAsync` / `VerifyAsync` / `DeactivateAsync` |
+| `LicenseManager.cs` | Orchestratore: normalizza key, `GetStatus` (locale), `ActivateAsync`, `VerifyOnlineAsync`, `DeactivateAsync`, grace 30 gg |
+| `LicenseGateWindow.xaml(.cs)` | Finestra modale (dark theme coerente con Ledwall); `DialogResult=true` ⇒ sblocca `MainWindow` |
+
+**Build condizionale** (`TeleprompterApp.csproj`):
+
+```xml
+<LicenseEnabled Condition="'$(LicenseEnabled)' == ''">false</LicenseEnabled>
+<DefineConstants Condition="'$(LicenseEnabled)' == 'true'">$(DefineConstants);LICENSE_ENABLED</DefineConstants>
+```
+
+- `dotnet publish -c Release` → **Portable** (cartella `Licensing/` e `System.Management` esclusi dalla compilazione, EXE license-free).
+- `dotnet publish -c Release -p:LicenseEnabled=true` → **Setup** (gate licenza attivo, `--deactivate` CLI per uninstaller).
+
+**Bootstrap gate** in `App.xaml.cs` (`#if LICENSE_ENABLED`):
+
+1. Se `args` contiene `--deactivate` → `LicenseManager.DeactivateAsync("uninstall")` e `Shutdown(0)` (chiamato dallo uninstaller Windows).
+2. Altrimenti `new LicenseGateWindow().ShowDialog()`; se ritorna `true` parte `MainWindow`.
+
+**Pipeline installer** (`installer/build-installer.ps1`):
+
+- Step 1: publish PORTABLE (`-p:LicenseEnabled=false`) → `release/Live_Speaker_Teleprompter_Portable.exe`
+- Step 2: publish SETUP (`-p:LicenseEnabled=true`)
+- Step 3: verifica SHA-256 (binari diversi = separazione attiva)
+- Step 4: IExpress wrap del SETUP in `Live_Speaker_Teleprompter_Setup.exe`
+
+Lo uninstaller generato da `installer-template.ps1` esegue `"<exe>" --deactivate` (timeout 30 s) **prima** di cancellare la cartella, così `/api/deactivate` rilascia lo slot PC sul backend.
 
 ### 6.3 Python
 

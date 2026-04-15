@@ -171,6 +171,17 @@ $createStartMenu = $startMenuCb.Checked
 $createDesktop = $desktopCb.Checked
 
 try {
+    # Upgrade: kill running instance and clean old files (license data in
+    # %LOCALAPPDATA%\com.livesoftware.live-speaker-teleprompter is NOT touched)
+    $existingExe = Join-Path $installPath "$appName.exe"
+    if (Test-Path $existingExe) {
+        Get-Process | Where-Object {
+            $_.Path -and ($_.Path -eq $existingExe -or $_.Name -eq $appName)
+        } | Stop-Process -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 500
+        Get-ChildItem $installPath -File | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+
     # Create install directory
     if (-not (Test-Path $installPath)) {
         New-Item -ItemType Directory -Path $installPath -Force | Out-Null
@@ -212,6 +223,8 @@ try {
     }
 
     # Create uninstaller script (must remove registry BEFORE deleting folder)
+    # Rilascio licenza: prima di rimuovere la cartella, esegue l'exe con --deactivate
+    # (chiama /api/deactivate su Live WORKS, poi cancella il file locale in LOCALAPPDATA).
     $uninstallPs1Path = Join-Path $installPath "Uninstall.ps1"
     $uninstallContent = @"
 # Live Speaker Teleprompter - Uninstaller
@@ -220,6 +233,14 @@ if (Test-Path `$regPath) { Remove-Item `$regPath -Recurse -Force -ErrorAction Si
 Remove-Item "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\$publisherName" -Recurse -Force -ErrorAction SilentlyContinue
 `$desktopLnk = Join-Path ([Environment]::GetFolderPath('Desktop')) "$appName.lnk"
 Remove-Item `$desktopLnk -Force -ErrorAction SilentlyContinue
+# Rilascio licenza (best-effort: timeout 30s)
+`$mainExePath = Join-Path "$installPath" "$appName.exe"
+if (Test-Path `$mainExePath) {
+    try {
+        `$deactProc = Start-Process -FilePath `$mainExePath -ArgumentList "--deactivate" -PassThru -WindowStyle Hidden
+        if (`$deactProc) { `$deactProc | Wait-Process -Timeout 30 -ErrorAction SilentlyContinue }
+    } catch { }
+}
 Remove-Item "$installPath" -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host "$($s.Uninstalled)" -ForegroundColor Green
 "@

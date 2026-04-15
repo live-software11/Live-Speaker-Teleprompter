@@ -17,6 +17,8 @@ Dopo `.\clean-and-build.ps1`, la cartella `release/` contiene:
 | `README_ITA_Live_Speaker_Teleprompter.md` | Documentazione utente italiana |
 | `README_ENG_Live_Speaker_Teleprompter.md` | Documentazione utente inglese |
 
+L’installer WinForms, in caso di reinstallazione sulla stessa cartella, termina il processo in esecuzione e sostituisce l’exe senza toccare i dati licenza in `%LOCALAPPDATA%\com.livesoftware.live-speaker-teleprompter\`. La disinstallazione esegue `--deactivate` tramite `Uninstall.ps1`.
+
 ## Documentazione
 
 | Documento | Percorso |

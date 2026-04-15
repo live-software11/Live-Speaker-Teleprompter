@@ -1,110 +1,114 @@
 # Live Speaker Teleprompter - Unified Build Script
 # Produces:
-#   1. Self-contained single-file publish (dotnet publish)
-#      - ReadyToRun pre-compiled for ~40% faster cold startup
-#      - Compression enabled for smaller file size
-#      - .NET 8 runtime embedded: works on ANY Windows 10/11 x64 machine
-#   2. Portable EXE (release/Live_Speaker_Teleprompter_Portable.exe) — solo exe, nessun altro file
-#   3. Self-extracting installer EXE (release/Live_Speaker_Teleprompter_Setup.exe)
+#   1. Portable EXE (release/Live_Speaker_Teleprompter_Portable.exe)
+#      - Self-contained, nessun runtime richiesto.
+#      - NESSUN gate licenze (LICENSE_ENABLED = false): versione per demo/uso interno.
+#   2. Self-extracting installer EXE (release/Live_Speaker_Teleprompter_Setup.exe)
+#      - Self-contained, nessun runtime richiesto.
+#      - Include il gate licenze Live WORKS (LICENSE_ENABLED = true): versione vendibile.
+#      - Uninstaller chiama `--deactivate` per rilasciare la licenza su /api/deactivate.
 #
-# Portable e Installer contengono lo stesso eseguibile. Nessuna dipendenza, nessuna estrazione richiesta.
+# Due publish passes distinti per differenziare gli eseguibili.
 #
 # Usage:
-#   .\build-installer.ps1                  # full build
-#   .\build-installer.ps1 -SkipPublish     # reuse previous publish output
+#   .\build-installer.ps1                  # full build (portable + setup)
 
 param(
     [string]$ProjectDir  = (Resolve-Path "$PSScriptRoot\..\src\TeleprompterApp"),
     [string]$OutputDir   = (Join-Path (Split-Path $PSScriptRoot -Parent) "release"),
-    [string]$InstallerName = "Live_Speaker_Teleprompter_Setup.exe",
-    [switch]$SkipPublish
+    [string]$InstallerName = "Live_Speaker_Teleprompter_Setup.exe"
 )
 
 $ErrorActionPreference = "Stop"
 
 # -- Paths ---------------------------------------------------------------
 $publishDir   = Join-Path $ProjectDir "bin\Release\net8.0-windows\win-x64\publish"
+$releaseDir   = Join-Path $ProjectDir "bin\Release"
+$objDir       = Join-Path $ProjectDir "obj"
 $exeTarget    = Join-Path $OutputDir $InstallerName
+$portableExeTarget = Join-Path $OutputDir "Live_Speaker_Teleprompter_Portable.exe"
 $templatePath = Join-Path $PSScriptRoot "installer-template.ps1"
 
-Write-Host ""
-Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host "  Live Speaker Teleprompter - Build Pipeline v2.0" -ForegroundColor Cyan
-Write-Host "  Self-contained portable build (no .NET required)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host ""
-
-# -- Step 1: Publish -----------------------------------------------------
-if (-not $SkipPublish) {
-    Write-Host "[1/4] Publishing self-contained single-file executable..." -ForegroundColor Yellow
-    Write-Host "  (ReadyToRun + Compression enabled)" -ForegroundColor DarkGray
-
-    # Clean previous publish output e obj per forzare rebuild icona
-    $releaseDir = Join-Path $ProjectDir "bin\Release"
-    $objDir = Join-Path $ProjectDir "obj"
+function Invoke-DotnetPublish {
+    param([bool]$LicenseEnabled)
+    $label = if ($LicenseEnabled) { 'SETUP (licensed)' } else { 'PORTABLE (no-license)' }
+    Write-Host "  dotnet publish -> $label" -ForegroundColor DarkGray
     if (Test-Path $releaseDir) { Remove-Item $releaseDir -Recurse -Force }
     if (Test-Path $objDir) { Remove-Item $objDir -Recurse -Force }
-
     Push-Location $ProjectDir
-    dotnet publish -c Release --nologo -v minimal
-    Pop-Location
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "dotnet publish failed with exit code $LASTEXITCODE"
-        exit 1
+    try {
+        $licArg = if ($LicenseEnabled) { 'true' } else { 'false' }
+        dotnet publish -c Release -p:LicenseEnabled=$licArg --nologo -v minimal
+        if ($LASTEXITCODE -ne 0) {
+            throw "dotnet publish ($label) failed with exit code $LASTEXITCODE"
+        }
+    } finally {
+        Pop-Location
     }
-} else {
-    Write-Host "[1/4] Skipping publish (reusing existing output)..." -ForegroundColor DarkGray
+    if (-not (Test-Path $publishDir)) { throw "Publish directory not found: $publishDir" }
 }
 
-# Validate publish output
-if (-not (Test-Path $publishDir)) {
-    Write-Error "Publish directory not found: $publishDir"
-    exit 1
+function Get-FriendlyExe {
+    $originalExe = Join-Path $publishDir "TeleprompterApp.exe"
+    $friendlyExe = Join-Path $publishDir "Live Speaker Teleprompter.exe"
+    if (Test-Path $originalExe) {
+        Move-Item $originalExe $friendlyExe -Force
+    }
+    $originalPdb = Join-Path $publishDir "TeleprompterApp.pdb"
+    $friendlyPdb = Join-Path $publishDir "Live Speaker Teleprompter.pdb"
+    if (Test-Path $originalPdb) {
+        Move-Item $originalPdb $friendlyPdb -Force
+    }
+    return $friendlyExe
 }
 
-$exeFile = Get-ChildItem $publishDir -Filter "*.exe" | Select-Object -First 1
-if (-not $exeFile) {
-    Write-Error "No executable found in publish directory."
-    exit 1
-}
+Write-Host ""
+Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host "  Live Speaker Teleprompter - Build Pipeline v2.1" -ForegroundColor Cyan
+Write-Host "  Dual build: Portable (no-license) + Setup (licensed)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host ""
 
-# Rename exe to friendly name (AssemblyName must stay TeleprompterApp for WPF XAML compatibility)
-$originalExe = Join-Path $publishDir "TeleprompterApp.exe"
-$friendlyExe = Join-Path $publishDir "Live Speaker Teleprompter.exe"
-if (Test-Path $originalExe) {
-    Move-Item $originalExe $friendlyExe -Force
-    Write-Host "  Renamed: TeleprompterApp.exe -> Live Speaker Teleprompter.exe" -ForegroundColor DarkGray
-}
-$originalPdb = Join-Path $publishDir "TeleprompterApp.pdb"
-$friendlyPdb = Join-Path $publishDir "Live Speaker Teleprompter.pdb"
-if (Test-Path $originalPdb) {
-    Move-Item $originalPdb $friendlyPdb -Force
-}
-
-$publishFiles = Get-ChildItem $publishDir -Recurse -File
-$totalSize = ($publishFiles | Measure-Object -Property Length -Sum).Sum
-Write-Host "  Published: $($publishFiles.Count) files, $([math]::Round($totalSize/1MB, 1)) MB" -ForegroundColor Green
-
-# -- Step 2: Ensure output directory -------------------------------------
-Write-Host "[2/4] Preparing output directory..." -ForegroundColor Yellow
+# -- Step 0: Prepare output directory -----------------------------------
 if (-not (Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }
-
-# Remove old outputs
-$portableExeTarget = Join-Path $OutputDir "Live_Speaker_Teleprompter_Portable.exe"
-Remove-Item $exeTarget      -Force -ErrorAction SilentlyContinue
+Remove-Item $exeTarget         -Force -ErrorAction SilentlyContinue
 Remove-Item $portableExeTarget -Force -ErrorAction SilentlyContinue
 
-# -- Step 3: Portable — single EXE with both languages (IT/EN switch in-app) ---
-Write-Host "[3/4] Creating portable EXE (IT+EN)..." -ForegroundColor Yellow
+# -- Step 1: Publish PORTABLE (no-license) ------------------------------
+Write-Host "[1/4] Publish PORTABLE (LICENSE_ENABLED=false)..." -ForegroundColor Yellow
+Invoke-DotnetPublish -LicenseEnabled $false
+$friendlyExe = Get-FriendlyExe
+$portableInfo = Get-Item $friendlyExe
+Write-Host "  Portable publish OK ($([math]::Round($portableInfo.Length/1MB, 1)) MB)" -ForegroundColor Green
+
 Copy-Item $friendlyExe $portableExeTarget -Force
 $portableInfo = Get-Item $portableExeTarget
-Write-Host "  Portable EXE: Live_Speaker_Teleprompter_Portable.exe ($([math]::Round($portableInfo.Length/1MB, 1)) MB)" -ForegroundColor Green
+Write-Host "  Portable EXE -> Live_Speaker_Teleprompter_Portable.exe ($([math]::Round($portableInfo.Length/1MB, 1)) MB)" -ForegroundColor Green
 
-# -- Step 4: Create self-extracting installer -----------------------------
-Write-Host "[4/4] Creating self-extracting installer..." -ForegroundColor Yellow
+# -- Step 2: Publish SETUP (licensed) -----------------------------------
+Write-Host ""
+Write-Host "[2/4] Publish SETUP (LICENSE_ENABLED=true)..." -ForegroundColor Yellow
+Invoke-DotnetPublish -LicenseEnabled $true
+$friendlyExe = Get-FriendlyExe
+$setupInfo = Get-Item $friendlyExe
+Write-Host "  Setup publish OK ($([math]::Round($setupInfo.Length/1MB, 1)) MB)" -ForegroundColor Green
+
+# -- Step 3: Validate different binaries --------------------------------
+Write-Host ""
+Write-Host "[3/4] Validating dual-binary output..." -ForegroundColor Yellow
+$portableHash = (Get-FileHash $portableExeTarget -Algorithm SHA256).Hash
+$setupSourceHash = (Get-FileHash $friendlyExe -Algorithm SHA256).Hash
+if ($portableHash -eq $setupSourceHash) {
+    Write-Warning "  Portable e Setup hanno lo stesso hash SHA-256: la separazione LicenseEnabled potrebbe non essere attiva."
+} else {
+    Write-Host "  OK: binari distinti (Portable != Setup)." -ForegroundColor Green
+}
+
+# -- Step 4: Wrap SETUP in self-extracting installer --------------------
+Write-Host ""
+Write-Host "[4/4] Creating self-extracting installer (IExpress)..." -ForegroundColor Yellow
 
 if (-not (Test-Path $templatePath)) {
     Write-Warning "Installer template not found at $templatePath -- skipping installer."
