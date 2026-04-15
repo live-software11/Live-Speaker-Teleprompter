@@ -769,26 +769,28 @@ Determina la directory base per preferenze e log in base alla modalità di esecu
 3. `dotnet restore`
 4. Chiama `installer\build-installer.ps1`
 
-### Pipeline `build-installer.ps1`
+### Pipeline `build-installer.ps1` (dual publish)
 
-**Step 1 — Publish:**
+Due publish distinti per differenziare i binari tramite `LicenseEnabled`:
+
+**Step 1 — Publish PORTABLE (no-license):**
 ```
-dotnet publish -c Release
-→ src\TeleprompterApp\bin\Release\net8.0-windows\win-x64\publish\
-  └─ TeleprompterApp.exe (rinominato in "Live Speaker Teleprompter.exe")
+dotnet publish -c Release -p:LicenseEnabled=false
+→ "Live Speaker Teleprompter.exe" → release\Live_Speaker_Teleprompter_Portable.exe
+```
+Il symbol `LICENSE_ENABLED` non è definito; la cartella `Licensing/` e `System.Management` sono esclusi dalla compilazione (vedi csproj `ItemGroup Condition`).
+
+**Step 2 — Publish SETUP (licensed):**
+```
+dotnet publish -c Release -p:LicenseEnabled=true
+→ "Live Speaker Teleprompter.exe" (binario distinto, con gate licenza Live WORKS)
 ```
 
-**Step 2 — Portable base:**
-```
-Copia "Live Speaker Teleprompter.exe"
-→ release\Live_Speaker_Teleprompter_Portable.exe
-```
+**Step 3 — Validazione:** confronto SHA-256 Portable vs Setup (warn se identici).
 
-**Step 3 — Installer:**
-
-Funzione analoga con `installer-template.ps1`:
+**Step 4 — Installer:** IExpress wrap del SETUP:
 ```
-1. Base64(publish dir zip) → ##EMBEDDED_ZIP## nell'installer template
+1. Base64(setup exe zip) → ##EMBEDDED_ZIP## in installer-template.ps1
 2. iexpress.exe → Live_Speaker_Teleprompter_Setup.exe
 ```
 
@@ -805,8 +807,32 @@ Funzione analoga con `installer-template.ps1`:
 2. **Selezione cartella** — default `%LocalAppData%\Live Speaker\Live Speaker Teleprompter`
 3. **Estrazione** — `payload.zip` (base64 embedded) → cartella scelta
 4. **Shortcuts** — Start menu e/o Desktop (opzionali)
-5. **Uninstaller** — `Uninstall.ps1` nella cartella di installazione
+5. **Uninstaller** — `Uninstall.ps1` nella cartella di installazione; invoca `"<exe>" --deactivate` (timeout 30 s) prima di cancellare la cartella, così `/api/deactivate` rilascia lo slot PC su Live WORKS
 6. **Registro Windows** — chiave `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\LiveSpeakerTeleprompter` per "Aggiungi/Rimuovi programmi"
+
+---
+
+### Gate licenza (solo build Setup)
+
+Modulo in `src/TeleprompterApp/Licensing/` (attivo solo con `LICENSE_ENABLED`):
+
+| File | Ruolo |
+|------|-------|
+| `License.cs` | DTO + costanti (`ApiBaseUrl=https://live-works-app.web.app/api`, `ProductId=speaker-teleprompter`, AES key 32 B, grace 30 gg) |
+| `HardwareFingerprint.cs` | SHA-256(`MB_SERIAL\|CPU_ID\|DISK_SERIAL`) via WMI |
+| `LicenseStorage.cs` | AES-256-GCM su `%LOCALAPPDATA%\com.livesoftware.live-speaker-teleprompter\license.enc` (layout `nonce\|\|cipher\|\|tag`, compatibile con Rust `aes-gcm` di Ledwall) |
+| `LicenseApiClient.cs` | `HttpClient` verso `/api/activate` `/api/verify` `/api/deactivate` (camelCase, timeout 45 s) |
+| `LicenseManager.cs` | Orchestratore: format check, activate, verify online, deactivate, pending-approval polling |
+| `LicenseGateWindow.xaml(.cs)` | Finestra modale 480×560 dark theme (gradient `#070D1C→#101B33`, accent `#3B82F6`) |
+
+**Flusso avvio** (`App.xaml.cs` sotto `#if LICENSE_ENABLED`):
+
+1. CLI `--deactivate` → `LicenseManager.DeactivateAsync("uninstall")` → `Shutdown(0)` (chiamato dallo uninstaller)
+2. `new LicenseGateWindow().ShowDialog()` — se `true` parte `MainWindow`, altrimenti `Shutdown(0)`
+
+**Contratto backend:** identico a Live 3D Ledwall Render (stessa API Live WORKS). Bundle supportati lato server (`license.productIds.includes(productId)`). Lemon Squeezy-ready: licenze con `requiresActivationApproval=false` attivano immediatamente (nessuno schermo di attesa admin).
+
+Dettagli completi del contratto REST: [`GUIDA_INTEGRAZIONE_LICENZA_APP.md`](./GUIDA_INTEGRAZIONE_LICENZA_APP.md) §6.2.
 
 ---
 
@@ -816,10 +842,9 @@ Funzione analoga con `installer-template.ps1`:
 
 ### Dipendenze NuGet
 
-Nessuna dipendenza NuGet esterna. Il progetto usa esclusivamente:
 - `Microsoft.NET.Sdk` (WPF + Windows Forms)
-- `System.Text.Json` (incluso in .NET 8)
-- `System.Net.Http` (incluso in .NET 8)
+- `System.Text.Json`, `System.Net.Http` (inclusi in .NET 8)
+- `System.Management` 8.0.0 — **solo build Setup** (`Condition="'$(LicenseEnabled)' == 'true'"`): necessario per WMI fingerprint hardware. La build Portable non lo include.
 - NDI SDK via P/Invoke (`NdiInterop.cs`) — DLL esterna opzionale
 
 ### Configurazione Release
