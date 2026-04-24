@@ -34,6 +34,14 @@
     <DefineConstants Condition="'$(LicenseEnabled)' == 'true'">$(DefineConstants);LICENSE_ENABLED</DefineConstants>
   </PropertyGroup>
 
+  <!-- T-04: secret HMAC in AssemblyMetadata (stesso valore di APP_CHALLENGE_SECRET_SPEAKER_TELEPROMPTER in Functions). Passare con: -p:LiveWorksAppChallengeSecret=... oppure $env: prima di build (v. installer). -->
+  <ItemGroup Condition="'$(LicenseEnabled)' == 'true' and '$(LiveWorksAppChallengeSecret)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>LiveWorksAppChallengeSecret</_Parameter1>
+      <_Parameter2>$(LiveWorksAppChallengeSecret)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
   <ItemGroup Condition="'$(LicenseEnabled)' == 'true'">
     <!-- WMI per HardwareFingerprint (SHA-256 su MB_SERIAL|CPU_ID|DISK_SERIAL). Solo build Setup. -->
     <PackageReference Include="System.Management" Version="8.0.0" />

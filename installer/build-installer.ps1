@@ -12,6 +12,11 @@
 #
 # Usage:
 #   .\build-installer.ps1                  # full build (portable + setup)
+#
+# T-04 (opzionale, se userai APP_CHALLENGE_ENFORCED=true in produzione):
+#   $env:LIVEWORKS_APP_CHALLENGE_SECRET = "<stesso valore di APP_CHALLENGE_SECRET_SPEAKER_TELEPROMPTER (Secret Manager)>"
+#   .\build-installer.ps1
+# La publish SETUP passa -p:LiveWorksAppChallengeSecret=...; la publish Portable no.
 
 param(
     [string]$ProjectDir  = (Resolve-Path "$PSScriptRoot\..\src\TeleprompterApp"),
@@ -38,7 +43,15 @@ function Invoke-DotnetPublish {
     Push-Location $ProjectDir
     try {
         $licArg = if ($LicenseEnabled) { 'true' } else { 'false' }
-        dotnet publish -c Release -p:LicenseEnabled=$licArg --nologo -v minimal
+        $chArgs = @()
+        if ($LicenseEnabled -and -not [string]::IsNullOrWhiteSpace($env:LIVEWORKS_APP_CHALLENGE_SECRET)) {
+            $chArgs = @(
+                "-p:LiveWorksAppChallengeSecret=$($env:LIVEWORKS_APP_CHALLENGE_SECRET)"
+            )
+        }
+        $publishArgs = @("publish", "-c", "Release", "-p:LicenseEnabled=$licArg", "--nologo", "-v", "minimal")
+        if ($chArgs.Count -gt 0) { $publishArgs = $publishArgs + $chArgs }
+        & dotnet $publishArgs
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet publish ($label) failed with exit code $LASTEXITCODE"
         }

@@ -1,6 +1,6 @@
 using System;
 using System.Net.Http;
-using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +32,12 @@ internal sealed class LicenseApiClient : IDisposable
 
     public async Task<ActivateResponse> ActivateAsync(ActivateRequest req, CancellationToken ct = default)
     {
-        using var res = await _http.PostAsJsonAsync("activate", req, JsonOpts, ct).ConfigureAwait(false);
+        using var message = new HttpRequestMessage(HttpMethod.Post, "activate");
+        var json = JsonSerializer.Serialize((object)req, JsonOpts);
+        message.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        LicenseAppChallenge.TryAttach(
+            message, req.ProductId, req.AppVersion, req.HardwareFingerprint);
+        using var res = await _http.SendAsync(message, ct).ConfigureAwait(false);
         var text = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         try
         {
@@ -47,7 +52,12 @@ internal sealed class LicenseApiClient : IDisposable
 
     public async Task<VerifyResponse> VerifyAsync(VerifyRequest req, CancellationToken ct = default)
     {
-        using var res = await _http.PostAsJsonAsync("verify", req, JsonOpts, ct).ConfigureAwait(false);
+        using var message = new HttpRequestMessage(HttpMethod.Post, "verify");
+        var json = JsonSerializer.Serialize((object)req, JsonOpts);
+        message.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        LicenseAppChallenge.TryAttach(
+            message, req.ProductId, req.AppVersion, req.HardwareFingerprint);
+        using var res = await _http.SendAsync(message, ct).ConfigureAwait(false);
         var text = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         try
         {
@@ -64,7 +74,15 @@ internal sealed class LicenseApiClient : IDisposable
     {
         try
         {
-            using var res = await _http.PostAsJsonAsync("deactivate", req, JsonOpts, ct).ConfigureAwait(false);
+            using var message = new HttpRequestMessage(HttpMethod.Post, "deactivate");
+            var json = JsonSerializer.Serialize((object)req, JsonOpts);
+            message.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            LicenseAppChallenge.TryAttach(
+                message,
+                LicenseConstants.ProductId,
+                AppVersion(),
+                req.HardwareFingerprint);
+            using var res = await _http.SendAsync(message, ct).ConfigureAwait(false);
             _ = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         }
         catch
