@@ -21,6 +21,16 @@ public partial class App : System.Windows.Application
 		DispatcherUnhandledException += OnDispatcherUnhandledException;
 		AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 		TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
+		// Build Setup (LICENSE_ENABLED): il LicenseGateWindow viene mostrato con
+		// ShowDialog() PRIMA che la MainWindow esista. Con il default WPF
+		// (ShutdownMode.OnLastWindowClose), la chiusura del gate (anche dopo
+		// attivazione riuscita) accoda uno Shutdown() sul Dispatcher: la
+		// MainWindow appare per un istante e poi l'app si chiude da sola.
+		// Manteniamo OnExplicitShutdown durante tutto il bootstrap; viene
+		// riallineato a OnLastWindowClose (default storico, coerente con la
+		// build Portable) appena la MainWindow è stata effettivamente mostrata.
+		ShutdownMode = ShutdownMode.OnExplicitShutdown;
 	}
 
 	protected override void OnStartup(StartupEventArgs e)
@@ -61,6 +71,11 @@ public partial class App : System.Windows.Application
 		var main = new MainWindow();
 		MainWindow = main;
 		main.Show();
+
+		// Bootstrap completato: ripristiniamo il default WPF, coerente con la
+		// build Portable. Da qui in poi la chiusura dell'ultima finestra
+		// terminerà l'app come previsto (PresenterWindow secondaria inclusa).
+		ShutdownMode = ShutdownMode.OnLastWindowClose;
 	}
 
 	private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
