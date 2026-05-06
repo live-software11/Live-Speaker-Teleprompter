@@ -7,16 +7,21 @@ alwaysApply: true
 
 **Alla fine di ogni operazione significativa**, i seguenti documenti devono essere **aggiornati in modo dettagliato e professionale**. Non è opzionale: la documentazione è parte del codice. Prodotto destinato alla vendita professionale.
 
+> **Entry-point AI 2026:** `AGENTS.md` (root). Sintesi viva Claude: `CLAUDE.md` (root). Indice canonico: `docs/README.md`.
+
 ---
 
 ## Documenti obbligatori da aggiornare
 
 | Documento | Contenuto | Quando aggiornare |
 |-----------|-----------|-------------------|
-| `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` | Architettura, data model, OSC, Companion | Nuovi file/servizi, cambi data model, nuovi endpoint OSC/HTTP |
+| `AGENTS.md` (root) | Entry-point AI agent standard 2026: stack, account, invarianti, comandi, ecosistema | Cambi stack/account/invarianti, ogni audit completo, modifiche zona licenze/Companion/OSC |
+| `CLAUDE.md` (root) | Sintesi viva Claude (gemello AGENTS, più conciso) | Stessi trigger di AGENTS.md |
+| `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` | Architettura, data model, OSC, Companion, licensing, build dual | Nuovi file/servizi, cambi data model, nuovi endpoint OSC/HTTP |
+| `docs/README.md` | Indice canonico documentazione | Aggiunta/rimozione documenti, cambio precedenza fonti |
 | `docs/BugFix_Refactor_Implementazioni_Live_Speaker_Teleprompter.md` | Changelog, bug risolti, piano refactoring | Bugfix, nuove feature, cambi versione |
-| `docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md` | Istruzioni progetto per Claude (architetto) | Cambi data model, vincoli sacri, struttura file |
-| `docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md` | Prompt avvio chat Claude Desktop | Cambi ambiti analisi, fonti obbligatorie |
+| `docs/Istruzioni_Progetto_Claude_Live_Speaker_Teleprompter.md` (legacy) | System prompt Claude Desktop (architetto) | Cambi data model, vincoli sacri, struttura file |
+| `docs/Primo_Prompt_Avvio_Chat_Claude_Desktop_Live_Speaker_Teleprompter.md` (legacy) | Primo prompt avvio chat Claude Desktop | Cambi ambiti analisi, fonti obbligatorie |
 | `docs/README_ITA_Live_Speaker_Teleprompter.md` / `README_ENG_*` | Documentazione utente IT/EN (vendita) | Nuove funzionalità, cambi UI, nuovi formati supportati |
 
 ---

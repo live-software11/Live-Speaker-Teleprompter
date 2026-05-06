@@ -1,8 +1,11 @@
 # Live Speaker Teleprompter — Architettura Software
 
-> **Versione documento:** 2.3.4  
-> **Aggiornato:** Marzo 2026  
-> **Mantenuto da:** CTO / AI Agent — aggiornare ad ogni modifica strutturale al codice
+> **Versione documento:** 2.3.5
+> **Aggiornato:** 06/05/2026 (audit memoria a lungo termine: AGENTS.md + CLAUDE.md + docs/README.md; changelog T-04 HMAC + audit pre-vendita)
+> **Versione applicazione:** 2.3.3 (`TeleprompterApp.csproj`)
+> **Entry-point AI agent:** [`AGENTS.md`](../AGENTS.md) (root) — standard 2026 per Cursor/Codex/Continue. [`CLAUDE.md`](../CLAUDE.md) sintesi viva per Claude Desktop.
+> **Indice docs:** [`docs/README.md`](./README.md).
+> **Mantenuto da:** CTO / AI Agent — aggiornare ad ogni modifica strutturale al codice.
 
 ---
 

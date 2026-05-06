@@ -5,20 +5,28 @@ alwaysApply: true
 
 # Live Speaker Teleprompter — Contesto Ecosistema
 
+> **Entry-point standard 2026:** [`AGENTS.md`](../../AGENTS.md) (root). Sezione §8 contiene la mappa completa progetti sorelle. **Sintesi Claude:** [`CLAUDE.md`](../../CLAUDE.md).
+
 ## Ruolo nell'ecosistema
 
-App desktop .NET 8 WPF (C# 12). Nessun Firebase diretto. Sistema licenze via **Live WORKS APP**.
+App desktop .NET 8 WPF (C# 12). Nessun Firebase diretto. Sistema licenze via **Live WORKS APP**. Companion HTTP porta 3131 e OSC UDP rx 8000 / tx 8001 sono **bind solo loopback** (regola SACRA, audit pre-vendita chiuso).
 
 ## Licenze
 
 - **Piattaforma:** Live WORKS APP (`live-works-app` su Firebase Blaze, account `live.software11@gmail.com`)
+- **Repo backend:** `live-software11/live-works-app` (privato — gemello da consultare per modifiche al contratto API)
+- **API base URL:** `https://live-works-app.web.app/api`
+- **Product ID:** `speaker-teleprompter` · AppData `%LOCALAPPDATA%\com.livesoftware.live-speaker-teleprompter\`
 - **Vendita:** Lemon Squeezy (lifetime) — checkout linkato dal SITO www.liveworksapp.com
-- **Integrazione client:** Modulo licenza locale — vedi `docs/GUIDA_INTEGRAZIONE_LICENZA_APP.md`
+- **Integrazione client:** Modulo licenza locale `src/TeleprompterApp/Licensing/` (incluso solo con `-p:LicenseEnabled=true`) — vedi `docs/GUIDA_INTEGRAZIONE_LICENZA_APP.md`
+- **T-04 HMAC App Challenge** (allineato 24/04/2026): header `X-App-*` opzionali su API. Secret iniettato via MSBuild `-p:LiveWorksAppChallengeSecret=...` → `AssemblyMetadata` `LiveWorksAppChallengeSecret` ↔ backend `APP_CHALLENGE_SECRET_SPEAKER_TELEPROMPTER`. Modalità lazy finché `APP_CHALLENGE_ENFORCED=true` non è attivato.
+- **Compatibilità AES-GCM:** layout `nonce||cipher||tag` di `license.enc` compatibile con il modulo Rust di Live 3d Ledwall Render / Live Speaker Timer. Mai cambiare layout senza allineamento ecosistema.
+- **Audit pre-vendita** (commit `3b9c366`): VERDE — vedi `docs/AUDIT_PRE_VENDITA.md`. Companion/OSC loopback, CORS restrittivo, info disclosure rimossa, fingerprint WMI strict, pending cifrato.
 
 ## Account
 
-- **GitHub:** `live-software11` — `Live-Speaker-Teleprompter`
-- **Firebase:** nessuno per questa app (backend = .NET locale)
+- **GitHub:** `live-software11` — `Live-Speaker-Teleprompter` (branch `master`)
+- **Firebase:** nessuno per questa app (backend = Live WORKS APP esterno via HTTPS)
 
 ## Progetti fratelli
 
