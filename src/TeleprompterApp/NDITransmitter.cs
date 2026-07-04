@@ -113,7 +113,10 @@ internal sealed class NDITransmitter : IDisposable
             p_groups = IntPtr.Zero,
             p_clock_domain = IntPtr.Zero,
             clock_audio = false,
-            clock_video = true
+            // Il pacing è già gestito dal rate-limiter Stopwatch in OnRendering:
+            // con clock_video=true la send bloccherebbe il thread UI per allineare
+            // i frame (stutter sullo scroll durante lo streaming NDI).
+            clock_video = false
         };
 
         _sendInstance = NdiInterop.SendCreate(ref sendCreate);

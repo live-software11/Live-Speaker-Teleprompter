@@ -65,6 +65,12 @@ namespace TeleprompterApp
     private readonly List<ScreenInfo> _screenInfos = new();
     private readonly List<ToggleButton> _monitorToggleButtons = new();
 
+    // Intento dell'operatore, separato dallo stato transitorio dei toggle:
+    // sopravvive agli hot-plug (lo schermo scelto può essere temporaneamente assente).
+    private string? _selectedMonitorDeviceName;
+    private bool _presenterHiddenByUser;
+    private bool _isRebuildingMonitorToggles;
+
     // ── Services ──
     private DisplayManager? _displayManager;
     private DebouncedPreferencesService? _debouncedPrefs;
@@ -87,6 +93,9 @@ namespace TeleprompterApp
     private double _arrowScale = 1.0;
     private bool _isUpdatingEditToggle;
     private bool _pendingEditMode = false;
+    // Stato underline mantenuto qui: evitare TextRange.GetPropertyValue sull'intero
+    // documento in CapturePreferences (hot path: ogni SetSpeed → SavePreferences).
+    private bool _useUnderline;
     private bool _isUpdatingLeftMargin;
     private bool _isUpdatingMarginSliders;
     private double _marginTop = 40;
@@ -466,6 +475,8 @@ namespace TeleprompterApp
             return;
         }
 
+        _useUnderline = _preferences.UseUnderline;
+
         if (!string.IsNullOrWhiteSpace(_preferences.DocumentBackgroundHex))
         {
             var background = CreateBrushFromHex(_preferences.DocumentBackgroundHex);
@@ -525,7 +536,12 @@ namespace TeleprompterApp
 
         if (selectedScreenInfo != null)
         {
-            MoveWindowToScreen(selectedScreenInfo);
+            _selectedMonitorDeviceName = selectedScreenInfo.Screen.DeviceName;
+            var shown = MoveWindowToScreen(selectedScreenInfo);
+            // "Nascosto per scelta" solo se esisteva un'alternativa: con un solo
+            // schermo il presenter deve riapparire da solo appena si collega
+            // lo schermo di palco.
+            _presenterHiddenByUser = !shown && _screenInfos.Count > 1;
         }
 
         var preferredSpeed = Math.Abs(_preferences.DefaultScrollSpeed) < 0.01 ? 0.5 : _preferences.DefaultScrollSpeed;
@@ -595,94 +611,101 @@ namespace TeleprompterApp
 
     /// <summary>
     /// Called by DisplayManager whenever screens are added, removed, or reconfigured.
+    /// Il rebuild dei toggle è l'unica fonte di verità: il toggle selezionato pilota
+    /// MoveWindowToScreen (show/re-home/hide) tramite il suo handler Checked.
     /// </summary>
     private void OnScreensChanged(IReadOnlyList<ScreenInfo> screens)
     {
-        // Remember which screen was selected before rebuild
-        var previousScreenName = _presenterWindow?.CurrentScreenDeviceName;
+        RebuildMonitorToggles(screens, _selectedMonitorDeviceName);
 
-        RebuildMonitorToggles(screens, previousScreenName);
-
-        // If presenter window was on a now-gone screen, re-home it
-        if (_presenterWindow != null && !string.IsNullOrEmpty(previousScreenName) &&
-            screens.All(s => !string.Equals(s.Screen.DeviceName, previousScreenName, StringComparison.OrdinalIgnoreCase)))
+        // Nessuno schermo disponibile (edge case transitorio): spegni l'uscita;
+        // verrà ripristinata dal rebuild successivo appena ricompare uno schermo.
+        if (screens.Count == 0)
         {
-            // Screen was removed — select best alternative
-            var alt = screens.FirstOrDefault(s => !IsMainWindowScreen(s.Screen));
-            if (alt != null)
-            {
-                MoveWindowToScreen(alt);
-            }
-            else
-            {
-                _presenterWindow.HideIfNeeded();
-            }
+            _presenterWindow?.HideIfNeeded();
         }
     }
 
     private void RebuildMonitorToggles(IReadOnlyList<ScreenInfo> screens, string? preferScreenDeviceName = null)
     {
-        _screenInfos.Clear();
-        _screenInfos.AddRange(screens);
-
-        _monitorTogglePanel.Children.Clear();
-        _monitorToggleButtons.Clear();
-
-        var mainScreen = GetCurrentMainScreen();
-
-        foreach (var info in _screenInfos)
+        _isRebuildingMonitorToggles = true;
+        try
         {
-            var toggle = new ToggleButton
+            _screenInfos.Clear();
+            _screenInfos.AddRange(screens);
+
+            _monitorTogglePanel.Children.Clear();
+            _monitorToggleButtons.Clear();
+
+            var mainScreen = GetCurrentMainScreen();
+
+            foreach (var info in _screenInfos)
             {
-                Content = info.DisplayLabel,
-                Style = (Style)FindResource("MonitorToggleStyle"),
-                Margin = _monitorTogglePanel.Children.Count == 0 ? new Thickness(0) : new Thickness(8, 0, 0, 0),
-                Tag = info,
-                MinWidth = 150,
-                Padding = new Thickness(22, 10, 22, 10)
-            };
+                var toggle = new ToggleButton
+                {
+                    Content = info.DisplayLabel,
+                    Style = (Style)FindResource("MonitorToggleStyle"),
+                    Margin = _monitorTogglePanel.Children.Count == 0 ? new Thickness(0) : new Thickness(8, 0, 0, 0),
+                    Tag = info,
+                    MinWidth = 150,
+                    Padding = new Thickness(22, 10, 22, 10)
+                };
 
-            toggle.Checked += MonitorToggle_Checked;
-            toggle.Unchecked += MonitorToggle_Unchecked;
+                toggle.Checked += MonitorToggle_Checked;
+                toggle.Unchecked += MonitorToggle_Unchecked;
 
-            _monitorTogglePanel.Children.Add(toggle);
-            _monitorToggleButtons.Add(toggle);
-        }
-
-        if (_monitorToggleButtons.Count > 0)
-        {
-            ToggleButton? targetToggle = null;
-
-            // Try to preserve the previously selected screen
-            if (!string.IsNullOrEmpty(preferScreenDeviceName))
-            {
-                targetToggle = _monitorToggleButtons.FirstOrDefault(button =>
-                    button.Tag is ScreenInfo opt &&
-                    string.Equals(opt.Screen.DeviceName, preferScreenDeviceName, StringComparison.OrdinalIgnoreCase));
+                _monitorTogglePanel.Children.Add(toggle);
+                _monitorToggleButtons.Add(toggle);
             }
 
-            // Fallback: pick first non-primary, non-main screen
-            if (targetToggle == null && _screenInfos.Count > 1)
+            if (_monitorToggleButtons.Count > 0)
             {
-                targetToggle = _monitorToggleButtons.FirstOrDefault(button =>
-                    button.Tag is ScreenInfo opt && !opt.IsPrimary && opt.Screen.DeviceName != mainScreen.DeviceName);
+                ToggleButton? targetToggle = null;
+
+                // L'operatore ha scelto di tenere nascosto il presenter: resta nascosto
+                // qualunque sia il cambiamento di topologia (mai riapparire da soli in live).
+                if (_presenterHiddenByUser)
+                {
+                    targetToggle = _monitorToggleButtons.FirstOrDefault(button =>
+                        button.Tag is ScreenInfo opt &&
+                        string.Equals(opt.Screen.DeviceName, mainScreen.DeviceName, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Try to preserve the previously selected screen
+                if (targetToggle == null && !string.IsNullOrEmpty(preferScreenDeviceName))
+                {
+                    targetToggle = _monitorToggleButtons.FirstOrDefault(button =>
+                        button.Tag is ScreenInfo opt &&
+                        string.Equals(opt.Screen.DeviceName, preferScreenDeviceName, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Fallback: pick first non-primary, non-main screen
+                if (targetToggle == null && _screenInfos.Count > 1)
+                {
+                    targetToggle = _monitorToggleButtons.FirstOrDefault(button =>
+                        button.Tag is ScreenInfo opt && !opt.IsPrimary && opt.Screen.DeviceName != mainScreen.DeviceName);
+                }
+
+                targetToggle ??= _monitorToggleButtons[0];
+                targetToggle.IsChecked = true;
             }
 
-            targetToggle ??= _monitorToggleButtons[0];
-            targetToggle.IsChecked = true;
+            if (_screenInfos.Count > 1)
+            {
+                SetStatus(Localization.Get("Status_ScreensDetected", string.Join(", ", _screenInfos.Select(o => o.DisplayLabel))));
+            }
+            else if (_screenInfos.Count == 1)
+            {
+                SetStatus(Localization.Get("Status_ScreenActive", _screenInfos[0].DisplayLabel));
+            }
+            else
+            {
+                SetStatus(Localization.Get("Status_NoMonitor"));
+            }
         }
-
-        if (_screenInfos.Count > 1)
+        finally
         {
-            SetStatus(Localization.Get("Status_ScreensDetected", string.Join(", ", _screenInfos.Select(o => o.DisplayLabel))));
-        }
-        else if (_screenInfos.Count == 1)
-        {
-            SetStatus(Localization.Get("Status_ScreenActive", _screenInfos[0].DisplayLabel));
-        }
-        else
-        {
-            SetStatus(Localization.Get("Status_NoMonitor"));
+            _isRebuildingMonitorToggles = false;
         }
     }
 
@@ -703,7 +726,29 @@ namespace TeleprompterApp
         }
         _isSyncingMonitorToggle = false;
 
+        if (_isApplyingPreferences)
+        {
+            // ApplyPreferences registra l'intento e muove il presenter esplicitamente:
+            // evita il doppio ShowOnScreen durante il bootstrap.
+            return;
+        }
+
+        // Solo un click reale dell'operatore aggiorna l'intento; il re-check automatico
+        // durante un rebuild (hot-plug) è transitorio e non deve sovrascriverlo.
+        var isUserAction = !_isRebuildingMonitorToggles;
+        if (isUserAction)
+        {
+            _selectedMonitorDeviceName = option.Screen.DeviceName;
+        }
+
         var presenterShown = MoveWindowToScreen(option);
+        if (isUserAction)
+        {
+            // Nascosto "per scelta" solo se c'era un'alternativa: con un solo schermo
+            // l'auto-show al collegamento dello schermo di palco resta attivo.
+            _presenterHiddenByUser = !presenterShown && _screenInfos.Count > 1;
+        }
+
         if (presenterShown)
         {
             SetStatus(Localization.Get("Status_PresenterOn", option.DisplayLabel));
@@ -754,7 +799,16 @@ namespace TeleprompterApp
         try
         {
             ApplyArrowSafePadding();
-            SyncPresenterDocument();
+
+            // La serializzazione completa del documento serve solo al primo show:
+            // quando il presenter è già visibile, PresenterSyncService lo tiene
+            // allineato in tempo reale e ri-serializzare qui è lavoro inutile
+            // (documenti lunghi = stutter durante gli hot-plug).
+            if (!_presenterWindow.IsVisible)
+            {
+                SyncPresenterDocument();
+            }
+
             _presenterWindow.ShowOnScreen(option.Screen);
             Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
             {
@@ -843,19 +897,27 @@ namespace TeleprompterApp
             var path = filePath;
             _ = Task.Run(() =>
             {
-                var text = ExtractTextFromDocx(path);
-                Dispatcher.Invoke(() =>
+                try
                 {
-                    SetPlainTextDocument(text);
-                    _contentEditor.CaretPosition = _contentEditor.Document.ContentStart;
-                    _currentDocumentPath = path;
-                    if (_preferences != null)
-                        _preferences.LastScriptPath = path;
-                    ApplyArrowSafePadding();
-                    SavePreferences();
-                    SyncPresenterDocument();
-                    SetStatus(Localization.Get("Status_Imported", Path.GetFileName(path)));
-                });
+                    var text = ExtractTextFromDocx(path);
+                    Dispatcher.Invoke(() =>
+                    {
+                        SetPlainTextDocument(text);
+                        _contentEditor.CaretPosition = _contentEditor.Document.ContentStart;
+                        _currentDocumentPath = path;
+                        if (_preferences != null)
+                            _preferences.LastScriptPath = path;
+                        ApplyArrowSafePadding();
+                        SavePreferences();
+                        SyncPresenterDocument();
+                        SetStatus(Localization.Get("Status_Imported", Path.GetFileName(path)));
+                    });
+                }
+                catch
+                {
+                    // App in chiusura mentre l'import era in corso: mai far
+                    // propagare eccezioni da un task in background.
+                }
             });
             return;
         }
@@ -1279,6 +1341,7 @@ namespace TeleprompterApp
 
     private void ApplyFont(string fontFamilyName, double fontSizePoints, bool isBold, bool isItalic, bool underline, bool strikeout)
     {
+        _useUnderline = underline;
         var points = fontSizePoints <= 0 ? 72 : fontSizePoints;
         var wpfSize = ConvertPointsToWpf(points);
         var family = new MediaFontFamily(fontFamilyName);
@@ -1413,10 +1476,10 @@ namespace TeleprompterApp
             return;
         }
 
-        _presenterWindow = new PresenterWindow
-        {
-            Owner = this
-        };
+        // Nessun Owner: la finestra di palco non deve minimizzarsi insieme alla
+        // finestra di controllo (un minimize accidentale spegnerebbe l'uscita live).
+        // La chiusura è gestita esplicitamente in Window_Closing.
+        _presenterWindow = new PresenterWindow();
         _presenterWindow.Title = Localization.Get("Title_Presenter");
 
         _presenterWindow.Hide();
@@ -2084,6 +2147,7 @@ namespace TeleprompterApp
         }
         catch { }
 
+        try { _onAirTimerDisplay?.Stop(); } catch { }
         try { _ndiTransmitter?.Dispose(); } catch { }
         try { _companionBridge?.Dispose(); } catch { }
         try { _oscBridge?.Dispose(); } catch { }
@@ -2722,24 +2786,27 @@ namespace TeleprompterApp
         _preferences.IsBold = _contentEditor.FontWeight == FontWeights.Bold;
         _preferences.IsItalic = _contentEditor.FontStyle == FontStyles.Italic;
 
-        try
-        {
-            var range = new TextRange(_contentEditor.Document.ContentStart, _contentEditor.Document.ContentEnd);
-            var decorations = range.GetPropertyValue(Inline.TextDecorationsProperty);
-            _preferences.UseUnderline = decorations is TextDecorationCollection collection && collection == TextDecorations.Underline;
-        }
-        catch
-        {
-            _preferences.UseUnderline = false;
-        }
+        _preferences.UseUnderline = _useUnderline;
 
         _preferences.DefaultScrollSpeed = _scrollSpeed;
         _preferences.MirrorEnabled = _mirrorToggle.IsChecked == true;
         _preferences.TopMostEnabled = _topMostToggle.IsChecked == true;
         _preferences.LastScriptPath = _currentDocumentPath;
 
-        var selectedMonitor = _monitorToggleButtons.FirstOrDefault(button => button.IsChecked == true);
-        _preferences.PreferredDisplayNumber = selectedMonitor?.Tag is ScreenInfo screenInfo ? screenInfo.DisplayNumber : 0;
+        // Preferisci l'intento dell'operatore: se il suo schermo è temporaneamente
+        // scollegato (toggle su un fallback), non sovrascrivere la preferenza.
+        var intendedScreen = !string.IsNullOrEmpty(_selectedMonitorDeviceName)
+            ? _screenInfos.FirstOrDefault(s => string.Equals(s.Screen.DeviceName, _selectedMonitorDeviceName, StringComparison.OrdinalIgnoreCase))
+            : null;
+        if (intendedScreen != null)
+        {
+            _preferences.PreferredDisplayNumber = intendedScreen.DisplayNumber;
+        }
+        else if (string.IsNullOrEmpty(_selectedMonitorDeviceName))
+        {
+            var selectedMonitor = _monitorToggleButtons.FirstOrDefault(button => button.IsChecked == true);
+            _preferences.PreferredDisplayNumber = selectedMonitor?.Tag is ScreenInfo screenInfo ? screenInfo.DisplayNumber : 0;
+        }
         _preferences.EditModeEnabled = IsEditMode;
         if (_arrowShape != null && _arrowShape.Fill is SolidColorBrush arrowBrush)
         {

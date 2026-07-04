@@ -1,7 +1,7 @@
 # Live Speaker Teleprompter — Architettura Software
 
-> **Versione documento:** 2.3.5
-> **Aggiornato:** 06/05/2026 (audit memoria a lungo termine: AGENTS.md + CLAUDE.md + docs/README.md; changelog T-04 HMAC + audit pre-vendita)
+> **Versione documento:** 2.3.6
+> **Aggiornato:** 04/07/2026 (audit CTO performance/stabilità: hot-plug monitor, focus-steal, flicker presenter, hot path preferenze)
 > **Versione applicazione:** 2.3.3 (`TeleprompterApp.csproj`)
 > **Entry-point AI agent:** [`AGENTS.md`](../AGENTS.md) (root) — standard 2026 per Cursor/Codex/Continue. [`CLAUDE.md`](../CLAUDE.md) sintesi viva per Claude Desktop.
 > **Indice docs:** [`docs/README.md`](./README.md).
@@ -277,6 +277,10 @@ Rileva in tempo reale i monitor connessi con **tripla ridondanza**:
 | 2 | .NET `SystemEvents.DisplaySettingsChanged` | ~200 ms |
 | 3 | `DispatcherTimer` polling ogni 3 secondi | max 3 s |
 
+**Coalescing:** gli eventi push (layer 1–2) arrivano in burst mentre il driver assesta la topologia. Vengono coalizzati con **debounce 300ms**, seguito da un **re-check di assestamento a 1.5s** (bounds/DPI aggiornati in ritardo). Il polling resta come safety net.
+
+**Resume da standby:** `SystemEvents.PowerModeChanged` (Resume) schedula un check — proiettori/monitor possono riagganciarsi in ritardo dopo lo standby.
+
 **Evento pubblico:** `ScreensChanged` — raised sul UI thread con `IReadOnlyList<ScreenInfo>`.
 
 **`ScreenInfo`** (record interno):
@@ -453,6 +457,7 @@ CompositionTarget.Rendering (vsync)
 - **Buffer nativo pre-allocato** con `Marshal.AllocHGlobal` — pool crescente, mai riallocato se la risoluzione non cambia
 - **VisualBrush cachato** — WPF aggiorna automaticamente il contenuto
 - **Frame-rate limiter** via `Stopwatch` — evita oversending a monitor ad alto refresh rate
+- **`clock_video = false`** in `NDIlib_send_create_t` — il pacing frame è già gestito dallo `Stopwatch` limiter in `OnRendering`; con `clock_video = true` la `send` blocca il thread finché il downstream NDI non consuma il frame, causando stutter dello scroll quando lo streaming è attivo
 
 ### Controllo via OSC
 
@@ -689,11 +694,26 @@ MainWindow.Window_Closing
 
 ### `OnScreensChanged` (MainWindow)
 
-1. Aggiorna `_screenInfos`
-2. Rimuove i vecchi toggle button dal pannello
-3. Crea nuovi `ToggleButton` per ogni schermo
-4. Ripristina la selezione salvata in `_preferences.PreferredDisplayNumber`
-5. Se il monitor del presenter è stato rimosso: sposta su alternativo o nasconde
+Il rebuild dei toggle è l'**unica fonte di verità**: il toggle selezionato pilota `MoveWindowToScreen` (show / re-home / hide) tramite il suo handler `Checked`. Nessun doppio spostamento.
+
+1. Aggiorna `_screenInfos`, ricrea i `ToggleButton`
+2. Selezione del toggle in ordine di priorità:
+   - se `_presenterHiddenByUser` → schermo della MainWindow (il presenter **non riappare mai da solo** se l'operatore l'ha nascosto)
+   - altrimenti `_selectedMonitorDeviceName` (**intento dell'operatore**, sopravvive agli hot-plug)
+   - altrimenti primo schermo non-primario e non-main
+3. Se lo schermo scelto dall'operatore viene ricollegato, il presenter **torna automaticamente** su di esso (l'intento non viene sovrascritto dai re-home temporanei)
+4. Zero schermi (edge transitorio) → presenter nascosto
+
+**Intento operatore (`MainWindow`):**
+- `_selectedMonitorDeviceName` — device scelto con un click reale (i re-check automatici del rebuild non lo toccano)
+- `_presenterHiddenByUser` — true solo se l'operatore ha scelto lo schermo della MainWindow **quando esisteva un'alternativa**; con un solo schermo l'auto-show al collegamento dello schermo di palco resta attivo
+- `CapturePreferences` salva `PreferredDisplayNumber` dall'intento, non dal toggle transitorio
+
+**Anti-flicker / anti-focus-steal (`PresenterWindow`):**
+- `ShowActivated="False"` + nessun `Activate()` → gli hot-plug non rubano mai il focus alla finestra di controllo (i tasti dell'operatore continuano a funzionare)
+- `ShowOnScreen` è **no-op** se la finestra è già massimizzata sullo stesso device con gli stessi bounds → nessun ciclo Normal→Maximized sull'uscita di palco quando cambia un altro schermo
+- Nessun `Owner`: un minimize accidentale della finestra di controllo non spegne l'uscita live (chiusura gestita esplicitamente in `Window_Closing`)
+- `MoveWindowToScreen` ri-serializza il documento solo al primo show (quando già visibile ci pensa `PresenterSyncService`)
 
 ---
 
@@ -724,6 +744,8 @@ MainWindow.SavePreferences()
           ├─ Scrive su preferences.json.tmp
           └─ File.Move(.tmp → preferences.json, overwrite: true)
 ```
+
+**Hot path `CapturePreferences`:** `SavePreferences()` viene chiamato ad ogni `SetSpeed` (rotella, OSC, Companion durante lo scroll). `CapturePreferences` **non deve mai** scandire l'intero `FlowDocument` (es. `TextRange.GetPropertyValue` su `ContentStart..ContentEnd`) — con documenti lunghi introduce stutter percettibile. Lo stato underline è mantenuto nel campo `_useUnderline` (aggiornato da `ApplyFont`), non ricalcolato dal documento ad ogni salvataggio.
 
 ---
 

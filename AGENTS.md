@@ -3,7 +3,7 @@
 > **Entry-point unico per agenti AI** (Cursor, Claude Code, Codex, Continue, ecc.) su questo workspace.
 > Compatibile con il formato standard `AGENTS.md` (2026). Letto a inizio di ogni sessione.
 >
-> **Ultimo aggiornamento:** 6 maggio 2026 (audit completo: ARCHITETTURA 2.3.5, T-04 HMAC, audit pre-vendita chiuso).
+> **Ultimo aggiornamento:** 4 luglio 2026 (audit CTO performance/stabilità: hot-plug monitor, focus-steal, flicker presenter — ARCHITETTURA 2.3.6).
 
 ---
 
@@ -147,7 +147,8 @@ A runtime, `LicenseApiClient` legge `AssemblyMetadata` `LiveWorksAppChallengeSec
   - Installato: `%APPDATA%\Live Speaker Teleprompter`.
   - `PreferencesPath`, `LogDirectory`, `LayoutPresetService.PresetsPath` derivati da `BaseDirectory`.
 - **Layout preset (S1-S4/L1-L4):** salva colori, font, dim, B/I/U, velocità, mirror, freccia, margini. NON salva: lingua, file, monitor, topmost, modalità modifica. File `layout-presets.json` in `BaseDirectory`.
-- **NDI opzionale:** se `ProcessNDI4.dll` non c'è → toggle disabilitato. Mai crash.
+- **NDI opzionale:** se `ProcessNDI4.dll` non c'è → toggle disabilitato. Mai crash. `NDIlib_send_create_t.clock_video = false` (pacing già gestito dal rate-limiter interno; `true` bloccherebbe il thread UI).
+- **Hot-plug monitor:** `DisplayManager` coalizza gli eventi push con debounce 300ms + re-check di assestamento 1.5s (mai reagire diretto a `WM_DISPLAYCHANGE`/`SystemEvents`). L'intento dell'operatore (schermo scelto, presenter nascosto per scelta) è distinto dallo stato transitorio dei toggle e sopravvive agli hot-plug. `PresenterWindow`: `ShowActivated="False"`, mai `Activate()`, nessun `Owner`, `ShowOnScreen` no-op se già a schermo intero sullo stesso device.
 - **`AssemblyName = TeleprompterApp`** non rinominare (XAML pack URIs).
 - **DPI awareness:** `ApplicationHighDpiMode = PerMonitorV2`, manifest `dpiAware: true/PM`.
 
@@ -271,7 +272,8 @@ git push origin master
 
 ## 9. Storia documentale
 
-- **6 maggio 2026 (audit corrente)** — Creato `AGENTS.md` (questo file) e `CLAUDE.md` come entry-point standard 2026 per agenti AI; aggiunto indice `docs/README.md`. Aggiornato `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` a v2.3.5 con riferimenti AGENTS.md/CLAUDE.md/docs/README.md. Cursor rules `ecosystem-context`, `doc-sync` aggiornate per puntare a `AGENTS.md` come prima fonte. Nessuna modifica al codice.
+- **4 luglio 2026 (audit corrente)** — Audit CTO completo performance/stabilità, focus su gestione monitor esterni e comportamento hot-plug (collega/scollega a runtime). Fix: presenter che riappariva da solo dopo hot-plug se nascosto dall'operatore; `Activate()` che rubava il focus alla finestra di controllo su ogni show; flicker Normal→Maximized quando cambiava *un altro* schermo; doppio re-home con doppia serializzazione documento; `Owner` rimosso da `PresenterWindow` (minimize accidentale non spegne più l'uscita live). Perf: coalescing eventi `DisplayManager` (debounce 300ms + settle 1.5s + resume standby), hot path `CapturePreferences` senza scansione documento, NDI `clock_video=false` (no blocking UI thread), skip serializzazione ridondante su cambio schermo con presenter già visibile. Aggiornato `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` a v2.3.6, `docs/BugFix_Refactor_*.md`, `.cursor/rules/performance-stability.mdc`, `.cursor/rules/project-architecture.mdc`. Nessuna modifica a licensing, Companion/OSC binding, csproj, ShutdownMode. Build Debug/Setup/Release verificate 0 errori 0 warning.
+- **6 maggio 2026** — Creato `AGENTS.md` (questo file) e `CLAUDE.md` come entry-point standard 2026 per agenti AI; aggiunto indice `docs/README.md`. Aggiornato `docs/ARCHITETTURA_Live_Speaker_Teleprompter.md` a v2.3.5 con riferimenti AGENTS.md/CLAUDE.md/docs/README.md. Cursor rules `ecosystem-context`, `doc-sync` aggiornate per puntare a `AGENTS.md` come prima fonte. Nessuna modifica al codice.
 - **24 aprile 2026** — T-04 LiveWorks App Challenge HMAC client (commit `19ecd96`): secret in `AssemblyMetadata` (`LiveWorksAppChallengeSecret`), header `X-App-*` opzionali su API. Allineato con backend WORKS APP T-04 chiuso 24/04/2026.
 - **Aprile 2026** — Audit pre-vendita chiuso (commit `3b9c366`): Companion/OSC loopback, CORS restrittivo, info disclosure rimossa, fingerprint WMI strict, pending cifrato AES-GCM. Verdetto: **VERDE — pronto per la vendita** (vedi `docs/AUDIT_PRE_VENDITA.md`).
 - **Aprile 2026** — Fix `ShutdownMode = OnExplicitShutdown` durante license gate (commit `7e36ca4`): evita exit dopo `ShowDialog()`.

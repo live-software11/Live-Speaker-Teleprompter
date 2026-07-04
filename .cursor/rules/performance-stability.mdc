@@ -55,11 +55,25 @@ _contentScrollViewer.UpdateLayout(); // costa 2-5ms per frame, causa jank
 - Il capture usa `CompositionTarget.Rendering` allineato al vsync.
 - Buffer e bitmap cached per evitare allocazioni per-frame.
 - Se NDI SDK non disponibile, disabilitare il toggle e informare l'utente (mai crash).
+- `NDIlib_send_create_t.clock_video` DEVE restare `false`: il pacing è già gestito dal rate-limiter `Stopwatch` in `OnRendering`. Con `clock_video = true` la `send` blocca il thread finché il downstream non consuma il frame → stutter dello scroll quando NDI è attivo.
+
+## Gestione monitor esterni / hot-plug (DisplayManager)
+- Gli eventi push (`WM_DISPLAYCHANGE`, `SystemEvents.DisplaySettingsChanged`) arrivano **in burst** mentre Windows assesta la nuova topologia: sempre passare da `ScheduleCheck()` (debounce 300ms) + re-check di assestamento (1.5s), MAI chiamare `CheckForChanges()` direttamente dall'handler.
+- `SystemEvents.PowerModeChanged` (Resume) deve schedulare un check: proiettori/monitor possono riagganciarsi in ritardo dopo lo standby.
+- L'**intento dell'operatore** (`_selectedMonitorDeviceName`, `_presenterHiddenByUser` in `MainWindow`) è distinto dallo stato transitorio dei toggle e va sempre preservato attraverso un rebuild: un hot-plug non deve mai far riapparire un presenter che l'operatore ha scelto di nascondere, né far perdere lo schermo scelto quando viene ricollegato.
+- `PresenterWindow` non deve mai rubare il focus: `ShowActivated="False"` in XAML, MAI chiamare `Activate()` in `ShowOnScreen`. Un hot-plug che ruba il focus rompe i tasti dell'operatore (play/pausa, velocità) durante il live.
+- `ShowOnScreen` deve essere no-op se la finestra è già massimizzata sullo stesso device con gli stessi bounds: altrimenti ogni hot-plug su *un altro* schermo causa un ciclo Normal→Maximized (flicker) anche sul monitor già in uscita.
+- `PresenterWindow` NON deve avere `Owner`: un minimize accidentale della finestra di controllo spegnerebbe l'uscita live insieme ad essa.
+- `MoveWindowToScreen` deve ri-serializzare il documento (`SyncPresenterDocument`) solo se il presenter non è ancora visibile — a presenter già visibile ci pensa `PresenterSyncService` in tempo reale; ri-serializzare ad ogni hot-plug è lavoro sprecato su documenti lunghi.
+
+## CapturePreferences (hot path)
+- `SavePreferences()` viene chiamato ad ogni `SetSpeed` (rotella, OSC, Companion durante lo scroll attivo). `CapturePreferences` NON deve MAI scandire l'intero `FlowDocument` (es. `TextRange.GetPropertyValue` su `ContentStart..ContentEnd`): con documenti lunghi introduce stutter percettibile. Stati derivati dal documento (es. underline) vanno mantenuti in un campo aggiornato dal punto in cui cambiano (es. `ApplyFont`), non ricalcolati ad ogni salvataggio.
 
 ## Checklist pre-release
 1. Testare con documento vuoto, 1 riga, 100+ righe
-2. Testare hot-plug monitor (connetti/disconnetti durante scroll)
+2. Testare hot-plug monitor (connetti/disconnetti durante scroll) — verificare: nessun flicker, nessun furto di focus, il presenter torna sullo schermo scelto quando ricollegato, resta nascosto se nascosto per scelta
 3. Testare velocita negative (scroll inverso)
 4. Testare con DPI diversi (100%, 125%, 150%, 200%)
 5. Testare mirror mode con freccia e margini
 6. Verificare che il play si fermi correttamente a fine testo
+7. Testare standby/resume con monitor esterno collegato (proiettori spesso si riagganciano in ritardo)

@@ -49,15 +49,26 @@ namespace TeleprompterApp
 
         private void HwndSource_DpiChanged(object sender, HwndDpiChangedEventArgs e)
         {
-            if (!string.IsNullOrEmpty(CurrentScreenDeviceName))
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,
+                ReapplyBoundsToCurrentScreen);
+        }
+
+        /// <summary>
+        /// Riapplica i bounds dello schermo su cui la finestra è attualmente assegnata,
+        /// se ancora connesso. Usato dopo DPI change e dopo il primo render.
+        /// </summary>
+        private void ReapplyBoundsToCurrentScreen()
+        {
+            if (string.IsNullOrEmpty(CurrentScreenDeviceName))
             {
-                var currentScreen = System.Windows.Forms.Screen.AllScreens
-                    .FirstOrDefault(s => s.DeviceName == CurrentScreenDeviceName);
-                if (currentScreen != null)
-                {
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
-                        ApplyScreenBounds(currentScreen));
-                }
+                return;
+            }
+
+            var currentScreen = System.Windows.Forms.Screen.AllScreens
+                .FirstOrDefault(s => string.Equals(s.DeviceName, CurrentScreenDeviceName, StringComparison.OrdinalIgnoreCase));
+            if (currentScreen != null)
+            {
+                ApplyScreenBounds(currentScreen);
             }
         }
 
@@ -283,6 +294,17 @@ namespace TeleprompterApp
 
         public void ShowOnScreen(System.Windows.Forms.Screen screen)
         {
+            // No-op se già a schermo intero sul monitor richiesto con gli stessi bounds:
+            // evita il ciclo Normal→Maximized (flicker sull'uscita di palco) quando un
+            // altro schermo viene collegato/scollegato senza toccare questo.
+            if (IsVisible &&
+                WindowState == WindowState.Maximized &&
+                string.Equals(CurrentScreenDeviceName, screen.DeviceName, StringComparison.OrdinalIgnoreCase) &&
+                _lastAppliedDeviceBounds == screen.Bounds)
+            {
+                return;
+            }
+
             CurrentScreenDeviceName = screen.DeviceName;
             WindowState = WindowState.Normal;
             WindowStartupLocation = WindowStartupLocation.Manual;
@@ -294,27 +316,19 @@ namespace TeleprompterApp
 
             ApplyScreenBounds(screen);
             WindowState = WindowState.Maximized;
-            Activate();
 
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
-            {
-                if (!string.IsNullOrEmpty(CurrentScreenDeviceName))
-                {
-                    var currentScreen = System.Windows.Forms.Screen.AllScreens
-                        .FirstOrDefault(s => s.DeviceName == CurrentScreenDeviceName);
-                    if (currentScreen != null)
-                    {
-                        ApplyScreenBounds(currentScreen);
-                    }
-                }
-            });
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,
+                ReapplyBoundsToCurrentScreen);
         }
+
+        private System.Drawing.Rectangle _lastAppliedDeviceBounds;
 
         private void ApplyScreenBounds(System.Windows.Forms.Screen screen)
         {
             // Use Bounds (full screen area) instead of WorkingArea (excludes taskbar)
             // since the presenter should cover the entire display.
             var bounds = screen.Bounds;
+            _lastAppliedDeviceBounds = bounds;
             var source = PresentationSource.FromVisual(this);
             var compositionTarget = source?.CompositionTarget;
 
@@ -339,18 +353,8 @@ namespace TeleprompterApp
                 Height = bounds.Height;
 
                 // Schedule a re-apply after the window has a PresentationSource
-                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
-                {
-                    if (!string.IsNullOrEmpty(CurrentScreenDeviceName))
-                    {
-                        var currentScreen = System.Windows.Forms.Screen.AllScreens
-                            .FirstOrDefault(s => s.DeviceName == CurrentScreenDeviceName);
-                        if (currentScreen != null)
-                        {
-                            ApplyScreenBounds(currentScreen);
-                        }
-                    }
-                });
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,
+                    ReapplyBoundsToCurrentScreen);
             }
         }
 

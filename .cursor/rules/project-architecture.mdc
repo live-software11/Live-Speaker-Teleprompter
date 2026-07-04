@@ -34,7 +34,7 @@ src/TeleprompterApp/
   MainWindow.xaml/.cs       → Editor + Preview (finestra principale)
   PresenterWindow.xaml/.cs  → Output su monitor esterno (full-screen)
   Services/
-    DisplayManager.cs       → Rilevamento schermi (Win32 + polling)
+    DisplayManager.cs       → Rilevamento schermi (Win32 + polling + debounce/settle + resume standby)
     PresenterSyncService.cs → Sync documento (debounce 300ms, XamlPackage clone)
     DebouncedPreferencesService.cs → Salvataggio preferenze (debounce 500ms)
     LayoutPresetService.cs  → Save/Load preset layout S1–S4 / L1–L4 (layout-presets.json)

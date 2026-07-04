@@ -1,11 +1,39 @@
 # BugFix, Refactor e Implementazioni — Live Speaker Teleprompter
 
-> **Ultimo aggiornamento:** Marzo 2026 — v2.3.5  
+> **Ultimo aggiornamento:** 4 luglio 2026 — v2.3.6  
 > **Scopo:** Registro unico di bug risolti, changelog per versione, piano refactoring e guida aggiornamenti
 
 ---
 
 ## CHANGELOG PER VERSIONE
+
+### v2.3.6 — Audit CTO: hot-plug monitor, stabilità e performance live
+
+Audit completo pre-vendita su gestione schermi esterni e comportamento in collegamento/scollegamento a runtime. Nessuna modifica a licensing, Companion/OSC binding, `csproj` o `ShutdownMode`.
+
+| Intervento | File | Descrizione |
+|---|---|---|
+| **BUG: presenter riappariva da solo** | `MainWindow.xaml.cs` | Se l'operatore nascondeva il presenter, un hot-plug/resume successivo lo rimostrava usando il device stantio dell'ultima visualizzazione. Introdotto intento esplicito (`_selectedMonitorDeviceName`, `_presenterHiddenByUser`) separato dallo stato transitorio dei toggle: sopravvive agli hot-plug, "nascosto per scelta" resta nascosto, lo schermo scelto torna automaticamente quando viene ricollegato |
+| **BUG: focus rubato durante hot-plug** | `PresenterWindow.xaml/.cs` | `ShowOnScreen()` chiamava `Activate()` ad ogni show: su hot-plug il presenter prendeva il focus e i tasti dell'operatore (play/pausa, velocità) smettevano di rispondere. Aggiunto `ShowActivated="False"`, rimosso `Activate()` |
+| **BUG: flicker sull'uscita di palco** | `PresenterWindow.xaml.cs` | Collegare/scollegare un *altro* schermo causava un ciclo Normal→Maximized anche sul monitor già attivo. `ShowOnScreen` ora è no-op se già massimizzato sullo stesso device con gli stessi bounds |
+| **BUG: doppio re-home su hot-plug** | `MainWindow.xaml.cs` | `OnScreensChanged` spostava il presenter due volte (rebuild toggle + logica esplicita), con doppia serializzazione del documento. Il rebuild dei toggle è ora l'unica fonte di verità (il toggle selezionato pilota `MoveWindowToScreen` via `Checked`) |
+| **HARDENING: `Owner` rimosso da PresenterWindow** | `MainWindow.xaml.cs` | Minimizzare la finestra di controllo minimizzava anche il presenter (spegneva l'uscita live). Nessun `Owner`; chiusura gestita esplicitamente in `Window_Closing` |
+| **PERF: coalescing eventi DisplayManager** | `Services/DisplayManager.cs` | `WM_DISPLAYCHANGE`/`SystemEvents` arrivano in burst durante l'assestamento driver, causando check ridondanti. Debounce 300ms + re-check di assestamento a 1.5s. Aggiunto `SystemEvents.PowerModeChanged` (Resume da standby) |
+| **PERF: hot path `CapturePreferences`** | `MainWindow.xaml.cs` | `TextRange.GetPropertyValue` sull'intero documento veniva eseguito ad ogni `SetSpeed` (rotella/OSC durante lo scroll) — stutter su documenti lunghi. Stato underline ora mantenuto in campo (`_useUnderline`), non ricalcolato dal documento |
+| **PERF: serializzazione ridondante su MoveWindowToScreen** | `MainWindow.xaml.cs` | Ogni cambio schermo ri-serializzava l'intero documento anche a presenter già visibile (dove ci pensa già `PresenterSyncService`). Skip se `_presenterWindow.IsVisible` |
+| **PERF: NDI blocking sul thread UI** | `NDITransmitter.cs` | `clock_video = true` in `NDIlib_send_create_t` bloccava il thread finché il downstream non consumava il frame (stutter scroll con NDI attivo). Il pacing è già gestito dal rate-limiter `Stopwatch`; impostato `clock_video = false` |
+| **HARDENING: import .docx durante chiusura app** | `MainWindow.xaml.cs` | Task in background per import Word non era protetto: un'eccezione durante la chiusura dell'app poteva propagare su `TaskScheduler.UnobservedTaskException`. Avvolto in try/catch |
+| **HARDENING: timer On-Air non fermato in chiusura** | `MainWindow.xaml.cs` | `_onAirTimerDisplay` non veniva fermato esplicitamente in `Window_Closing` |
+
+**Verifica:** build Debug (portable), Debug `-p:LicenseEnabled=true` (setup) e Release win-x64 self-contained — tutte 0 errori, 0 warning.
+
+**Test manuali richiesti prima del rilascio (necessitano monitor fisici):**
+1. Presenter su schermo 2 → scollega schermo 2 → migra sul superstite → ricollega → deve tornare su schermo 2, senza rubare il focus alla finestra di controllo
+2. Presenter nascosto per scelta → hot-plug/cambio risoluzione/standby-resume → non deve mai riapparire da solo
+3. Scroll attivo durante hot-plug → nessun flicker sull'uscita, nessuna perdita di controllo da tastiera
+4. Singolo schermo all'avvio → collega schermo di palco → il prompter appare automaticamente
+
+---
 
 ### v2.3.5 — Freccia allineata al testo, scroll fluido
 

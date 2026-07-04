@@ -1,7 +1,7 @@
 # CLAUDE.md — Live Speaker Teleprompter
 
 > **Sintesi viva** per Claude Desktop / Claude Code.
-> **Versione:** 1.0 — 6 maggio 2026 (audit completo: ARCHITETTURA 2.3.5, T-04 HMAC, audit pre-vendita chiuso).
+> **Versione:** 1.1 — 4 luglio 2026 (audit CTO performance/stabilità: hot-plug monitor, focus-steal, flicker presenter — ARCHITETTURA 2.3.6).
 > **Entry-point standard 2026:** [`AGENTS.md`](./AGENTS.md). **Architettura completa:** [`docs/ARCHITETTURA_Live_Speaker_Teleprompter.md`](./docs/ARCHITETTURA_Live_Speaker_Teleprompter.md).
 
 ---
@@ -56,7 +56,8 @@ Prima di `git push`: `gh auth status` deve mostrare **`live-software11`** attivo
 - **Preferenze debounced 500ms** + scrittura atomica `.tmp` + `File.Move(overwrite: true)`
 - **AssemblyName = TeleprompterApp** (XAML pack URIs)
 - **DPI:** `ApplicationHighDpiMode = PerMonitorV2`
-- **NDI opzionale:** se `ProcessNDI4.dll` assente → toggle disabilitato (mai crash)
+- **NDI opzionale:** se `ProcessNDI4.dll` assente → toggle disabilitato (mai crash); `clock_video = false` (pacing già gestito internamente, mai bloccare il thread UI)
+- **Hot-plug monitor:** `DisplayManager` debounce 300ms + settle 1.5s + resume da standby (mai reagire diretto agli eventi push). Intento operatore (schermo scelto / presenter nascosto per scelta) sopravvive agli hot-plug. `PresenterWindow`: `ShowActivated="False"`, mai `Activate()`, nessun `Owner`, `ShowOnScreen` no-op se già a schermo intero sullo stesso device
 - **Brush freeze:** tutti i `SolidColorBrush` dinamici hanno `.Freeze()`
 - **Layout preset (S1-S4/L1-L4):** snapshot colori/font/velocità/mirror/freccia/margini in `layout-presets.json`
 - **AppPaths:** portable (USB-friendly, no traccia host) vs installato (`%APPDATA%\Live Speaker Teleprompter`)
@@ -109,7 +110,8 @@ dotnet publish src/TeleprompterApp/TeleprompterApp.csproj -c Release -p:LicenseE
 
 ## 9. Storia recente
 
-- **6 maggio 2026** (questo audit) — `AGENTS.md` + `CLAUDE.md` + `docs/README.md` + ARCHITETTURA 2.3.5.
+- **4 luglio 2026** (questo audit) — Audit CTO performance/stabilità: gestione monitor esterni e hot-plug. Fix presenter che riappariva da solo, focus rubato da `Activate()`, flicker su cambio schermo, doppio re-home, `Owner` rimosso dal presenter. Perf: coalescing eventi DisplayManager, hot path `CapturePreferences`, NDI `clock_video=false`, skip serializzazione ridondante. ARCHITETTURA → 2.3.6. Zero modifiche a licensing/Companion/OSC/csproj/ShutdownMode.
+- **6 maggio 2026** — `AGENTS.md` + `CLAUDE.md` + `docs/README.md` + ARCHITETTURA 2.3.5.
 - **24 aprile 2026** — T-04 LiveWorks App Challenge HMAC (`19ecd96`): secret in `AssemblyMetadata`, header `X-App-*`.
 - **Aprile 2026** — Audit pre-vendita chiuso (`3b9c366`): Companion/OSC loopback, CORS restrittivo, info disclosure fix, fingerprint strict, pending cifrato.
 - **Aprile 2026** — Fix `ShutdownMode = OnExplicitShutdown` durante license gate (`7e36ca4`).

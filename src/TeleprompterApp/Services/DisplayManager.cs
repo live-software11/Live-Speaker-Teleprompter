@@ -15,16 +15,24 @@ namespace TeleprompterApp.Services;
 /// 1. Win32 WM_DISPLAYCHANGE hook (instant, ~50ms)
 /// 2. SystemEvents.DisplaySettingsChanged (.NET backup)
 /// 3. Polling timer every 3 seconds (safety net for edge cases)
+///
+/// Gli eventi push (1 e 2) arrivano a raffica mentre Windows assesta la nuova
+/// topologia: vengono coalizzati con un debounce breve e seguiti da un re-check
+/// di assestamento, così i consumer vedono una sola transizione stabile.
 /// </summary>
 internal sealed class DisplayManager : IDisposable
 {
     private const int WM_DISPLAYCHANGE = 0x007E;
     private const int WM_DEVICECHANGE = 0x0219;
     private const double PollingIntervalSeconds = 3.0;
+    private const int DebounceMs = 300;
+    private const int SettleRecheckMs = 1500;
 
     private readonly Window _owner;
     private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _pollingTimer;
+    private readonly DispatcherTimer _debounceTimer;
+    private readonly DispatcherTimer _settleTimer;
 
     private HwndSource? _hwndSource;
     private string _lastFingerprint = string.Empty;
@@ -46,6 +54,18 @@ internal sealed class DisplayManager : IDisposable
             Interval = TimeSpan.FromSeconds(PollingIntervalSeconds)
         };
         _pollingTimer.Tick += OnPollingTick;
+
+        _debounceTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)
+        {
+            Interval = TimeSpan.FromMilliseconds(DebounceMs)
+        };
+        _debounceTimer.Tick += OnDebounceTick;
+
+        _settleTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)
+        {
+            Interval = TimeSpan.FromMilliseconds(SettleRecheckMs)
+        };
+        _settleTimer.Tick += OnSettleTick;
     }
 
     /// <summary>
@@ -64,6 +84,9 @@ internal sealed class DisplayManager : IDisposable
 
         // 2. .NET SystemEvents
         SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+
+        // 2b. Resume da standby: proiettori/monitor possono riagganciarsi in ritardo
+        SystemEvents.PowerModeChanged += OnPowerModeChanged;
 
         // 3. Polling timer
         _pollingTimer.Start();
@@ -102,9 +125,9 @@ internal sealed class DisplayManager : IDisposable
     {
         if (msg is WM_DISPLAYCHANGE or WM_DEVICECHANGE)
         {
-            // WM_DISPLAYCHANGE fires when resolution or monitor count changes
-            // Slight delay to let Windows settle the new configuration
-            _dispatcher.BeginInvoke(DispatcherPriority.Background, () => CheckForChanges());
+            // WM_DISPLAYCHANGE fires when resolution or monitor count changes;
+            // spesso arriva in burst mentre il driver assesta la topologia.
+            _dispatcher.BeginInvoke(DispatcherPriority.Background, ScheduleCheck);
         }
 
         return IntPtr.Zero;
@@ -112,7 +135,45 @@ internal sealed class DisplayManager : IDisposable
 
     private void OnDisplaySettingsChanged(object? sender, EventArgs e)
     {
-        _dispatcher.BeginInvoke(DispatcherPriority.Background, () => CheckForChanges());
+        _dispatcher.BeginInvoke(DispatcherPriority.Background, ScheduleCheck);
+    }
+
+    private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs e)
+    {
+        if (e.Mode == PowerModes.Resume)
+        {
+            _dispatcher.BeginInvoke(DispatcherPriority.Background, ScheduleCheck);
+        }
+    }
+
+    /// <summary>
+    /// Coalizza gli eventi push in un unico check (debounce), seguito da un
+    /// re-check di assestamento per intercettare bounds/DPI aggiornati in ritardo.
+    /// </summary>
+    private void ScheduleCheck()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _debounceTimer.Stop();
+        _debounceTimer.Start();
+    }
+
+    private void OnDebounceTick(object? sender, EventArgs e)
+    {
+        _debounceTimer.Stop();
+        CheckForChanges();
+
+        _settleTimer.Stop();
+        _settleTimer.Start();
+    }
+
+    private void OnSettleTick(object? sender, EventArgs e)
+    {
+        _settleTimer.Stop();
+        CheckForChanges();
     }
 
     private void OnPollingTick(object? sender, EventArgs e)
@@ -173,8 +234,11 @@ internal sealed class DisplayManager : IDisposable
 
         _disposed = true;
         _pollingTimer.Stop();
+        _debounceTimer.Stop();
+        _settleTimer.Stop();
 
         SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
 
         if (_hwndSource != null)
         {
