@@ -284,3 +284,27 @@ git push origin master
 **Regola d'oro per tutta la sessione:**
 
 > Prima di scrivere codice nuovo, controlla se esiste un pattern simile nel codebase. Riusa, non duplicare. Per la zona licenze: ogni modifica al `LicenseApiClient` o al manager che cambia il contratto API verso `live-works-app.web.app` richiede replica nel backend WORKS APP (`live-software11/live-works-app`). Per Companion/OSC: il bind loopback è non negoziabile.
+
+## Test, audit e debug a fondo
+
+Test, audit, campo e debug vanno fatti **a fondo**, con l'obiettivo di trovare i problemi **prima** del cliente e di Andrea. Mai uno sguardo veloce: CI e unit verdi **non bastano**.
+
+### Cosa coprire (quando applicabile)
+
+- Percorso felice
+- Write o chiamata fallita a metà (niente stato parziale nascosto né successo finto)
+- Reload e sessione
+- Import e azioni di massa (righe errate, duplicati, limiti di batch)
+- Ruoli, permessi e rules
+- Concorrenza e race (listener prima della promise, modifiche ravvicinate, due utenti)
+- Dati limite (vuoti, null/undefined, date e Timestamp serializzati, caratteri speciali)
+- Regressioni sui flussi che condividono file, hook o servizi
+- Effetti esterni (calendari, email, Functions) **senza** effetti reali
+- Coerenza finale tra UI e dati salvati
+
+### Come lavorare
+
+- Leggere il **diff** e i **chiamanti** dei file toccati; quando si scopre un bug simile, cercare gli altri punti con lo stesso schema.
+- **Dati reali intoccabili:** test solo con fixture fittizie poi eliminate, o su emulatore; le azioni che potrebbero toccare dati reali non si eseguono sui dati veri.
+- Ogni esito verde dichiara in chiaro **cosa è stato provato** e **cosa resta fuori**, con il motivo.
+- UI e campo a **1920×1080**.
